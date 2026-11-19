@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Stages: Check -> Test. The test jobs only start when all check jobs succeeded.
+jobs:
+  php-checks:
+    name: PHP checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-php-app
+
+      # PHPStan reads var/cache/dev/App_KernelDevDebugContainer.xml
+      - name: Warm up the dev container
+        run: php bin/console cache:warmup
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: PHP CS Fixer (dry run)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Twig CS Fixer (lint)
+        run: vendor/bin/twig-cs-fixer lint
+
+  frontend-checks:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # Fails on TypeScript and Sass errors
+      - name: Build assets
+        run: npm run build
+
+  phpunit:
+    name: PHPUnit
+    needs: [php-checks, frontend-checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-php-app
+
+      # The home page renders the Encore entrypoints, so public/build/entrypoints.json must exist
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: PHPUnit
+        run: php bin/phpunit
+
+  vitest:
+    name: Vitest
+    needs: [php-checks, frontend-checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Vitest
+        run: npm test

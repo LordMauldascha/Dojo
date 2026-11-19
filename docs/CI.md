@@ -1,48 +1,58 @@
-# CI checks
+# CI
 
-There is **no CI pipeline configured in this repository yet** (no `.github/`, no `.gitlab-ci.yml`).
-This file lists the checks a pipeline must run and the exact commands, so a pipeline can be set up without guessing.
-Update it when a pipeline is added.
+The pipeline is a GitHub Actions workflow on GitHub-hosted runners (`ubuntu-latest`, no self-hosted runner).
 
-All commands run from the repository root. The Docker image (`Dockerfile`) is PHP 8.5 without Node, so a pipeline
-needs a PHP 8.5 job and a Node job (version in `.nvmrc`).
+| File | Purpose |
+| --- | --- |
+| `.github/workflows/ci.yml` | The pipeline |
+| `.github/actions/setup-php-app/action.yml` | Composite action: PHP 8.5, Composer cache, `composer install` |
 
-## PHP checks
+Triggers: pull requests, pushes to `main` and manual runs (`gh workflow run ci.yml`).
+A `concurrency` group per ref cancels the running pipeline when a new commit is pushed.
 
-| Check                 | Command                                           | Notes                                                                                                                   |
-| --------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Install               | `composer install --no-interaction --prefer-dist` |                                                                                                                         |
-| PHPStan (level `max`) | `vendor/bin/phpstan analyse --no-progress`        | Needs the dev container XML, run `php bin/console cache:warmup` first (`var/cache/dev/App_KernelDevDebugContainer.xml`) |
-| PHP CS Fixer          | `vendor/bin/php-cs-fixer fix --dry-run --diff`    | Check only, violations fail the job                                                                                     |
-| Twig CS Fixer         | `vendor/bin/twig-cs-fixer lint`                   | Check only, violations fail the job                                                                                     |
-| PHPUnit               | `php bin/phpunit`                                 |                                                                                                                         |
+## Jobs
 
-The minimum PHP version in `composer.json` is `>=8.5`. PHP CS Fixer warns when it runs on a newer PHP than that
-minimum, so keep the job's PHP version equal to the minimum.
+```
+ci.yml
+ ├─ Check (parallel)
+ │   ├─ PHP checks        cache:warmup, PHPStan, PHP CS Fixer (dry run), Twig CS Fixer (lint)
+ │   └─ Frontend checks   Prettier, type check, assets build
+ └─ Test (needs Check, parallel)
+     ├─ PHPUnit           builds the assets first
+     └─ Vitest
+```
 
-## Frontend checks
+The test jobs only start when both check jobs succeeded.
 
-| Check      | Command                | Notes                                                 |
-| ---------- | ---------------------- | ----------------------------------------------------- |
-| Install    | `npm ci`               |                                                       |
-| Prettier   | `npm run format:check` | `assets/` only                                        |
-| Type check | `npx tsc --noEmit`     |                                                       |
-| Vitest     | `npm test`             |                                                       |
-| Build      | `npm run build`        | Production build, fails on TypeScript and Sass errors |
+| Check | Command |
+| --- | --- |
+| PHPStan (level `max`) | `vendor/bin/phpstan analyse --no-progress` |
+| PHP CS Fixer | `vendor/bin/php-cs-fixer fix --dry-run --diff` |
+| Twig CS Fixer | `vendor/bin/twig-cs-fixer lint` |
+| Prettier (`assets/` only) | `npm run format:check` |
+| Type check | `npx tsc --noEmit` |
+| Assets build | `npm run build` (fails on TypeScript and Sass errors) |
+| PHPUnit | `php bin/phpunit` |
+| Vitest | `npm test` |
 
-See [webpack.md](webpack.md) for the frontend setup.
+## Notes
 
-## Suggested order
-
-1. Install dependencies (`composer install`, `npm ci`).
-2. Static checks in parallel: PHPStan, PHP CS Fixer, Twig CS Fixer, Prettier, type check.
-3. Tests in parallel: PHPUnit, Vitest.
-4. Production build.
+- PHPStan reads `var/cache/dev/App_KernelDevDebugContainer.xml`, so the PHP checks job runs
+  `php bin/console cache:warmup` first.
+- The home page renders the Encore entrypoints. PHPUnit fails with `Could not find the entrypoints file` when
+  `public/build/entrypoints.json` is missing, so the PHPUnit job runs `npm run build` before the tests.
+- PHP version: `php-version: '8.5'` in the composite action, equal to the minimum in `composer.json` (`>=8.5`).
+  PHP CS Fixer warns when it runs on a newer PHP than that minimum.
+- Node version: from `.nvmrc`.
+- PHPStan and the Symfony cache warmup run with `memory_limit=-1`.
+- No database service: the current tests do not use the database. Add a Postgres 16 service container (as in
+  `compose.yaml`) once tests or migrations need one.
 
 ## Local equivalents
 
-The pre-commit hook (`.githooks/pre-commit`) runs the fixers in **write** mode on staged files:
-Prettier for `assets/`, PHP CS Fixer for `*.php`, Twig CS Fixer for `templates/*.twig`. The hook is the first line of
-defence, the pipeline checks the whole repository in **check** mode.
+The pre-commit hook (`.githooks/pre-commit`) runs the fixers in **write** mode on staged files: Prettier for
+`assets/`, PHP CS Fixer for `*.php`, Twig CS Fixer for `templates/*.twig`. The pipeline checks the whole repository in
+**check** mode.
 
 Fix violations locally with `npm run format`, `vendor/bin/php-cs-fixer fix` and `vendor/bin/twig-cs-fixer fix`.
+See [webpack.md](webpack.md) for the frontend setup.
