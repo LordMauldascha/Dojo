@@ -9,11 +9,37 @@
 
     <h2>Vorhandene Benutzer</h2>
     {% if users %}
-        <ul>
-            {% for user in users %}
-                <li>{{ user.username }}</li>
-            {% endfor %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>Benutzername</th>
+                    <th>Rolle</th>
+                    <th>Status</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.role.label }}</td>
+                        <td>{{ user.enabled ? 'aktiv' : 'deaktiviert' }}</td>
+                        <td>
+                            {% if user.userIdentifier != app.user.userIdentifier %}
+                                <form method="post" action="{{ path('app_admin_user_toggle', {id: user.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle-user-' ~ user.id) }}">
+                                    <button type="submit">{{ user.enabled ? 'Deaktivieren' : 'Aktivieren' }}</button>
+                                </form>
+                                <form method="post" action="{{ path('app_admin_user_delete', {id: user.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
+                                    <button type="submit">Löschen</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p>Noch keine Benutzer angelegt.</p>
     {% endif %}

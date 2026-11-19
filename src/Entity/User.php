@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Security\UserRole;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -13,7 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ORM\Table(name: 'app_user')]
 #[UniqueEntity(fields: ['username'], message: 'Dieser Benutzername ist bereits vergeben.')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
 {
     /** Username of the in-memory administrator, must not be taken by a database user. */
     public const RESERVED_USERNAME = 'admin';
@@ -31,6 +33,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     private string $password = '';
+
+    #[ORM\Column(length: 16, enumType: UserRole::class)]
+    private UserRole $role = UserRole::User;
+
+    #[ORM\Column]
+    private bool $enabled = true;
 
     public function getId(): ?int
     {
@@ -59,7 +67,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /** @return list<string> */
     public function getRoles(): array
     {
-        return ['ROLE_USER'];
+        return [$this->role->value];
+    }
+
+    public function getRole(): UserRole
+    {
+        return $this->role;
+    }
+
+    public function setRole(UserRole $role): void
+    {
+        $this->role = $role;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): void
+    {
+        $this->enabled = $enabled;
     }
 
     public function getPassword(): string
@@ -70,6 +98,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $hashedPassword): void
     {
         $this->password = $hashedPassword;
+    }
+
+    /**
+     * Ends the session when the refreshed user was deactivated, got another role or a new password.
+     * The stored password is the crc32c of the hash after unserialization (see __serialize()).
+     */
+    public function isEqualTo(UserInterface $user): bool
+    {
+        return $user instanceof self
+            && $user->enabled
+            && $this->username === $user->username
+            && $this->role === $user->role
+            && ($this->password === $user->password || hash('crc32c', $user->password) === $this->password);
     }
 
     /** Keeps the password hash out of the session while still invalidating sessions on a password change. */

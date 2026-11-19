@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -120,6 +121,104 @@ final class UserManagementTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testAdminCanCreateAdminWhoGetsAdminAccess(): void
+    {
+        $this->client->loginUser($this->admin());
+        $this->createUser('boss', self::PASSWORD, 'ROLE_ADMIN');
+        self::assertResponseRedirects('/admin/users');
+
+        $this->entityManager->clear();
+        $boss = $this->entityManager->getRepository(User::class)->findOneBy(['username' => 'boss']);
+        self::assertInstanceOf(User::class, $boss);
+        self::assertSame(UserRole::Admin, $boss->getRole());
+
+        $this->client->loginUser($boss);
+        $this->client->request('GET', '/admin/api-keys');
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testDeactivatedUserCannotLogIn(): void
+    {
+        $this->persistUser('gina', enabled: false);
+
+        $crawler = $this->client->request('GET', '/login');
+        $this->client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'gina', '_password' => self::PASSWORD]));
+
+        self::assertResponseRedirects('/login');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Dieses Konto ist deaktiviert.');
+    }
+
+    public function testDeactivationEndsExistingSession(): void
+    {
+        $user = $this->persistUser('hank');
+        $this->client->loginUser($user);
+        $this->client->request('GET', '/account');
+        self::assertResponseIsSuccessful();
+
+        $user->setEnabled(false);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/account');
+        self::assertResponseRedirects('http://localhost/login');
+    }
+
+    public function testAdminDeactivatesReactivatesAndDeletesUser(): void
+    {
+        $this->persistUser('ivy');
+        $this->client->loginUser($this->admin());
+
+        $crawler = $this->client->request('GET', '/admin/users');
+        $this->client->submit($crawler->filter('form[action$="/toggle"]')->form());
+        self::assertResponseRedirects('/admin/users');
+        $this->entityManager->clear();
+        self::assertFalse($this->findUser('ivy')->isEnabled());
+
+        $crawler = $this->client->request('GET', '/admin/users');
+        self::assertSelectorTextContains('body', 'deaktiviert');
+        $this->client->submit($crawler->filter('form[action$="/toggle"]')->form());
+        $this->entityManager->clear();
+        self::assertTrue($this->findUser('ivy')->isEnabled());
+
+        $crawler = $this->client->request('GET', '/admin/users');
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
+        self::assertResponseRedirects('/admin/users');
+        $this->entityManager->clear();
+        self::assertNull($this->entityManager->getRepository(User::class)->findOneBy(['username' => 'ivy']));
+    }
+
+    public function testAdminCannotDeactivateOrDeleteOwnAccount(): void
+    {
+        $boss = $this->persistUser('jules', UserRole::Admin);
+        $this->client->loginUser($boss);
+
+        foreach (['toggle', 'delete'] as $action) {
+            $this->client->request('POST', \sprintf('/admin/users/%d/%s', $boss->getId(), $action));
+            self::assertResponseRedirects('/admin/users');
+        }
+
+        $this->entityManager->clear();
+        self::assertTrue($this->findUser('jules')->isEnabled());
+    }
+
+    public function testUserActionsRequireValidCsrfToken(): void
+    {
+        $target = $this->persistUser('kim');
+        $this->client->loginUser($this->admin());
+
+        $this->client->request('POST', \sprintf('/admin/users/%d/delete', $target->getId()), ['_token' => 'invalid']);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    private function findUser(string $username): User
+    {
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
+        self::assertInstanceOf(User::class, $user);
+
+        return $user;
+    }
+
     private function admin(): InMemoryUser
     {
         $hash = $_SERVER['ADMIN_PASSWORD_HASH'];
@@ -128,10 +227,12 @@ final class UserManagementTest extends WebTestCase
         return new InMemoryUser('admin', $hash, ['ROLE_ADMIN']);
     }
 
-    private function persistUser(string $username): User
+    private function persistUser(string $username, UserRole $role = UserRole::User, bool $enabled = true): User
     {
         $user = new User();
         $user->setUsername($username);
+        $user->setRole($role);
+        $user->setEnabled($enabled);
         $user->setPassword(static::getContainer()->get(UserPasswordHasherInterface::class)->hashPassword($user, self::PASSWORD));
         $this->entityManager->persist($user);
         $this->entityManager->flush();
@@ -139,13 +240,14 @@ final class UserManagementTest extends WebTestCase
         return $user;
     }
 
-    private function createUser(string $username, string $password): void
+    private function createUser(string $username, string $password, string $role = 'ROLE_USER'): void
     {
         $crawler = $this->client->request('GET', '/admin/users');
         $this->client->submit($crawler->selectButton('Benutzer anlegen')->form([
             'user_create[username]' => $username,
             'user_create[plainPassword][first]' => $password,
             'user_create[plainPassword][second]' => $password,
+            'user_create[role]' => $role,
         ]));
     }
 }

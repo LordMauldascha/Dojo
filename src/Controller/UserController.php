@@ -40,4 +40,54 @@ final class UserController extends AbstractController
             'form' => $form,
         ]);
     }
+
+    #[Route('/admin/users/{id}/toggle', name: 'app_admin_user_toggle', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function toggle(User $user, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        if ($this->isCurrentUser($user)) {
+            return $this->rejectSelfAction();
+        }
+        $this->denyUnlessValidToken('toggle-user-'.$user->getId(), $request);
+
+        $user->setEnabled(!$user->isEnabled());
+        $entityManager->flush();
+        $this->addFlash('success', \sprintf('Benutzer "%s" %s.', $user->getUserIdentifier(), $user->isEnabled() ? 'aktiviert' : 'deaktiviert'));
+
+        return $this->redirectToRoute('app_admin_users');
+    }
+
+    #[Route('/admin/users/{id}/delete', name: 'app_admin_user_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(User $user, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        if ($this->isCurrentUser($user)) {
+            return $this->rejectSelfAction();
+        }
+        $this->denyUnlessValidToken('delete-user-'.$user->getId(), $request);
+
+        $username = $user->getUserIdentifier();
+        $entityManager->remove($user);
+        $entityManager->flush();
+        $this->addFlash('success', \sprintf('Benutzer "%s" gelöscht.', $username));
+
+        return $this->redirectToRoute('app_admin_users');
+    }
+
+    private function isCurrentUser(User $user): bool
+    {
+        return $this->getUser()?->getUserIdentifier() === $user->getUserIdentifier();
+    }
+
+    private function rejectSelfAction(): Response
+    {
+        $this->addFlash('error', 'Das eigene Konto kann nicht deaktiviert oder gelöscht werden.');
+
+        return $this->redirectToRoute('app_admin_users');
+    }
+
+    private function denyUnlessValidToken(string $tokenId, Request $request): void
+    {
+        if (!$this->isCsrfTokenValid($tokenId, $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+    }
 }
