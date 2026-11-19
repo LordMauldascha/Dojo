@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mein Konto{% endblock %}
+
+{% block body %}
+    <h1>Mein Konto</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p>Angemeldet als {{ app.user.userIdentifier }}.</p>
+    {% if not is_granted('ROLE_ADMIN') %}
+        <p><a href="{{ path('app_account_password') }}">Passwort ändern</a></p>
+    {% endif %}
+{% endblock %}

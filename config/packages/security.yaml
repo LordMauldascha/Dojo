@@ -5,7 +5,19 @@ security:
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        users_in_memory: { memory: null }
+        users_in_memory:
+            memory:
+                users:
+                    admin:
+                        password: '%env(ADMIN_PASSWORD_HASH)%'
+                        roles: ['ROLE_ADMIN']
+        app_users:
+            entity:
+                class: App\Entity\User
+                property: username
+        all_users:
+            chain:
+                providers: [users_in_memory, app_users]
 
     firewalls:
         dev:
@@ -14,7 +26,16 @@ security:
             security: false
         main:
             lazy: true
-            provider: users_in_memory
+            provider: all_users
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                default_target_path: app_account
+            logout:
+                path: app_logout
+            login_throttling:
+                max_attempts: 5
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -23,7 +44,12 @@ security:
             # switch_user: true
 
     # Note: Only the *first* matching rule is applied
+    role_hierarchy:
+        ROLE_ADMIN: ROLE_USER
+
     access_control:
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/account, roles: ROLE_USER }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 

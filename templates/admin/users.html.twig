@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Benutzer{% endblock %}
+
+{% block body %}
+    <h1>Benutzer</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <h2>Vorhandene Benutzer</h2>
+    {% if users %}
+        <ul>
+            {% for user in users %}
+                <li>{{ user.username }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Noch keine Benutzer angelegt.</p>
+    {% endif %}
+
+    <h2>Neuen Benutzer anlegen</h2>
+    {{ form(form) }}
+{% endblock %}
