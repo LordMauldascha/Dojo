@@ -104,7 +104,8 @@ Run all of these before declaring a task done. They must exit with code 0.
 - `npm run format:check` / `npm run format`: Prettier, applies to `assets/` only.
 - `npx tsc --noEmit`: TypeScript type check.
 
-Node is not in the Docker image, so npm commands run on the host (version in `.nvmrc`).
+The Docker image contains Node only for the Claude Code CLI (`symfony/ai-claude-code-platform`, key via
+`ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` in `.env.local`). Frontend npm commands still run on the host (version in `.nvmrc`).
 
 ### Pre-commit hook
 
@@ -121,6 +122,15 @@ git config core.hooksPath .githooks
   `webpack.config.js` or the frontend setup changes.
 - [docs/CI.md](docs/CI.md): the GitHub Actions pipeline (`.github/workflows/ci.yml`). Keep it up to date when
   `.github/` changes.
+
+## AI usage and data protection
+
+Prompts sent via `app:ask-claude` or the `PlatformInterface` leave the application and go to Anthropic. Never put
+personal data (names, e-mail addresses, IDs, customer content) into prompts, fixtures or logs unless a data processing
+agreement covers it. Use pseudonymized or synthetic data instead.
+
+Permissions for Claude Code live in `.claude/settings.json` (secrets, destructive commands, git, paid calls). Personal
+overrides go to `.claude/settings.local.json`, which is git-ignored.
 
 ## Discover, don't guess
 

@@ -21,5 +21,16 @@ services:
 
     Sulu\Twig\Extensions\ComponentExtension: ~
 
+    # ai-bundle has no config key for the Claude Code bridge, so the platform is built via its factory
+    Symfony\AI\Platform\PlatformInterface:
+        public: true
+        factory: ['Symfony\AI\Platform\Bridge\ClaudeCode\Factory', 'createPlatform']
+        arguments:
+            $environment:
+                ANTHROPIC_API_KEY: '%env(ANTHROPIC_API_KEY)%'
+                CLAUDE_CODE_OAUTH_TOKEN: '%env(CLAUDE_CODE_OAUTH_TOKEN)%'
+            $eventDispatcher: '@event_dispatcher'
+            $logger: '@logger'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/*.local)",
+      "Read(**/*.local.*)",
+      "Edit(**/*.local)",
+      "Edit(**/*.local.*)",
+      "Bash(cat *.local*)",
+      "Bash(head *.local*)",
+      "Bash(tail *.local*)",
+      "Bash(less *.local*)",
+      "Bash(more *.local*)",
+      "Bash(grep * *.local*)",
+      "Bash(rg * *.local*)",
+      "Bash(sed * *.local*)",
+      "Bash(awk * *.local*)",
+      "Bash(source *.local*)",
+      "Bash(. *.local*)",
+      "Read(**/config/secrets/*/*.decrypt.private.php)",
+      "Edit(**/config/secrets/*/*.decrypt.private.php)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/auth.json)",
+      "Bash(docker compose down -v*)",
+      "Bash(docker compose down --volumes*)",
+      "Bash(docker volume rm*)",
+      "Bash(*doctrine:schema:*)",
+      "Bash(*doctrine:database:drop*)",
+      "Bash(*doctrine:fixtures:load*)",
+      "Bash(git reset --hard*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ],
+    "ask": [
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(docker compose exec * app:ask-claude*)",
+      "Bash(docker compose exec * claude*)"
+    ]
+  }
+}
