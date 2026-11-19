@@ -29,10 +29,7 @@ final class ApiKeyController extends AbstractController
     #[Route('/admin/api-keys', name: 'app_admin_api_keys', methods: ['GET', 'POST'])]
     public function index(Request $request): Response
     {
-        $stored = [];
-        foreach ($this->entityManager->getRepository(ProviderApiKey::class)->findAll() as $key) {
-            $stored[$key->getProvider()->value] = $key;
-        }
+        $stored = $this->store->findAll();
 
         $rows = [];
         foreach (Provider::cases() as $provider) {

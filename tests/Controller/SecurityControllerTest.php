@@ -15,7 +15,7 @@ final class SecurityControllerTest extends WebTestCase
 
         $client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'admin', '_password' => 'test-only']));
 
-        self::assertResponseRedirects('/account');
+        self::assertResponseRedirects('/');
     }
 
     public function testWrongPasswordIsRejected(): void

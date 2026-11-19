@@ -41,7 +41,7 @@ final class UserManagementTest extends WebTestCase
         $client = static::createClient();
         $crawler = $client->request('GET', '/login');
         $client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'alice', '_password' => self::PASSWORD]));
-        self::assertResponseRedirects('/account');
+        self::assertResponseRedirects('/');
     }
 
     public function testInvalidUsersAreRejected(): void

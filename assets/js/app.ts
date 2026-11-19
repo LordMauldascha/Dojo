@@ -1,4 +1,1 @@
-import web from '@sulu/web';
-import Hello from './components/hello';
-
-web.registerComponent('hello', Hello);
+import '@sulu/web';

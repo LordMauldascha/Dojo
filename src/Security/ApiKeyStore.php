@@ -16,6 +16,17 @@ final readonly class ApiKeyStore
     ) {
     }
 
+    /** @return array<string, ProviderApiKey> keyed by provider value */
+    public function findAll(): array
+    {
+        $byProvider = [];
+        foreach ($this->entityManager->getRepository(ProviderApiKey::class)->findAll() as $key) {
+            $byProvider[$key->getProvider()->value] = $key;
+        }
+
+        return $byProvider;
+    }
+
     public function has(Provider $provider): bool
     {
         return null !== $this->entityManager->getRepository(ProviderApiKey::class)->findOneBy(['provider' => $provider]);
