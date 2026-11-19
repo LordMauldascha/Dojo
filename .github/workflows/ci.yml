@@ -61,9 +61,60 @@ jobs:
       - name: Build assets
         run: npm run build
 
+  doctrine-migrations:
+    name: Doctrine migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: test
+      # In the test env Doctrine appends _test to the database name (app_test)
+      DATABASE_URL: postgresql://app:ci@127.0.0.1:5432/app?serverVersion=16&charset=utf8
+    services:
+      database:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-php-app
+
+      # Without entities and migrations there is nothing to check: migrate fails with "no registered
+      # migrations" and schema:validate reports a false "not in sync". The checks start with the first file.
+      - name: Detect entities and migrations
+        id: detect
+        run: |
+          if [ -n "$(find src/Entity migrations -name '*.php' 2>/dev/null)" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No entities or migrations yet, skipping the migration checks"
+          fi
+
+      - name: Create database
+        if: steps.detect.outputs.present == 'true'
+        run: php bin/console doctrine:database:create --if-not-exists
+
+      - name: Run migrations
+        if: steps.detect.outputs.present == 'true'
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      # Fails when the mapping and the migrated schema differ, e.g. an entity change without a migration
+      - name: Validate schema
+        if: steps.detect.outputs.present == 'true'
+        run: php bin/console doctrine:schema:validate
+
   phpunit:
     name: PHPUnit
-    needs: [php-checks, frontend-checks]
+    needs: [php-checks, frontend-checks, doctrine-migrations]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -87,7 +138,7 @@ jobs:
 
   vitest:
     name: Vitest
-    needs: [php-checks, frontend-checks]
+    needs: [php-checks, frontend-checks, doctrine-migrations]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

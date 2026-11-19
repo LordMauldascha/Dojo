@@ -16,13 +16,14 @@ A `concurrency` group per ref cancels the running pipeline when a new commit is 
 ci.yml
  ├─ Check (parallel)
  │   ├─ PHP checks        cache:warmup, PHPStan, PHP CS Fixer (dry run), Twig CS Fixer (lint)
- │   └─ Frontend checks   Prettier, type check, assets build
+ │   ├─ Frontend checks   Prettier, type check, assets build
+ │   └─ Doctrine migrations   Postgres 16 service, migrate, schema validate (skipped while nothing exists)
  └─ Test (needs Check, parallel)
      ├─ PHPUnit           builds the assets first
      └─ Vitest
 ```
 
-The test jobs only start when both check jobs succeeded.
+The test jobs only start when all three check jobs succeeded.
 
 | Check | Command |
 | --- | --- |
@@ -32,6 +33,9 @@ The test jobs only start when both check jobs succeeded.
 | Prettier (`assets/` only) | `npm run format:check` |
 | Type check | `npx tsc --noEmit` |
 | Assets build | `npm run build` (fails on TypeScript and Sass errors) |
+| Create database | `php bin/console doctrine:database:create --if-not-exists` |
+| Migrations | `php bin/console doctrine:migrations:migrate --no-interaction` |
+| Schema in sync | `php bin/console doctrine:schema:validate` |
 | PHPUnit | `php bin/phpunit` |
 | Vitest | `npm test` |
 
@@ -45,8 +49,12 @@ The test jobs only start when both check jobs succeeded.
   PHP CS Fixer warns when it runs on a newer PHP than that minimum.
 - Node version: from `.nvmrc`.
 - PHPStan and the Symfony cache warmup run with `memory_limit=-1`.
-- No database service: the current tests do not use the database. Add a Postgres 16 service container (as in
-  `compose.yaml`) once tests or migrations need one.
+- The migrations job runs in `APP_ENV=test` against a `postgres:16-alpine` service container (as in `compose.yaml`).
+  Doctrine appends `_test` in that env, so the database is `app_test`.
+- The migration steps are skipped (with a notice) while `src/Entity/` and `migrations/` contain no `*.php` file.
+  Without that guard `migrate` fails with "no registered migrations" and `schema:validate` reports a false "not in
+  sync". Once an entity or a migration exists, all three steps run. An entity without a migration then fails the job.
+- PHPUnit does not use the database yet. If tests need it, add the same service container to the `phpunit` job.
 
 ## Local equivalents
 
