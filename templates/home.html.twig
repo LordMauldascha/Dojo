@@ -3,5 +3,6 @@
 {% block title %}Hello World{% endblock %}
 
 {% block body %}
-    {{ component('HelloWorld') }}
+    <h1>Hello, World!</h1>
+    <button id="{{ prepare_component('hello', {text: 'Hello from TypeScript'}) }}">Click me</button>
 {% endblock %}
