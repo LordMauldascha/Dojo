@@ -54,7 +54,8 @@ The test jobs only start when all three check jobs succeeded.
 - The migration steps are skipped (with a notice) while `src/Entity/` and `migrations/` contain no `*.php` file.
   Without that guard `migrate` fails with "no registered migrations" and `schema:validate` reports a false "not in
   sync". Once an entity or a migration exists, all three steps run. An entity without a migration then fails the job.
-- PHPUnit does not use the database yet. If tests need it, add the same service container to the `phpunit` job.
+- The `phpunit` job has the same `postgres:16-alpine` service and `DATABASE_URL`. It creates `app_test` and runs the
+  migrations (`--env=test`) before the tests, because the tests clear and fill the `user` table.
 
 ## Local equivalents
 

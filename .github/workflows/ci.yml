@@ -117,10 +117,32 @@ jobs:
     needs: [php-checks, frontend-checks, doctrine-migrations]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # In the test env Doctrine appends _test to the database name (app_test)
+      DATABASE_URL: postgresql://app:ci@127.0.0.1:5432/app?serverVersion=16&charset=utf8
+    services:
+      database:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-php-app
+
+      - name: Create test database and schema
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
       # The home page renders the Encore entrypoints, so public/build/entrypoints.json must exist
       - uses: actions/setup-node@v7

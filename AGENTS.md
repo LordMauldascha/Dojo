@@ -121,6 +121,8 @@ git config core.hooksPath .githooks
 
 - [docs/webpack.md](docs/webpack.md): Encore setup, components, commands, troubleshooting. Keep it up to date when
   `webpack.config.js` or the frontend setup changes.
+- [docs/Commands.md](docs/Commands.md): the app's console commands (`src/Command/`). Keep it up to date when a
+  command is added or changed.
 - [docs/CI.md](docs/CI.md): the GitHub Actions pipeline (`.github/workflows/ci.yml`). Keep it up to date when
   `.github/` changes.
 
