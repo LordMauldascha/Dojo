@@ -8,6 +8,7 @@ use App\Command\AskClaudeCommand;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -36,6 +37,16 @@ final class AskClaudeCommandTest extends KernelTestCase
         self::assertSame('max', $platform->options['effort']);
     }
 
+    public function testEmptyModelIsRejected(): void
+    {
+        $platform = $this->stubPlatform();
+
+        $tester = $this->executeCommand($platform, ['prompt' => 'Hi', '--model' => '']);
+
+        self::assertSame(Command::INVALID, $tester->getStatusCode());
+        self::assertSame('', $platform->model);
+    }
+
     public function testInvalidEffortFails(): void
     {
         $this->expectException(InvalidOptionException::class);
@@ -48,8 +59,7 @@ final class AskClaudeCommandTest extends KernelTestCase
      */
     private function executeCommand(PlatformInterface $platform, array $input): CommandTester
     {
-        self::bootKernel();
-        $application = new Application(self::$kernel);
+        $application = new Application(self::bootKernel());
         $application->addCommand(new AskClaudeCommand($platform));
 
         $tester = new CommandTester($application->find('app:ask-claude'));

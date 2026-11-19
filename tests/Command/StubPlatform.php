@@ -24,7 +24,7 @@ final class StubPlatform implements PlatformInterface
 
     public function invoke(string|Model $model, array|string|object $input, array $options = []): DeferredResult
     {
-        $this->model = (string) $model;
+        $this->model = $model instanceof Model ? $model->getName() : $model;
         $this->input = $input;
         $this->options = $options;
 

@@ -28,6 +28,12 @@ final readonly class AskClaudeCommand
         #[Option('Effort level')]
         Effort $effort = Effort::Medium,
     ): int {
+        if ('' === $model) {
+            $io->error('The model must not be empty.');
+
+            return Command::INVALID;
+        }
+
         // an empty tool list disables the CLI's built-in tools, so it only generates text
         $result = $this->platform->invoke($model, $prompt, ['effort' => $effort->value, 'tools' => []]);
 
