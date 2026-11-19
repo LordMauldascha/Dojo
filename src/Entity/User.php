@@ -17,9 +17,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['username'], message: 'Dieser Benutzername ist bereits vergeben.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
 {
-    /** Username of the in-memory administrator, must not be taken by a database user. */
-    public const RESERVED_USERNAME = 'admin';
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -28,7 +25,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     #[ORM\Column(length: 64, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Regex(pattern: '/^[a-z0-9._-]{3,64}$/', message: 'Erlaubt sind 3 bis 64 Zeichen: Kleinbuchstaben, Ziffern, ".", "_" und "-".')]
-    #[Assert\NotEqualTo(value: self::RESERVED_USERNAME, message: 'Dieser Benutzername ist reserviert.')]
     private string $username = '';
 
     #[ORM\Column]

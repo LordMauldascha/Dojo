@@ -10,7 +10,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class UserManagementTest extends WebTestCase
 {
@@ -49,8 +48,6 @@ final class UserManagementTest extends WebTestCase
     {
         $this->client->loginUser($this->admin());
 
-        $this->createUser('admin', self::PASSWORD);
-        self::assertResponseStatusCodeSame(422);
         $this->createUser('Bad Name', self::PASSWORD);
         self::assertResponseStatusCodeSame(422);
         $this->createUser('shortpw', 'too-short');
@@ -59,7 +56,7 @@ final class UserManagementTest extends WebTestCase
         $this->createUser('bob', self::PASSWORD);
         $this->createUser('bob', self::PASSWORD);
         self::assertResponseStatusCodeSame(422);
-        self::assertCount(1, $this->entityManager->getRepository(User::class)->findAll());
+        self::assertCount(2, $this->entityManager->getRepository(User::class)->findAll());
     }
 
     public function testRegularUserHasNoAccessToAdminAreas(): void
@@ -112,13 +109,13 @@ final class UserManagementTest extends WebTestCase
         self::assertTrue(password_verify(self::PASSWORD, $stored->getPassword()));
     }
 
-    public function testAdminCannotUsePasswordChange(): void
+    public function testAdminCanOpenPasswordChange(): void
     {
         $this->client->loginUser($this->admin());
 
         $this->client->request('GET', '/account/password');
 
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseIsSuccessful();
     }
 
     public function testAdminCanCreateAdminWhoGetsAdminAccess(): void
@@ -219,12 +216,9 @@ final class UserManagementTest extends WebTestCase
         return $user;
     }
 
-    private function admin(): InMemoryUser
+    private function admin(): User
     {
-        $hash = $_SERVER['ADMIN_PASSWORD_HASH'];
-        self::assertIsString($hash);
-
-        return new InMemoryUser('admin', $hash, ['ROLE_ADMIN']);
+        return $this->persistUser('root', UserRole::Admin);
     }
 
     private function persistUser(string $username, UserRole $role = UserRole::User, bool $enabled = true): User

@@ -7,10 +7,10 @@ namespace App\Tests\Controller;
 use App\Ai\Provider;
 use App\Entity\ProviderApiKey;
 use App\Entity\User;
+use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class HomeControllerTest extends WebTestCase
 {
@@ -36,9 +36,13 @@ final class HomeControllerTest extends WebTestCase
     {
         $this->entityManager->persist(new ProviderApiKey(Provider::OpenAi, 'ciphertext', '1234'));
         $this->entityManager->flush();
-        $hash = $_SERVER['ADMIN_PASSWORD_HASH'];
-        self::assertIsString($hash);
-        $this->client->loginUser(new InMemoryUser('admin', $hash, ['ROLE_ADMIN']));
+        $admin = new User();
+        $admin->setUsername('root');
+        $admin->setRole(UserRole::Admin);
+        $admin->setPassword('x');
+        $this->entityManager->persist($admin);
+        $this->entityManager->flush();
+        $this->client->loginUser($admin);
 
         $this->client->request('GET', '/');
 
@@ -46,7 +50,7 @@ final class HomeControllerTest extends WebTestCase
         self::assertSelectorTextContains('tbody tr:nth-child(1)', 'OpenAI API Key');
         self::assertSelectorTextNotContains('tbody tr:nth-child(1)', 'nicht hinterlegt');
         self::assertSelectorTextContains('tbody tr:nth-child(2)', 'nicht hinterlegt');
-        self::assertSelectorTextContains('body', 'Angelegte Benutzer: 0');
+        self::assertSelectorTextContains('body', 'Angelegte Benutzer: 1');
         self::assertStringNotContainsString('1234', (string) $this->client->getResponse()->getContent());
     }
 

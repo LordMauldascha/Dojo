@@ -6,11 +6,12 @@ namespace App\Tests\Controller;
 
 use App\Ai\Provider;
 use App\Entity\ProviderApiKey;
+use App\Entity\User;
 use App\Security\ApiKeyEncryptor;
+use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class ApiKeyControllerTest extends WebTestCase
 {
@@ -22,14 +23,19 @@ final class ApiKeyControllerTest extends WebTestCase
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
+        $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
     }
 
-    private function admin(): InMemoryUser
+    private function admin(): User
     {
-        $hash = $_SERVER['ADMIN_PASSWORD_HASH'];
-        self::assertIsString($hash);
+        $admin = new User();
+        $admin->setUsername('root');
+        $admin->setRole(UserRole::Admin);
+        $admin->setPassword('x');
+        $this->entityManager->persist($admin);
+        $this->entityManager->flush();
 
-        return new InMemoryUser('admin', $hash, ['ROLE_ADMIN']);
+        return $admin;
     }
 
     public function testAnonymousIsRedirectedToLogin(): void

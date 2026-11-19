@@ -8,7 +8,5 @@
     {{ include('_flashes.html.twig') }}
 
     <p>Angemeldet als {{ app.user.userIdentifier }}.</p>
-    {% if not is_granted('ROLE_ADMIN') %}
-        <p><a href="{{ path('app_account_password') }}">Passwort ändern</a></p>
-    {% endif %}
+    <p><a href="{{ path('app_account_password') }}">Passwort ändern</a></p>
 {% endblock %}

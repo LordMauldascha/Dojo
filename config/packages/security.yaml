@@ -5,19 +5,10 @@ security:
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        users_in_memory:
-            memory:
-                users:
-                    admin:
-                        password: '%env(ADMIN_PASSWORD_HASH)%'
-                        roles: ['ROLE_ADMIN']
         app_users:
             entity:
                 class: App\Entity\User
                 property: username
-        all_users:
-            chain:
-                providers: [users_in_memory, app_users]
 
     firewalls:
         dev:
@@ -26,7 +17,7 @@ security:
             security: false
         main:
             lazy: true
-            provider: all_users
+            provider: app_users
             user_checker: App\Security\UserChecker
             form_login:
                 login_path: app_login
