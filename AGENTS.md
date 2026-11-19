@@ -90,6 +90,37 @@ Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
 superset). Run `vendor/bin/php-cs-fixer fix` if `friendsofphp/php-cs-fixer` is
 installed; it isn't part of the skeleton by default.
 
+## Tooling and quality checks
+
+Run all of these before declaring a task done. They must exit with code 0.
+
+- `php bin/phpunit`: PHP tests.
+- `vendor/bin/phpstan analyse --no-progress`: PHPStan at level `max` (`phpstan.dist.neon`). It needs the dev
+  container, run `bin/console cache:warmup` first if `var/cache/dev/App_KernelDevDebugContainer.xml` is missing.
+  Fix the cause, do not add ignores or baselines.
+- `vendor/bin/php-cs-fixer fix` / `vendor/bin/twig-cs-fixer fix`: code style for PHP (`@Symfony`) and Twig. Add
+  `--dry-run --diff` (PHP) or use `lint` (Twig) to only check.
+- `npm test`: Vitest. Tests live in `assets/js/tests/` (`*.test.ts`) and are not picked up elsewhere.
+- `npm run format:check` / `npm run format`: Prettier, applies to `assets/` only.
+- `npx tsc --noEmit`: TypeScript type check.
+
+Node is not in the Docker image, so npm commands run on the host (version in `.nvmrc`).
+
+### Pre-commit hook
+
+`.githooks/pre-commit` formats staged files (Prettier for `assets/`, PHP CS Fixer for `*.php`, Twig CS Fixer for
+`templates/*.twig`) and re-stages them. It is enabled per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+### More documentation
+
+- [docs/webpack.md](docs/webpack.md): Encore setup, components, commands, troubleshooting. Keep it up to date when
+  `webpack.config.js` or the frontend setup changes.
+- [docs/CI.md](docs/CI.md): the checks a pipeline must run. No pipeline exists yet. Keep it up to date when CI is added.
+
 ## Discover, don't guess
 
 Framework APIs change between versions and your training data may be stale. Look

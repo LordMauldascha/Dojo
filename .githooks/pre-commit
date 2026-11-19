@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Formats staged files and re-stages them:
+# Prettier for assets/, PHP-CS-Fixer for PHP files, Twig-CS-Fixer for Twig files.
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+files=()
+while IFS= read -r -d '' file; do
+    files+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+[ ${#files[@]} -eq 0 ] && exit 0
+
+asset_files=()
+php_files=()
+twig_files=()
+for file in "${files[@]}"; do
+    [[ "$file" == assets/* ]] && asset_files+=("$file")
+    [[ "$file" == *.php ]] && php_files+=("$file")
+    [[ "$file" == templates/*.twig ]] && twig_files+=("$file")
+done
+
+if [ ${#asset_files[@]} -gt 0 ]; then
+    npx prettier --write --ignore-unknown --no-error-on-unmatched-pattern "${asset_files[@]}"
+fi
+
+if [ ${#php_files[@]} -gt 0 ]; then
+    # intersection: only the staged files, still honoring the Finder excludes of the config
+    vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --path-mode=intersection --using-cache=no -- "${php_files[@]}"
+fi
+
+if [ ${#twig_files[@]} -gt 0 ]; then
+    vendor/bin/twig-cs-fixer lint --fix --config=.twig-cs-fixer.php -- "${twig_files[@]}"
+fi
+
+git add -- "${files[@]}"

@@ -7,6 +7,7 @@
         "babel-plugin-polyfill-corejs3": "^1.0.0",
         "core-js": "^3.49.0",
         "jsdom": "^31.0.1",
+        "prettier": "^3.10.1",
         "sass": "^1.108.2",
         "sass-loader": "^17.1.0",
         "ts-loader": "^9.6.2",
@@ -23,7 +24,9 @@
         "watch": "encore dev --watch",
         "build": "encore production --progress",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "format": "prettier --write assets",
+        "format:check": "prettier --check assets"
     },
     "dependencies": {
         "@sulu/web": "^2.4.1"
