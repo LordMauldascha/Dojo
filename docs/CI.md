@@ -59,8 +59,9 @@ The test jobs only start when all three check jobs succeeded.
 ## Local equivalents
 
 The pre-commit hook (`.githooks/pre-commit`) runs the fixers in **write** mode on staged files: Prettier for
-`assets/`, PHP CS Fixer for `*.php`, Twig CS Fixer for `templates/*.twig`. The pipeline checks the whole repository in
-**check** mode.
+`assets/`, PHP CS Fixer for `*.php`, Twig CS Fixer for `templates/*.twig`. When PHP files or `phpstan.dist.neon` are
+staged, it also runs PHPStan over the whole project (`memory_limit=-1`) and aborts the commit on errors. The pipeline
+checks the whole repository in **check** mode.
 
 Fix violations locally with `npm run format`, `vendor/bin/php-cs-fixer fix` and `vendor/bin/twig-cs-fixer fix`.
 See [webpack.md](webpack.md) for the frontend setup.

@@ -110,7 +110,8 @@ The Docker image contains Node only for the Claude Code CLI (`symfony/ai-claude-
 ### Pre-commit hook
 
 `.githooks/pre-commit` formats staged files (Prettier for `assets/`, PHP CS Fixer for `*.php`, Twig CS Fixer for
-`templates/*.twig`) and re-stages them. It is enabled per clone:
+`templates/*.twig`) and re-stages them. If PHP files or `phpstan.dist.neon` are staged, it then runs PHPStan over the
+whole project and aborts the commit on errors. It is enabled per clone:
 
 ```bash
 git config core.hooksPath .githooks

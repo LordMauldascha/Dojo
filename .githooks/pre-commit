@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Formats staged files and re-stages them:
 # Prettier for assets/, PHP-CS-Fixer for PHP files, Twig-CS-Fixer for Twig files.
+# Then PHPStan over the whole project when PHP files or its config are staged (blocks the commit on errors).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -35,3 +36,14 @@ if [ ${#twig_files[@]} -gt 0 ]; then
 fi
 
 git add -- "${files[@]}"
+
+run_phpstan=false
+for file in "${files[@]}"; do
+    [[ "$file" == *.php || "$file" == phpstan.dist.neon ]] && run_phpstan=true
+done
+
+if $run_phpstan; then
+    # PHPStan reads the dev container XML, see AGENTS.md
+    [ -f var/cache/dev/App_KernelDevDebugContainer.xml ] || php bin/console cache:warmup
+    php -d memory_limit=-1 vendor/bin/phpstan analyse --no-progress
+fi
