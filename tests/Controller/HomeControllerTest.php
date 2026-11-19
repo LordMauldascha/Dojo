@@ -6,13 +6,13 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class HomeControllerTest extends WebTestCase
 {
-    public function testHomeRendersHelloWorldLiveComponent(): void
+    public function testHomeRendersHelloWorldAndComponentButton(): void
     {
         $client = static::createClient();
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Hello, World!');
-        self::assertSelectorExists('div[data-controller="live"]');
+        self::assertSelectorTextContains('button[id]', 'Click me');
     }
 }
