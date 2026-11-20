@@ -33,7 +33,7 @@ final class SecurityControllerTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/login');
 
-        $this->client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'root', '_password' => 'test-only-password']));
+        $this->client->submit($crawler->selectButton('Sign in')->form(['_username' => 'root', '_password' => 'test-only-password']));
 
         self::assertResponseRedirects('/');
     }
@@ -42,7 +42,7 @@ final class SecurityControllerTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/login');
 
-        $this->client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'root', '_password' => 'wrong']));
+        $this->client->submit($crawler->selectButton('Sign in')->form(['_username' => 'root', '_password' => 'wrong']));
 
         self::assertResponseRedirects('/login');
     }
@@ -51,7 +51,7 @@ final class SecurityControllerTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/login');
 
-        $this->client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'admin', '_password' => 'test-only']));
+        $this->client->submit($crawler->selectButton('Sign in')->form(['_username' => 'admin', '_password' => 'test-only']));
 
         self::assertResponseRedirects('/login');
     }

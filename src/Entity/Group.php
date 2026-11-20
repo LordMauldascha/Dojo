@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GroupRepository::class)]
 #[ORM\Table(name: 'app_group')]
-#[UniqueEntity(fields: ['title'], message: 'Dieser Gruppentitel ist bereits vergeben.')]
+#[UniqueEntity(fields: ['title'], message: 'This group title is already taken.')]
 class Group
 {
     #[ORM\Id]

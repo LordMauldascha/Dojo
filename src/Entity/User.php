@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'app_user')]
-#[UniqueEntity(fields: ['username'], message: 'Dieser Benutzername ist bereits vergeben.')]
+#[UniqueEntity(fields: ['username'], message: 'This username is already taken.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
 {
     #[ORM\Id]
@@ -24,7 +24,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
 
     #[ORM\Column(length: 64, unique: true)]
     #[Assert\NotBlank]
-    #[Assert\Regex(pattern: '/^[a-z0-9._-]{3,64}$/', message: 'Erlaubt sind 3 bis 64 Zeichen: Kleinbuchstaben, Ziffern, ".", "_" und "-".')]
+    #[Assert\Regex(pattern: '/^[a-z0-9._-]{3,64}$/', message: 'Allowed are 3 to 64 characters: lowercase letters, digits, ".", "_" and "-".')]
     private string $username = '';
 
     #[ORM\Column]

@@ -12,14 +12,14 @@
     {% endif %}
 
     <form method="post">
-        <label for="username">Benutzername</label>
+        <label for="username">Username</label>
         <input type="text" id="username" name="_username" value="{{ last_username }}" autocomplete="username" required autofocus>
 
-        <label for="password">Passwort</label>
+        <label for="password">Password</label>
         <input type="password" id="password" name="_password" autocomplete="current-password" required>
 
         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-        <button type="submit">Anmelden</button>
+        <button type="submit">Sign in</button>
     </form>
 {% endblock %}

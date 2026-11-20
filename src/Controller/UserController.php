@@ -17,6 +17,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 final class UserController extends AbstractController
 {
+    use CsrfGuardTrait;
+
     #[Route('/admin/users', name: 'app_admin_users', methods: ['GET', 'POST'])]
     public function index(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher): Response
     {
@@ -30,7 +32,7 @@ final class UserController extends AbstractController
             $user->setPassword($hasher->hashPassword($user, $plainPassword));
             $entityManager->persist($user);
             $entityManager->flush();
-            $this->addFlash('success', \sprintf('Benutzer "%s" angelegt.', $user->getUserIdentifier()));
+            $this->addFlash('success', \sprintf('User "%s" created.', $user->getUserIdentifier()));
 
             return $this->redirectToRoute('app_admin_users');
         }
@@ -51,7 +53,7 @@ final class UserController extends AbstractController
 
         $user->setEnabled(!$user->isEnabled());
         $entityManager->flush();
-        $this->addFlash('success', \sprintf('Benutzer "%s" %s.', $user->getUserIdentifier(), $user->isEnabled() ? 'aktiviert' : 'deaktiviert'));
+        $this->addFlash('success', \sprintf('User "%s" %s.', $user->getUserIdentifier(), $user->isEnabled() ? 'enabled' : 'disabled'));
 
         return $this->redirectToRoute('app_admin_users');
     }
@@ -67,7 +69,7 @@ final class UserController extends AbstractController
         $username = $user->getUserIdentifier();
         $entityManager->remove($user);
         $entityManager->flush();
-        $this->addFlash('success', \sprintf('Benutzer "%s" gelöscht.', $username));
+        $this->addFlash('success', \sprintf('User "%s" deleted.', $username));
 
         return $this->redirectToRoute('app_admin_users');
     }
@@ -79,15 +81,8 @@ final class UserController extends AbstractController
 
     private function rejectSelfAction(): Response
     {
-        $this->addFlash('error', 'Das eigene Konto kann nicht deaktiviert oder gelöscht werden.');
+        $this->addFlash('error', 'You cannot disable or delete your own account.');
 
         return $this->redirectToRoute('app_admin_users');
-    }
-
-    private function denyUnlessValidToken(string $tokenId, Request $request): void
-    {
-        if (!$this->isCsrfTokenValid($tokenId, $request->request->getString('_token'))) {
-            throw $this->createAccessDeniedException('Invalid CSRF token.');
-        }
     }
 }

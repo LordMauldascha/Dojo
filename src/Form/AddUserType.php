@@ -13,7 +13,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 /** @extends AbstractType<array{user: User|null}> */
-final class GroupAddUserType extends AbstractType
+final class AddUserType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -22,11 +22,11 @@ final class GroupAddUserType extends AbstractType
                 'class' => User::class,
                 'choices' => $options['available_users'],
                 'choice_label' => 'username',
-                'label' => 'Benutzer hinzufügen',
-                'placeholder' => 'Benutzer wählen',
-                'constraints' => [new NotBlank(message: 'Bitte einen Benutzer wählen.')],
+                'label' => 'Add user',
+                'placeholder' => 'Select a user',
+                'constraints' => [new NotBlank(message: 'Please select a user.')],
             ])
-            ->add('add', SubmitType::class, ['label' => 'Hinzufügen']);
+            ->add('add', SubmitType::class, ['label' => 'Add']);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

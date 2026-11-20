@@ -17,8 +17,8 @@ final class GroupType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('title', TextType::class, ['label' => 'Titel', 'attr' => ['maxlength' => 100]])
-            ->add('save', SubmitType::class, ['label' => 'Speichern']);
+            ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 100]])
+            ->add('save', SubmitType::class, ['label' => 'Save']);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

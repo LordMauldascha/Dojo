@@ -1,25 +1,25 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Gruppe {{ group.title }}{% endblock %}
+{% block title %}Group {{ group.title }}{% endblock %}
 
 {% block body %}
-    <h1>Gruppe {{ group.title }}</h1>
+    <h1>Group {{ group.title }}</h1>
     {{ include('_nav.html.twig') }}
     {{ include('_flashes.html.twig') }}
 
-    <p><a href="{{ path('app_admin_groups') }}">Zurück zur Übersicht</a></p>
+    <p><a href="{{ path('app_admin_groups') }}">Back to overview</a></p>
 
-    <h2>Titel</h2>
+    <h2>Title</h2>
     {{ form(form) }}
 
-    <h2>Mitglieder</h2>
+    <h2>Members</h2>
     {% if group.users|length %}
         <table>
             <thead>
                 <tr>
-                    <th>Benutzername</th>
-                    <th>Rolle</th>
-                    <th>Aktionen</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -30,7 +30,7 @@
                         <td>
                             <form method="post" action="{{ path('app_admin_group_user_remove', {uuid: group.uuid, userId: user.id}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('remove-group-user-' ~ group.uuid ~ '-' ~ user.id) }}">
-                                <button type="submit">Entfernen</button>
+                                <button type="submit">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -38,11 +38,11 @@
             </tbody>
         </table>
     {% else %}
-        <p>Noch keine Mitglieder.</p>
+        <p>No members yet.</p>
     {% endif %}
 
     {{ form(addUserForm) }}
 
-    <h2>Gruppe löschen</h2>
-    <p><a href="{{ path('app_admin_group_delete', {uuid: group.uuid}) }}">Löschen</a></p>
+    <h2>Delete group</h2>
+    <p><a href="{{ path('app_admin_group_delete', {uuid: group.uuid}) }}">Delete</a></p>
 {% endblock %}

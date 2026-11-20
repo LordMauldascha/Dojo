@@ -9,13 +9,13 @@
 
 {% macro pagination(route, routeParams, query, page) %}
     {% set base = {q: query.q ?: null, sort: query.sort, dir: query.sort ? query.dir : null, perPage: page.perPage} %}
-    <nav aria-label="Seitenwahl">
+    <nav aria-label="Pagination">
         {% if page.page > 1 %}
-            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page - 1})) }}" rel="prev">Zurück</a>
+            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page - 1})) }}" rel="prev">Previous</a>
         {% endif %}
-        <span>Seite {{ page.page }} von {{ page.pageCount }} ({{ page.total }} Einträge)</span>
+        <span>Page {{ page.page }} of {{ page.pageCount }} ({{ page.total }} {{ 1 == page.total ? 'entry' : 'entries' }})</span>
         {% if page.page < page.pageCount %}
-            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page + 1})) }}" rel="next">Weiter</a>
+            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page + 1})) }}" rel="next">Next</a>
         {% endif %}
     </nav>
 {% endmacro %}

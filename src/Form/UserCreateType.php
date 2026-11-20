@@ -22,21 +22,21 @@ final class UserCreateType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('username', TextType::class, ['label' => 'Benutzername', 'attr' => ['autocomplete' => 'off']])
+            ->add('username', TextType::class, ['label' => 'Username', 'attr' => ['autocomplete' => 'off']])
             ->add('plainPassword', RepeatedType::class, [
                 'mapped' => false,
                 'type' => PasswordType::class,
-                'first_options' => ['label' => 'Passwort', 'attr' => ['autocomplete' => 'new-password']],
-                'second_options' => ['label' => 'Passwort wiederholen', 'attr' => ['autocomplete' => 'new-password']],
-                'invalid_message' => 'Die Passwörter stimmen nicht überein.',
+                'first_options' => ['label' => 'Password', 'attr' => ['autocomplete' => 'new-password']],
+                'second_options' => ['label' => 'Repeat password', 'attr' => ['autocomplete' => 'new-password']],
+                'invalid_message' => 'The passwords do not match.',
                 'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096)],
             ])
             ->add('role', EnumType::class, [
                 'class' => UserRole::class,
-                'label' => 'Rolle',
+                'label' => 'Role',
                 'choice_label' => static fn (UserRole $role): string => $role->label(),
             ])
-            ->add('save', SubmitType::class, ['label' => 'Benutzer anlegen']);
+            ->add('save', SubmitType::class, ['label' => 'Create user']);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

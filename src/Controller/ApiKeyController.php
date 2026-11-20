@@ -40,7 +40,7 @@ final class ApiKeyController extends AbstractController
                 /** @var array{apiKey: string} $data */
                 $data = $form->getData();
                 $this->store->save($provider, $data['apiKey']);
-                $this->addFlash('success', \sprintf('%s gespeichert.', $provider->label()));
+                $this->addFlash('success', \sprintf('%s saved.', $provider->label()));
 
                 return $this->redirectToRoute('app_admin_api_keys');
             }
@@ -62,7 +62,7 @@ final class ApiKeyController extends AbstractController
         if (null !== $key) {
             $this->entityManager->remove($key);
             $this->entityManager->flush();
-            $this->addFlash('success', \sprintf('%s gelöscht.', $provider->label()));
+            $this->addFlash('success', \sprintf('%s deleted.', $provider->label()));
         }
 
         return $this->redirectToRoute('app_admin_api_keys');

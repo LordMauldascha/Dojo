@@ -1,9 +1,9 @@
 {# Search and page size of an overview. Expects: route, routeParams (optional), query (ListQuery), page (Page). #}
 <form method="get" action="{{ path(route, routeParams|default({})) }}">
-    <label>Suche
+    <label>Search
         <input type="search" name="q" value="{{ query.q }}" maxlength="100">
     </label>
-    <label>Einträge pro Seite
+    <label>Entries per page
         <select name="perPage">
             {% for size in [10, 20, 50, 100] %}
                 <option value="{{ size }}"{{ size == page.perPage ? ' selected' }}>{{ size }}</option>
@@ -14,5 +14,5 @@
         <input type="hidden" name="sort" value="{{ query.sort }}">
         <input type="hidden" name="dir" value="{{ query.dir }}">
     {% endif %}
-    <button type="submit">Anwenden</button>
+    <button type="submit">Apply</button>
 </form>

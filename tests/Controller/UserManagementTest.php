@@ -40,7 +40,7 @@ final class UserManagementTest extends WebTestCase
         static::ensureKernelShutdown();
         $client = static::createClient();
         $crawler = $client->request('GET', '/login');
-        $client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'alice', '_password' => self::PASSWORD]));
+        $client->submit($crawler->selectButton('Sign in')->form(['_username' => 'alice', '_password' => self::PASSWORD]));
         self::assertResponseRedirects('/');
     }
 
@@ -78,7 +78,7 @@ final class UserManagementTest extends WebTestCase
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', '/account/password');
-        $this->client->submit($crawler->selectButton('Passwort ändern')->form([
+        $this->client->submit($crawler->selectButton('Change password')->form([
             'change_password[currentPassword]' => self::PASSWORD,
             'change_password[newPassword][first]' => 'another-long-password',
             'change_password[newPassword][second]' => 'another-long-password',
@@ -96,7 +96,7 @@ final class UserManagementTest extends WebTestCase
         $this->client->loginUser($this->persistUser('erin'));
 
         $crawler = $this->client->request('GET', '/account/password');
-        $this->client->submit($crawler->selectButton('Passwort ändern')->form([
+        $this->client->submit($crawler->selectButton('Change password')->form([
             'change_password[currentPassword]' => 'not-my-password',
             'change_password[newPassword][first]' => 'another-long-password',
             'change_password[newPassword][second]' => 'another-long-password',
@@ -139,11 +139,11 @@ final class UserManagementTest extends WebTestCase
         $this->persistUser('gina', enabled: false);
 
         $crawler = $this->client->request('GET', '/login');
-        $this->client->submit($crawler->selectButton('Anmelden')->form(['_username' => 'gina', '_password' => self::PASSWORD]));
+        $this->client->submit($crawler->selectButton('Sign in')->form(['_username' => 'gina', '_password' => self::PASSWORD]));
 
         self::assertResponseRedirects('/login');
         $this->client->followRedirect();
-        self::assertSelectorTextContains('body', 'Dieses Konto ist deaktiviert.');
+        self::assertSelectorTextContains('body', 'This account is disabled.');
     }
 
     public function testDeactivationEndsExistingSession(): void
@@ -172,7 +172,7 @@ final class UserManagementTest extends WebTestCase
         self::assertFalse($this->findUser('ivy')->isEnabled());
 
         $crawler = $this->client->request('GET', '/admin/users');
-        self::assertSelectorTextContains('body', 'deaktiviert');
+        self::assertSelectorTextContains('body', 'disabled');
         $this->client->submit($crawler->filter('form[action$="/toggle"]')->form());
         $this->entityManager->clear();
         self::assertTrue($this->findUser('ivy')->isEnabled());
@@ -237,7 +237,7 @@ final class UserManagementTest extends WebTestCase
     private function createUser(string $username, string $password, string $role = 'ROLE_USER'): void
     {
         $crawler = $this->client->request('GET', '/admin/users');
-        $this->client->submit($crawler->selectButton('Benutzer anlegen')->form([
+        $this->client->submit($crawler->selectButton('Create user')->form([
             'user_create[username]' => $username,
             'user_create[plainPassword][first]' => $password,
             'user_create[plainPassword][second]' => $password,

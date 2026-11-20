@@ -1,26 +1,26 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Gruppe löschen{% endblock %}
+{% block title %}Delete group{% endblock %}
 
 {% block body %}
-    <h1>Gruppe {{ group.title }} löschen</h1>
+    <h1>Delete group {{ group.title }}</h1>
     {{ include('_nav.html.twig') }}
     {{ include('_flashes.html.twig') }}
 
     {% if projects %}
-        <p>Die Gruppe wird aus diesen Projekten entfernt, die Berechtigungen ihrer Mitglieder entfallen:</p>
+        <p>The group is removed from these projects, and its members lose the access it granted:</p>
         <ul>
             {% for project in projects %}
                 <li>{{ project.title }}</li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>Die Gruppe ist keinem Projekt zugewiesen.</p>
+        <p>The group is not assigned to any project.</p>
     {% endif %}
 
     <form method="post" action="{{ path('app_admin_group_delete', {uuid: group.uuid}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-group-' ~ group.uuid) }}">
-        <button type="submit">Endgültig löschen</button>
+        <button type="submit">Delete permanently</button>
     </form>
-    <p><a href="{{ path('app_admin_group_show', {uuid: group.uuid}) }}">Abbrechen</a></p>
+    <p><a href="{{ path('app_admin_group_show', {uuid: group.uuid}) }}">Cancel</a></p>
 {% endblock %}

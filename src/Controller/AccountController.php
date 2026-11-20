@@ -39,7 +39,7 @@ final class AccountController extends AbstractController
             \assert(\is_string($newPassword));
             $user->setPassword($hasher->hashPassword($user, $newPassword));
             $entityManager->flush();
-            $this->addFlash('success', 'Passwort geändert.');
+            $this->addFlash('success', 'Password changed.');
 
             return $this->redirectToRoute('app_account');
         }

@@ -6,11 +6,12 @@ namespace App\Controller;
 
 use App\Entity\Group;
 use App\Entity\User;
-use App\Form\GroupAddUserType;
+use App\Form\AddUserType;
 use App\Form\GroupType;
 use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\GroupRepository;
+use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,6 +27,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/admin/groups')]
 final class GroupController extends AbstractController
 {
+    use CsrfGuardTrait;
+
     private const LIST_KEY = 'groups';
 
     #[Route('', name: 'app_admin_groups', methods: ['GET'])]
@@ -53,7 +56,7 @@ final class GroupController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($group);
             $entityManager->flush();
-            $this->addFlash('success', \sprintf('Gruppe "%s" angelegt.', $group->getTitle()));
+            $this->addFlash('success', \sprintf('Group "%s" created.', $group->getTitle()));
 
             return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
         }
@@ -73,7 +76,7 @@ final class GroupController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
-            $this->addFlash('success', 'Gruppe gespeichert.');
+            $this->addFlash('success', 'Group saved.');
 
             return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
         }
@@ -99,9 +102,9 @@ final class GroupController extends AbstractController
         if ($user instanceof User) {
             $group->addUser($user);
             $entityManager->flush();
-            $this->addFlash('success', \sprintf('Benutzer "%s" hinzugefügt.', $user->getUserIdentifier()));
+            $this->addFlash('success', \sprintf('User "%s" added.', $user->getUserIdentifier()));
         } else {
-            $this->addFlash('error', 'Der Benutzer konnte nicht hinzugefügt werden.');
+            $this->addFlash('error', 'The user could not be added.');
         }
 
         return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
@@ -118,7 +121,7 @@ final class GroupController extends AbstractController
 
         $group->removeUser($user);
         $entityManager->flush();
-        $this->addFlash('success', \sprintf('Benutzer "%s" entfernt.', $user->getUserIdentifier()));
+        $this->addFlash('success', \sprintf('User "%s" removed.', $user->getUserIdentifier()));
 
         return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
     }
@@ -127,6 +130,7 @@ final class GroupController extends AbstractController
     public function delete(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Group $group,
         Request $request,
+        ProjectRepository $projects,
         EntityManagerInterface $entityManager,
     ): Response {
         if ($request->isMethod('POST')) {
@@ -135,31 +139,23 @@ final class GroupController extends AbstractController
             $title = $group->getTitle();
             $entityManager->remove($group);
             $entityManager->flush();
-            $this->addFlash('success', \sprintf('Gruppe "%s" gelöscht.', $title));
+            $this->addFlash('success', \sprintf('Group "%s" deleted.', $title));
 
             return $this->redirectToRoute('app_admin_groups');
         }
 
         return $this->render('admin/groups/delete.html.twig', [
             'group' => $group,
-            // Filled with the assigned projects in plan 02.
-            'projects' => [],
+            'projects' => $projects->findByGroup($group),
         ]);
     }
 
     /** @return FormInterface<array{user: User|null}|null> */
     private function createAddUserForm(Group $group, GroupRepository $groups): FormInterface
     {
-        return $this->createForm(GroupAddUserType::class, null, [
+        return $this->createForm(AddUserType::class, null, [
             'action' => $this->generateUrl('app_admin_group_user_add', ['uuid' => $group->getUuid()]),
             'available_users' => $groups->findAssignableUsers($group),
         ]);
-    }
-
-    private function denyUnlessValidToken(string $tokenId, Request $request): void
-    {
-        if (!$this->isCsrfTokenValid($tokenId, $request->request->getString('_token'))) {
-            throw $this->createAccessDeniedException('Invalid CSRF token.');
-        }
     }
 }

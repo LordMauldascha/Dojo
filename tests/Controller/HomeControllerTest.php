@@ -48,9 +48,9 @@ final class HomeControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('tbody tr:nth-child(1)', 'OpenAI API Key');
-        self::assertSelectorTextNotContains('tbody tr:nth-child(1)', 'nicht hinterlegt');
-        self::assertSelectorTextContains('tbody tr:nth-child(2)', 'nicht hinterlegt');
-        self::assertSelectorTextContains('body', 'Angelegte Benutzer: 1');
+        self::assertSelectorTextNotContains('tbody tr:nth-child(1)', 'not set');
+        self::assertSelectorTextContains('tbody tr:nth-child(2)', 'not set');
+        self::assertSelectorTextContains('body', 'Existing users: 1');
         self::assertStringNotContainsString('1234', (string) $this->client->getResponse()->getContent());
     }
 
@@ -67,6 +67,6 @@ final class HomeControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('table');
-        self::assertSelectorTextNotContains('body', 'Angelegte Benutzer');
+        self::assertSelectorTextNotContains('body', 'Existing users');
     }
 }

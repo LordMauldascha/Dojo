@@ -12,15 +12,15 @@
             <h2>{{ row.provider.label }}</h2>
             {% if row.key %}
                 <p>
-                    Hinterlegt: ••••{{ row.key.lastFour }}
-                    (geändert am {{ row.key.updatedAt|date('d.m.Y H:i') }})
+                    Stored: ••••{{ row.key.lastFour }}
+                    (changed on {{ row.key.updatedAt|date('d.m.Y H:i') }})
                 </p>
                 <form method="post" action="{{ path('app_admin_api_key_delete', {provider: row.provider.value}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete-api-key-' ~ row.provider.value) }}">
-                    <button type="submit">Löschen</button>
+                    <button type="submit">Delete</button>
                 </form>
             {% else %}
-                <p>Kein Key hinterlegt.</p>
+                <p>No key stored.</p>
             {% endif %}
             {{ form(row.form) }}
         </section>

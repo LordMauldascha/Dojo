@@ -1,10 +1,11 @@
 <nav>
-    <a href="{{ path('app_home') }}">Übersicht</a>
-    <a href="{{ path('app_account') }}">Mein Konto</a>
+    <a href="{{ path('app_home') }}">Overview</a>
+    <a href="{{ path('app_projects') }}">Projects</a>
+    <a href="{{ path('app_account') }}">My account</a>
     {% if is_granted('ROLE_ADMIN') %}
         <a href="{{ path('app_admin_api_keys') }}">API Keys</a>
-        <a href="{{ path('app_admin_users') }}">Benutzer</a>
-        <a href="{{ path('app_admin_groups') }}">Gruppen</a>
+        <a href="{{ path('app_admin_users') }}">Users</a>
+        <a href="{{ path('app_admin_groups') }}">Groups</a>
     {% endif %}
     <a href="{{ path('app_logout') }}">Logout</a>
 </nav>

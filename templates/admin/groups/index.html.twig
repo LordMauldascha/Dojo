@@ -2,14 +2,14 @@
 
 {% import '_list/macros.html.twig' as list %}
 
-{% block title %}Gruppen{% endblock %}
+{% block title %}Groups{% endblock %}
 
 {% block body %}
-    <h1>Gruppen</h1>
+    <h1>Groups</h1>
     {{ include('_nav.html.twig') }}
     {{ include('_flashes.html.twig') }}
 
-    <p><a href="{{ path('app_admin_group_new') }}">Neue Gruppe</a></p>
+    <p><a href="{{ path('app_admin_group_new') }}">New group</a></p>
 
     {{ include('_list/controls.html.twig', {route: 'app_admin_groups', query: query, page: page}) }}
 
@@ -17,10 +17,10 @@
         <table>
             <thead>
                 <tr>
-                    {{ list.sort_header('app_admin_groups', {}, query, page, 'title', 'Titel') }}
-                    {{ list.sort_header('app_admin_groups', {}, query, page, 'users', 'Benutzer') }}
-                    {{ list.sort_header('app_admin_groups', {}, query, page, 'updatedAt', 'Aktualisiert') }}
-                    {{ list.sort_header('app_admin_groups', {}, query, page, 'createdAt', 'Erstellt') }}
+                    {{ list.sort_header('app_admin_groups', {}, query, page, 'title', 'Title') }}
+                    {{ list.sort_header('app_admin_groups', {}, query, page, 'users', 'Users') }}
+                    {{ list.sort_header('app_admin_groups', {}, query, page, 'updatedAt', 'Updated') }}
+                    {{ list.sort_header('app_admin_groups', {}, query, page, 'createdAt', 'Created') }}
                 </tr>
             </thead>
             <tbody>
@@ -37,6 +37,6 @@
         </table>
         {{ list.pagination('app_admin_groups', {}, query, page) }}
     {% else %}
-        <p>{{ query.q ? 'Keine Gruppen gefunden.' : 'Noch keine Gruppen angelegt.' }}</p>
+        <p>{{ query.q ? 'No groups found.' : 'No groups yet.' }}</p>
     {% endif %}
 {% endblock %}

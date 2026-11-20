@@ -1,12 +1,12 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Mein Konto{% endblock %}
+{% block title %}My account{% endblock %}
 
 {% block body %}
-    <h1>Mein Konto</h1>
+    <h1>My account</h1>
     {{ include('_nav.html.twig') }}
     {{ include('_flashes.html.twig') }}
 
-    <p>Angemeldet als {{ app.user.userIdentifier }}.</p>
-    <p><a href="{{ path('app_account_password') }}">Passwort ändern</a></p>
+    <p>Signed in as {{ app.user.userIdentifier }}.</p>
+    <p><a href="{{ path('app_account_password') }}">Change password</a></p>
 {% endblock %}

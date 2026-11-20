@@ -19,17 +19,17 @@ final class ChangePasswordType extends AbstractType
     {
         $builder
             ->add('currentPassword', PasswordType::class, [
-                'label' => 'Aktuelles Passwort',
+                'label' => 'Current password',
                 'attr' => ['autocomplete' => 'current-password'],
-                'constraints' => [new Assert\NotBlank(), new UserPassword(message: 'Das aktuelle Passwort ist falsch.')],
+                'constraints' => [new Assert\NotBlank(), new UserPassword(message: 'The current password is wrong.')],
             ])
             ->add('newPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
-                'first_options' => ['label' => 'Neues Passwort', 'attr' => ['autocomplete' => 'new-password']],
-                'second_options' => ['label' => 'Neues Passwort wiederholen', 'attr' => ['autocomplete' => 'new-password']],
-                'invalid_message' => 'Die Passwörter stimmen nicht überein.',
+                'first_options' => ['label' => 'New password', 'attr' => ['autocomplete' => 'new-password']],
+                'second_options' => ['label' => 'Repeat new password', 'attr' => ['autocomplete' => 'new-password']],
+                'invalid_message' => 'The passwords do not match.',
                 'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096)],
             ])
-            ->add('save', SubmitType::class, ['label' => 'Passwort ändern']);
+            ->add('save', SubmitType::class, ['label' => 'Change password']);
     }
 }

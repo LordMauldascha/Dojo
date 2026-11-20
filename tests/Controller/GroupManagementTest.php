@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Group;
+use App\Entity\Project;
 use App\Entity\User;
 use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,6 +22,7 @@ final class GroupManagementTest extends WebTestCase
     {
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->entityManager->createQuery('DELETE FROM '.Project::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Group::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
     }
@@ -59,7 +61,7 @@ final class GroupManagementTest extends WebTestCase
         $past = $this->findGroup('Entwicklung')->getUpdatedAt();
 
         $crawler = $this->client->request('GET', '/admin/groups/'.$group->getUuid());
-        $this->client->submit($crawler->selectButton('Speichern')->form(['group[title]' => 'Betrieb']));
+        $this->client->submit($crawler->selectButton('Save')->form(['group[title]' => 'Betrieb']));
         self::assertResponseRedirects('/admin/groups/'.$group->getUuid());
         $this->entityManager->clear();
         self::assertSame('Betrieb', $this->findGroup('Betrieb')->getTitle());
@@ -68,7 +70,7 @@ final class GroupManagementTest extends WebTestCase
         $this->setUpdatedAtToThePast($this->findGroup('Betrieb'));
         $past = $this->findGroup('Betrieb')->getUpdatedAt();
         $crawler = $this->client->request('GET', '/admin/groups/'.$group->getUuid());
-        $this->client->submit($crawler->selectButton('Hinzufügen')->form(['group_add_user[user]' => (string) $member->getId()]));
+        $this->client->submit($crawler->selectButton('Add')->form(['add_user[user]' => (string) $member->getId()]));
         self::assertResponseRedirects('/admin/groups/'.$group->getUuid());
         $this->entityManager->clear();
         self::assertCount(1, $this->findGroup('Betrieb')->getUsers());
@@ -107,13 +109,13 @@ final class GroupManagementTest extends WebTestCase
 
         $crawler = $this->client->request('GET', $path);
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('body', 'keinem Projekt');
+        self::assertSelectorTextContains('body', 'not assigned to any project');
 
         $this->client->request('POST', $path, ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
         self::assertNotNull($this->entityManager->getRepository(Group::class)->findOneBy(['title' => 'Entwicklung']));
 
-        $this->client->submit($crawler->selectButton('Endgültig löschen')->form());
+        $this->client->submit($crawler->selectButton('Delete permanently')->form());
         self::assertResponseRedirects('/admin/groups');
         $this->entityManager->clear();
         self::assertNull($this->entityManager->getRepository(Group::class)->findOneBy(['title' => 'Entwicklung']));
@@ -121,6 +123,25 @@ final class GroupManagementTest extends WebTestCase
         $assignments = $this->entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM app_group_user');
         self::assertIsNumeric($assignments);
         self::assertSame(0, (int) $assignments);
+    }
+
+    public function testDeleteConfirmationListsAssignedProjects(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $group = $this->persistGroup('Entwicklung');
+        foreach (['Security', 'Data protection'] as $title) {
+            $project = new Project();
+            $project->setTitle($title);
+            $project->addGroup($group);
+            $this->entityManager->persist($project);
+        }
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/admin/groups/'.$group->getUuid().'/delete');
+
+        self::assertSelectorTextContains('ul', 'Data protection');
+        self::assertSelectorTextContains('ul', 'Security');
+        self::assertSelectorTextNotContains('body', 'not assigned to any project');
     }
 
     public function testDeletingAGroupMemberUserKeepsTheGroup(): void
@@ -214,23 +235,23 @@ final class GroupManagementTest extends WebTestCase
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
         for ($i = 1; 25 >= $i; ++$i) {
-            $this->persistGroup(\sprintf('Gruppe %02d', $i));
+            $this->persistGroup(\sprintf('Group %02d', $i));
         }
 
         self::assertCount(10, $this->titles($this->client->request('GET', '/admin/groups')));
         $page = $this->client->request('GET', '/admin/groups', ['perPage' => 20, 'page' => 2]);
         self::assertCount(5, $this->titles($page));
-        self::assertSelectorTextContains('nav[aria-label="Seitenwahl"]', 'Seite 2 von 2 (25 Einträge)');
+        self::assertSelectorTextContains('nav[aria-label="Pagination"]', 'Page 2 of 2 (25 entries)');
 
         $page = $this->client->request('GET', '/admin/groups', ['perPage' => 10, 'page' => 99]);
-        self::assertSame(['Gruppe 21', 'Gruppe 22', 'Gruppe 23', 'Gruppe 24', 'Gruppe 25'], $this->titles($page));
+        self::assertSame(['Group 21', 'Group 22', 'Group 23', 'Group 24', 'Group 25'], $this->titles($page));
     }
 
     public function testPageSizeInUrlIsRememberedInSessionAndUrlWins(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
         for ($i = 1; 25 >= $i; ++$i) {
-            $this->persistGroup(\sprintf('Gruppe %02d', $i));
+            $this->persistGroup(\sprintf('Group %02d', $i));
         }
 
         $this->client->request('GET', '/admin/groups', ['perPage' => 50]);
@@ -277,7 +298,7 @@ final class GroupManagementTest extends WebTestCase
     private function submitNewGroup(string $title): void
     {
         $crawler = $this->client->request('GET', '/admin/groups/new');
-        $this->client->submit($crawler->selectButton('Speichern')->form(['group[title]' => $title]));
+        $this->client->submit($crawler->selectButton('Save')->form(['group[title]' => $title]));
     }
 
     private function setUpdatedAtToThePast(Group $group): void

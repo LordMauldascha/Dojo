@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% import '_list/macros.html.twig' as list %}
+
+{% block title %}Projects{% endblock %}
+
+{% block body %}
+    <h1>Projects</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    {% if is_granted('ROLE_ADMIN') %}
+        <p><a href="{{ path('app_project_new') }}">New project</a></p>
+    {% endif %}
+
+    {{ include('_list/controls.html.twig', {route: 'app_projects', query: query, page: page}) }}
+
+    {% if page.items %}
+        <table>
+            <thead>
+                <tr>
+                    {{ list.sort_header('app_projects', {}, query, page, 'title', 'Title') }}
+                    <th>Description</th>
+                    {{ list.sort_header('app_projects', {}, query, page, 'users', 'Users') }}
+                    {{ list.sort_header('app_projects', {}, query, page, 'groups', 'Groups') }}
+                    {{ list.sort_header('app_projects', {}, query, page, 'updatedAt', 'Updated') }}
+                    {{ list.sort_header('app_projects', {}, query, page, 'createdAt', 'Created') }}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in page.items %}
+                    {% set project = row[0] %}
+                    {% set description = project.description ?? '' %}
+                    <tr>
+                        <td><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">{{ project.title }}</a></td>
+                        <td>{{ description|slice(0, 100) }}{{ description|length > 100 ? '…' }}</td>
+                        <td>{{ row.userCount }}</td>
+                        <td>{{ row.groupCount }}</td>
+                        <td>{{ project.updatedAt|date }}</td>
+                        <td>{{ project.createdAt|date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {{ list.pagination('app_projects', {}, query, page) }}
+    {% else %}
+        <p>{{ query.q ? 'No projects found.' : 'No projects yet.' }}</p>
+    {% endif %}
+{% endblock %}

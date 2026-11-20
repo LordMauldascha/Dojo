@@ -1,9 +1,9 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Übersicht{% endblock %}
+{% block title %}Overview{% endblock %}
 
 {% block body %}
-    <h1>Übersicht</h1>
+    <h1>Overview</h1>
     {{ include('_nav.html.twig') }}
     {{ include('_flashes.html.twig') }}
 
@@ -13,14 +13,14 @@
             <tr>
                 <th>Provider</th>
                 <th>Status</th>
-                <th>Zuletzt geändert</th>
+                <th>Last changed</th>
             </tr>
         </thead>
         <tbody>
             {% for row in rows %}
                 <tr>
                     <td>{{ row.provider.label }}</td>
-                    <td>{{ row.key ? 'hinterlegt' : 'nicht hinterlegt' }}</td>
+                    <td>{{ row.key ? 'set' : 'not set' }}</td>
                     <td>{{ row.key ? row.key.updatedAt|date('d.m.Y H:i') : '–' }}</td>
                 </tr>
             {% endfor %}
@@ -28,7 +28,7 @@
     </table>
 
     {% if userCount is not null %}
-        <h2>Benutzer</h2>
-        <p>Angelegte Benutzer: {{ userCount }}</p>
+        <h2>Users</h2>
+        <p>Existing users: {{ userCount }}</p>
     {% endif %}
 {% endblock %}
