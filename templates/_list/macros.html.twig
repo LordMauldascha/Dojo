@@ -1,0 +1,21 @@
+{# Sortable column header. Toggles the direction of the active column and returns to page 1. #}
+{% macro sort_header(route, routeParams, query, page, field, label) %}
+    {% set active = field == query.sort %}
+    {% set nextDir = active and 'asc' == query.dir ? 'desc' : 'asc' %}
+    <th{% if active %} aria-sort="{{ 'asc' == query.dir ? 'ascending' : 'descending' }}"{% endif %}>
+        <a href="{{ path(route, routeParams|merge({q: query.q ?: null, sort: field, dir: nextDir, perPage: page.perPage, page: 1})) }}">{{ label }}</a>
+    </th>
+{% endmacro %}
+
+{% macro pagination(route, routeParams, query, page) %}
+    {% set base = {q: query.q ?: null, sort: query.sort, dir: query.sort ? query.dir : null, perPage: page.perPage} %}
+    <nav aria-label="Seitenwahl">
+        {% if page.page > 1 %}
+            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page - 1})) }}" rel="prev">Zurück</a>
+        {% endif %}
+        <span>Seite {{ page.page }} von {{ page.pageCount }} ({{ page.total }} Einträge)</span>
+        {% if page.page < page.pageCount %}
+            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page + 1})) }}" rel="next">Weiter</a>
+        {% endif %}
+    </nav>
+{% endmacro %}

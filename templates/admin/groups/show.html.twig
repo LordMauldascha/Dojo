@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gruppe {{ group.title }}{% endblock %}
+
+{% block body %}
+    <h1>Gruppe {{ group.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_admin_groups') }}">Zurück zur Übersicht</a></p>
+
+    <h2>Titel</h2>
+    {{ form(form) }}
+
+    <h2>Mitglieder</h2>
+    {% if group.users|length %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Benutzername</th>
+                    <th>Rolle</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in group.users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.role.label }}</td>
+                        <td>
+                            <form method="post" action="{{ path('app_admin_group_user_remove', {uuid: group.uuid, userId: user.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('remove-group-user-' ~ group.uuid ~ '-' ~ user.id) }}">
+                                <button type="submit">Entfernen</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Noch keine Mitglieder.</p>
+    {% endif %}
+
+    {{ form(addUserForm) }}
+
+    <h2>Gruppe löschen</h2>
+    <p><a href="{{ path('app_admin_group_delete', {uuid: group.uuid}) }}">Löschen</a></p>
+{% endblock %}

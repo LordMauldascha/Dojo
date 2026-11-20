@@ -31,7 +31,7 @@ yarn-error.log
 
 ###> claude-code ###
 /.claude/settings.local.json
-Plan.md
+/Plans
 ###< claude-code ###
 
 ###> vincentlanglet/twig-cs-fixer ###

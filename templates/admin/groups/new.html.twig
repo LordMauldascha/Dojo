@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Neue Gruppe{% endblock %}
+
+{% block body %}
+    <h1>Neue Gruppe</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    {{ form(form) }}
+    <p><a href="{{ path('app_admin_groups') }}">Zurück zur Übersicht</a></p>
+{% endblock %}
