@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Group;
 use App\Entity\Project;
 use App\Entity\Skill;
+use App\Entity\Testcase;
 use App\Entity\User;
 use App\Pagination\ListQuery;
 use App\Pagination\Page;
@@ -23,6 +24,7 @@ final class ProjectRepository extends ServiceEntityRepository
         'users' => 'userCount',
         'groups' => 'groupCount',
         'skills' => 'skillCount',
+        'testcases' => 'testcaseCount',
         'updatedAt' => 'p.updatedAt',
         'createdAt' => 'p.createdAt',
     ];
@@ -32,13 +34,14 @@ final class ProjectRepository extends ServiceEntityRepository
         parent::__construct($registry, Project::class);
     }
 
-    /** Items are rows of the form [0 => Project, 'userCount', 'groupCount', 'skillCount' => int|string]. */
+    /** Items are rows of the form [0 => Project, 'userCount', 'groupCount', 'skillCount', 'testcaseCount' => int|string]. */
     public function paginate(ListQuery $query, int $perPage, User $viewer): Page
     {
         $queryBuilder = $this->createQueryBuilder('p')
             ->addSelect('SIZE(p.users) AS userCount')
             ->addSelect('SIZE(p.groups) AS groupCount')
-            ->addSelect('(SELECT COUNT(sk.id) FROM '.Skill::class.' sk JOIN sk.projects skp WHERE skp = p AND sk.deletedAt IS NULL) AS skillCount');
+            ->addSelect('(SELECT COUNT(sk.id) FROM '.Skill::class.' sk JOIN sk.projects skp WHERE skp = p AND sk.deletedAt IS NULL) AS skillCount')
+            ->addSelect('(SELECT COUNT(tc.id) FROM '.Testcase::class.' tc WHERE tc.project = p AND tc.deletedAt IS NULL) AS testcaseCount');
         $this->applyAccessFilter($queryBuilder, 'p', $viewer);
 
         if ('' !== $query->q) {

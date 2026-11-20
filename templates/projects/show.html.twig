@@ -100,6 +100,9 @@
         {{ form(addSkillForm) }}
         <p><a href="{{ path('app_skills', {project: project.uuid}) }}">Open in skill overview</a></p>
 
+        <h2>Testcases</h2>
+        <p>Testcases: {{ testcaseCount }} (<a href="{{ path('app_testcases', {project: project.uuid}) }}">open in testcase overview</a>)</p>
+
         <h2>Delete project</h2>
         <p><a href="{{ path('app_project_delete', {uuid: project.uuid}) }}">Delete</a></p>
     {% else %}
@@ -110,5 +113,6 @@
         <p>Groups: {{ project.groups|length }}</p>
         <p>Users: {{ project.users|length }}</p>
         <p>Skills: {{ skills|length }} (<a href="{{ path('app_skills', {project: project.uuid}) }}">open in skill overview</a>)</p>
+        <p>Testcases: {{ testcaseCount }} (<a href="{{ path('app_testcases', {project: project.uuid}) }}">open in testcase overview</a>)</p>
     {% endif %}
 {% endblock %}

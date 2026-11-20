@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Delete testcase{% endblock %}
+
+{% block body %}
+    <h1>Delete testcase {{ testcase.activeVersion.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p>The testcase disappears from all lists. Its version history is kept in the database.</p>
+
+    <form method="post" action="{{ path('app_testcase_delete', {uuid: testcase.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete-testcase-' ~ testcase.uuid) }}">
+        <button type="submit">Delete permanently</button>
+    </form>
+    <p><a href="{{ path('app_testcase_show', {uuid: testcase.uuid}) }}">Cancel</a></p>
+{% endblock %}

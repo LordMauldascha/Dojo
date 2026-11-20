@@ -16,6 +16,7 @@ use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\ProjectRepository;
 use App\Repository\SkillRepository;
+use App\Repository\TestcaseRepository;
 use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -78,16 +79,18 @@ final class ProjectController extends AbstractController
         Request $request,
         ProjectRepository $projects,
         SkillRepository $skills,
+        TestcaseRepository $testcases,
         EntityManagerInterface $entityManager,
     ): Response {
         $projectSkills = $skills->findByProject($project);
+        $testcaseCount = $testcases->countByProject($project);
 
         if (!$this->isGranted(ProjectVoter::MANAGE, $project)) {
             if ($request->isMethod('POST')) {
                 throw $this->createAccessDeniedException();
             }
 
-            return $this->render('projects/show.html.twig', ['project' => $project, 'canManage' => false, 'skills' => $projectSkills]);
+            return $this->render('projects/show.html.twig', ['project' => $project, 'canManage' => false, 'skills' => $projectSkills, 'testcaseCount' => $testcaseCount]);
         }
 
         $form = $this->createForm(ProjectType::class, $project);
@@ -104,6 +107,7 @@ final class ProjectController extends AbstractController
             'project' => $project,
             'canManage' => true,
             'skills' => $projectSkills,
+            'testcaseCount' => $testcaseCount,
             'form' => $form,
             'addGroupForm' => $this->createAddGroupForm($project, $projects),
             'addUserForm' => $this->createAddUserForm($project, $projects),
@@ -237,6 +241,7 @@ final class ProjectController extends AbstractController
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Project $project,
         Request $request,
         SkillRepository $skills,
+        TestcaseRepository $testcases,
         EntityManagerInterface $entityManager,
     ): Response {
         if ($request->isMethod('POST')) {
@@ -250,7 +255,7 @@ final class ProjectController extends AbstractController
             return $this->redirectToRoute('app_projects');
         }
 
-        return $this->render('projects/delete.html.twig', ['project' => $project, 'skillCount' => \count($skills->findByProject($project))]);
+        return $this->render('projects/delete.html.twig', ['project' => $project, 'skillCount' => \count($skills->findByProject($project)), 'testcaseCount' => $testcases->countByProject($project)]);
     }
 
     /** @return FormInterface<array{group: Group|null}|null> */

@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\Group;
 use App\Entity\Project;
 use App\Entity\Skill;
+use App\Entity\Testcase;
 use App\Entity\User;
 use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,6 +24,7 @@ final class ProjectManagementTest extends WebTestCase
     {
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->entityManager->createQuery('DELETE FROM '.Testcase::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Skill::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Project::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Group::class)->execute();
@@ -400,6 +402,73 @@ final class ProjectManagementTest extends WebTestCase
         self::assertFalse($skills[0]->isDeleted());
     }
 
+    public function testProjectListCountsOnlyNonDeletedTestcasesAndSortsByTestcaseCount(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $many = $this->persistProject('B-many');
+        $one = $this->persistProject('C-one');
+        $this->persistProject('A-none');
+        $this->persistTestcase('T1', $many);
+        $this->persistTestcase('T2', $many);
+        $this->persistTestcase('T3', $one);
+        $this->persistTestcase('T4', $many)->softDelete();
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/projects', ['sort' => 'testcases', 'dir' => 'desc']);
+
+        self::assertSame(['B-many', 'C-one', 'A-none'], $this->titles($crawler));
+        self::assertSame(['2', '1', '0'], $crawler->filter('tbody tr td:nth-child(6)')->each(static fn (Crawler $cell): string => trim($cell->text())));
+        self::assertSelectorExists('a[href*="/testcases?project="]');
+    }
+
+    public function testProjectDetailShowsTheTestcaseCountToEveryoneWithAccess(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security');
+        $project->addUser($user);
+        $this->entityManager->flush();
+        $this->persistTestcase('T1', $project);
+        $this->persistTestcase('T2', $project)->softDelete();
+        $this->entityManager->flush();
+
+        $this->client->loginUser($user);
+        $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorTextContains('body', 'Testcases: 1');
+        self::assertSelectorExists('a[href*="/testcases?project="]');
+
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorTextContains('body', 'Testcases: 1');
+    }
+
+    public function testDeletingAProjectKeepsTestcasesAsAdminOnly(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $member = $this->persistUser('alice');
+        $project = $this->persistProject('Security');
+        $project->addUser($member);
+        $this->entityManager->flush();
+        $testcase = $this->persistTestcase('Greeting', $project);
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/delete');
+        self::assertSelectorTextContains('body', '1 testcase(s) lose their project and become admin-only');
+        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        self::assertResponseRedirects('/projects');
+
+        $this->entityManager->clear();
+        $stored = $this->entityManager->getRepository(Testcase::class)->findAll();
+        self::assertCount(1, $stored);
+        self::assertNull($stored[0]->getProject());
+        self::assertFalse($stored[0]->isDeleted());
+
+        $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+        self::assertResponseIsSuccessful();
+        $this->client->loginUser($member);
+        $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+        self::assertResponseStatusCodeSame(403);
+    }
+
     /** @return list<string> */
     private function titles(Crawler $crawler): array
     {
@@ -438,6 +507,15 @@ final class ProjectManagementTest extends WebTestCase
         $this->entityManager->flush();
 
         return $skill;
+    }
+
+    private function persistTestcase(string $title, ?Project $project): Testcase
+    {
+        $testcase = new Testcase($title, null, 'prompt', 'output', $project);
+        $this->entityManager->persist($testcase);
+        $this->entityManager->flush();
+
+        return $testcase;
     }
 
     private function persistGroup(string $title): Group

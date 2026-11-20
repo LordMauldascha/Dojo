@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Testcase {{ testcase.activeVersion.title }}{% endblock %}
+
+{% block body %}
+    {% set active = testcase.activeVersion %}
+    {% set draft = testcase.draft %}
+    <h1>Testcase {{ active.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_testcases') }}">Back to overview</a></p>
+
+    <p>Active version: {{ active.label }}</p>
+    {% if draft %}
+        <p>Draft {{ draft.label }} exists and is shown in the form below. It is ignored until it is saved as final.</p>
+    {% endif %}
+
+    <h2>Edit</h2>
+    {{ form(form) }}
+    {% if draft %}
+        <form method="post" action="{{ path('app_testcase_draft_discard', {uuid: testcase.uuid}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('discard-testcase-draft-' ~ testcase.uuid) }}">
+            <button type="submit">Discard draft</button>
+        </form>
+    {% endif %}
+
+    <h2>Project</h2>
+    {{ form(projectForm) }}
+
+    <h2>Version history</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Version</th>
+                <th>Title</th>
+                <th>Saved</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for version in testcase.versions|reverse %}
+                <tr>
+                    <td>{{ version.label }}</td>
+                    <td>{{ version.title }}</td>
+                    <td>{{ version.savedAt|date }}</td>
+                    <td>{{ version.draft ? 'draft' : (version.number == active.number ? 'active' : '') }}</td>
+                    <td>
+                        <a href="{{ path('app_testcase_version', {uuid: testcase.uuid, number: version.number}) }}">View</a>
+                        {% if not version.draft and version.number != active.number and not draft %}
+                            <form method="post" action="{{ path('app_testcase_restore', {uuid: testcase.uuid, number: version.number}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('restore-testcase-' ~ testcase.uuid ~ '-' ~ version.number) }}">
+                                <button type="submit">Restore</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if draft %}
+        <p>Restoring is possible once the draft is saved as final or discarded.</p>
+    {% endif %}
+
+    {% if canDelete %}
+        <h2>Delete testcase</h2>
+        <p><a href="{{ path('app_testcase_delete', {uuid: testcase.uuid}) }}">Delete</a></p>
+    {% endif %}
+{% endblock %}

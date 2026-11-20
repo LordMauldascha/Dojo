@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% import '_list/macros.html.twig' as list %}
+
+{% block title %}Testcases{% endblock %}
+
+{% block body %}
+    <h1>Testcases</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_testcase_new') }}">New testcase</a></p>
+
+    {{ include('_list/controls.html.twig', {route: 'app_testcases', query: query, page: page, projectChoices: projectChoices}) }}
+
+    {% if page.items %}
+        <table>
+            <thead>
+                <tr>
+                    {{ list.sort_header('app_testcases', {}, query, page, 'title', 'Title') }}
+                    <th>Description</th>
+                    <th>Project</th>
+                    <th>Version</th>
+                    {{ list.sort_header('app_testcases', {}, query, page, 'updatedAt', 'Updated') }}
+                    {{ list.sort_header('app_testcases', {}, query, page, 'createdAt', 'Created') }}
+                </tr>
+            </thead>
+            <tbody>
+                {% for testcase in page.items %}
+                    {% set description = testcase.activeVersion.description ?? '' %}
+                    <tr>
+                        <td><a href="{{ path('app_testcase_show', {uuid: testcase.uuid}) }}">{{ testcase.activeVersion.title }}</a></td>
+                        <td>{{ description|slice(0, 100) }}{{ description|length > 100 ? '…' }}</td>
+                        <td>{{ testcase.project ? testcase.project.title : '–' }}</td>
+                        <td>{{ testcase.activeVersion.label }}{{ testcase.draft ? ' (draft pending)' }}</td>
+                        <td>{{ testcase.updatedAt|date }}</td>
+                        <td>{{ testcase.createdAt|date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {{ list.pagination('app_testcases', {}, query, page) }}
+    {% else %}
+        <p>{{ query.q or query.project ? 'No testcases found.' : 'No testcases yet.' }}</p>
+    {% endif %}
+{% endblock %}

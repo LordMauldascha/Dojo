@@ -24,6 +24,7 @@
                     {{ list.sort_header('app_projects', {}, query, page, 'users', 'Users') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'groups', 'Groups') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'skills', 'Skills') }}
+                    {{ list.sort_header('app_projects', {}, query, page, 'testcases', 'Testcases') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'updatedAt', 'Updated') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'createdAt', 'Created') }}
                 </tr>
@@ -38,6 +39,7 @@
                         <td>{{ row.userCount }}</td>
                         <td>{{ row.groupCount }}</td>
                         <td><a href="{{ path('app_skills', {project: project.uuid}) }}">{{ row.skillCount }}</a></td>
+                        <td><a href="{{ path('app_testcases', {project: project.uuid}) }}">{{ row.testcaseCount }}</a></td>
                         <td>{{ project.updatedAt|date }}</td>
                         <td>{{ project.createdAt|date }}</td>
                     </tr>

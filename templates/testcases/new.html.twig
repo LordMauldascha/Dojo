@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New testcase{% endblock %}
+
+{% block body %}
+    <h1>New testcase</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    {% if not hasProjects %}
+        <p>No project is available to assign.</p>
+    {% endif %}
+
+    {{ form(form) }}
+    <p><a href="{{ path('app_testcases') }}">Back to overview</a></p>
+{% endblock %}
