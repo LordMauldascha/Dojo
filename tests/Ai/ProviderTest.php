@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Ai;
+
+use App\Ai\Provider;
+use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+
+final class ProviderTest extends PhpUnitTestCase
+{
+    public function testEveryProviderOffersUniqueNonEmptyModelsAndADisplayName(): void
+    {
+        foreach (Provider::cases() as $provider) {
+            $models = $provider->models();
+            self::assertNotSame([], $models, $provider->value);
+            self::assertSame($models, array_values(array_unique($models)), $provider->value);
+            self::assertSame($models, array_filter($models, static fn (string $model): bool => '' !== trim($model)), $provider->value);
+            self::assertNotSame('', $provider->displayName());
+        }
+    }
+}

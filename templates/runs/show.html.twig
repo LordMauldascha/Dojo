@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Run {{ run.title }}{% endblock %}
+
+{% block body %}
+    {% set latest = run.latestVersion %}
+    <h1>Run {{ run.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_runs', {uuid: run.project.uuid}) }}">Back to runs of project {{ run.project.title }}</a></p>
+
+    <h2>Details</h2>
+    {{ form(form) }}
+
+    <h2>LLM configurations</h2>
+    {% if run.configurations %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Provider / model / effort</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for configuration in run.configurations %}
+                    <tr>
+                        <td>{{ configuration.label }}</td>
+                        <td>
+                            <form method="post" action="{{ path('app_run_configuration_remove', {uuid: run.uuid, index: loop.index0}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('remove-run-configuration-' ~ run.uuid ~ '-' ~ loop.index0) }}">
+                                <button type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No configurations yet.</p>
+    {% endif %}
+    {{ form(configurationForm) }}
+
+    <h2>Skills</h2>
+    {% if hasSkills %}
+        {{ form(skillsForm) }}
+    {% else %}
+        <p>The project has no skills.</p>
+    {% endif %}
+
+    <h2>Testcases</h2>
+    {% if hasTestcases %}
+        {{ form(testcasesForm) }}
+    {% else %}
+        <p>The project has no testcases.</p>
+    {% endif %}
+
+    <h2>Start</h2>
+    <p>Starting creates a new version of this run. No LLM is called yet. A run needs at least one testcase and one configuration.</p>
+    <form method="post" action="{{ path('app_run_start', {uuid: run.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('start-run-' ~ run.uuid) }}">
+        <button type="submit">Start</button>
+    </form>
+
+    <h2>Versions</h2>
+    {% if run.versions|length %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for version in run.versions|reverse %}
+                    <tr>
+                        <td>{{ version.number }}</td>
+                        <td>{{ version.createdAt|date }}</td>
+                        <td><a href="{{ path('app_run_version', {uuid: run.uuid, number: version.number}) }}">View</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if run.versions|length > 1 %}
+            <p><a href="{{ path('app_run_compare', {uuid: run.uuid}) }}">Compare versions</a></p>
+        {% endif %}
+    {% else %}
+        <p>Not started yet.</p>
+    {% endif %}
+
+    {% if canDelete %}
+        <h2>Delete run</h2>
+        <p><a href="{{ path('app_run_delete', {uuid: run.uuid}) }}">Delete</a></p>
+    {% endif %}
+{% endblock %}

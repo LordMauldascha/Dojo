@@ -14,6 +14,7 @@ use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\ProjectRepository;
 use App\Repository\TestcaseRepository;
+use App\Run\RunAssignmentPruner;
 use App\Security\UserRole;
 use App\Security\Voter\TestcaseVoter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -123,6 +124,7 @@ final class TestcaseController extends AbstractController
         #[MapEntity(expr: self::FIND_TESTCASE)] Testcase $testcase,
         Request $request,
         ProjectRepository $projects,
+        RunAssignmentPruner $pruner,
         EntityManagerInterface $entityManager,
     ): Response {
         $form = $this->createProjectForm($testcase, $projects->findAccessibleBy($this->currentUser()));
@@ -137,6 +139,7 @@ final class TestcaseController extends AbstractController
 
         $testcase->moveToProject($project instanceof Project ? $project : null);
         $entityManager->flush();
+        $pruner->pruneTestcase($testcase);
         $this->addFlash('success', 'Project saved.');
 
         return $this->redirectToRoute('app_testcase_show', ['uuid' => $testcase->getUuid()]);
@@ -200,6 +203,7 @@ final class TestcaseController extends AbstractController
     public function delete(
         #[MapEntity(expr: self::FIND_TESTCASE)] Testcase $testcase,
         Request $request,
+        RunAssignmentPruner $pruner,
         EntityManagerInterface $entityManager,
     ): Response {
         if ($request->isMethod('POST')) {
@@ -208,6 +212,7 @@ final class TestcaseController extends AbstractController
             $title = $testcase->getActiveVersion()->getTitle();
             $testcase->softDelete();
             $entityManager->flush();
+            $pruner->pruneTestcase($testcase);
             $this->addFlash('success', \sprintf('Testcase "%s" deleted.', $title));
 
             return $this->redirectToRoute('app_testcases');

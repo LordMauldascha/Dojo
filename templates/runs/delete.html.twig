@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Delete run{% endblock %}
+
+{% block body %}
+    <h1>Delete run {{ run.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p>The run and its {{ run.versions|length }} version(s) are deleted for good. Skills and testcases are kept.</p>
+
+    <form method="post" action="{{ path('app_run_delete', {uuid: run.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete-run-' ~ run.uuid) }}">
+        <button type="submit">Delete permanently</button>
+    </form>
+    <p><a href="{{ path('app_run_show', {uuid: run.uuid}) }}">Cancel</a></p>
+{% endblock %}

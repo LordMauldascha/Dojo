@@ -1,0 +1,105 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Compare versions of {{ run.title }}{% endblock %}
+
+{% block body %}
+    <h1>Compare versions of run {{ run.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_run_show', {uuid: run.uuid}) }}">Back to run</a></p>
+
+    {% if run.versions|length < 2 %}
+        <p>At least two versions are needed to compare.</p>
+    {% else %}
+        <form method="get" action="{{ path('app_run_compare', {uuid: run.uuid}) }}">
+            <label>From
+                <select name="from">
+                    {% for version in run.versions %}
+                        <option value="{{ version.number }}"{{ from and version.number == from.number ? ' selected' }}>{{ version.number }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>To
+                <select name="to">
+                    {% for version in run.versions %}
+                        <option value="{{ version.number }}"{{ to and version.number == to.number ? ' selected' }}>{{ version.number }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit">Compare</button>
+        </form>
+
+        {% if diff is null %}
+            <p>Select two versions.</p>
+        {% elseif diff.empty %}
+            <p>No differences between version {{ from.number }} and version {{ to.number }}.</p>
+        {% else %}
+            <h2>Differences from version {{ from.number }} to version {{ to.number }}</h2>
+
+            {% if diff.fields %}
+                <h3>Fields</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Before</th>
+                            <th>After</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for name, change in diff.fields %}
+                            <tr>
+                                <td>{{ name }}</td>
+                                <td>{{ change.from ?? '–' }}</td>
+                                <td>{{ change.to ?? '–' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+            {% if diff.configurationsAdded or diff.configurationsRemoved %}
+                <h3>LLM configurations</h3>
+                <ul>
+                    {% for configuration in diff.configurationsAdded %}
+                        <li>Added: {{ configuration.label }}</li>
+                    {% endfor %}
+                    {% for configuration in diff.configurationsRemoved %}
+                        <li>Removed: {{ configuration.label }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if diff.skillsAdded or diff.skillsRemoved or diff.skillsChanged %}
+                <h3>Skills</h3>
+                <ul>
+                    {% for version in diff.skillsAdded %}
+                        <li>Added: {{ version.title }} (version {{ version.number }})</li>
+                    {% endfor %}
+                    {% for version in diff.skillsRemoved %}
+                        <li>Removed: {{ version.title }} (version {{ version.number }}){{ version.skill.deleted ? ' (deleted)' }}</li>
+                    {% endfor %}
+                    {% for change in diff.skillsChanged %}
+                        <li>Changed: {{ change.to.title }} from version {{ change.from.number }} to version {{ change.to.number }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if diff.testcasesAdded or diff.testcasesRemoved or diff.testcasesChanged %}
+                <h3>Testcases</h3>
+                <ul>
+                    {% for version in diff.testcasesAdded %}
+                        <li>Added: {{ version.title }} (version {{ version.number }})</li>
+                    {% endfor %}
+                    {% for version in diff.testcasesRemoved %}
+                        <li>Removed: {{ version.title }} (version {{ version.number }}){{ version.testcase.deleted ? ' (deleted)' }}</li>
+                    {% endfor %}
+                    {% for change in diff.testcasesChanged %}
+                        <li>Changed: {{ change.to.title }} from version {{ change.from.number }} to version {{ change.to.number }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

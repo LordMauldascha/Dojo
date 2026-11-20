@@ -86,6 +86,23 @@ final class TestcaseRepository extends ServiceEntityRepository
         return 0 < (int) $queryBuilder->getQuery()->getSingleScalarResult();
     }
 
+    /** @return list<Testcase> */
+    public function findByProject(Project $project): array
+    {
+        /** @var list<Testcase> $testcases */
+        $testcases = $this->createQueryBuilder('t')
+            ->addSelect('v')
+            ->join('t.activeVersion', 'v')
+            ->where('t.project = :project')
+            ->andWhere('t.deletedAt IS NULL')
+            ->setParameter('project', $project)
+            ->orderBy('v.title', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $testcases;
+    }
+
     public function countByProject(Project $project): int
     {
         return (int) $this->createQueryBuilder('t')

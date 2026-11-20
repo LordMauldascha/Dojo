@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Run {{ version.title }} – version {{ version.number }}{% endblock %}
+
+{% block body %}
+    <h1>{{ version.title }} – version {{ version.number }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_run_show', {uuid: run.uuid}) }}">Back to run</a></p>
+
+    <p>Created: {{ version.createdAt|date }}</p>
+
+    <h2>Description</h2>
+    <p>{{ version.description ?? 'No description.' }}</p>
+
+    <h2>LLM configurations</h2>
+    <ul>
+        {% for configuration in version.configurations %}
+            <li>{{ configuration.label }}</li>
+        {% else %}
+            <li>None.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Skills</h2>
+    <ul>
+        {% for skillVersion in version.skillVersions %}
+            <li>{{ skillVersion.title }} (version {{ skillVersion.number }}){{ skillVersion.skill.deleted ? ' (deleted)' }}</li>
+        {% else %}
+            <li>None.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Testcases</h2>
+    <ul>
+        {% for testcaseVersion in version.testcaseVersions %}
+            <li>{{ testcaseVersion.title }} (version {{ testcaseVersion.number }}){{ testcaseVersion.testcase.deleted ? ' (deleted)' }}</li>
+        {% else %}
+            <li>None.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

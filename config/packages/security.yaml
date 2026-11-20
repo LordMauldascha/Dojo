@@ -45,6 +45,7 @@ security:
         - { path: ^/projects, roles: ROLE_USER }
         - { path: ^/skills, roles: ROLE_USER }
         - { path: ^/testcases, roles: ROLE_USER }
+        - { path: ^/runs, roles: ROLE_USER }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 

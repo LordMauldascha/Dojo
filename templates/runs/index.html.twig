@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% import '_list/macros.html.twig' as list %}
+
+{% block title %}Runs of {{ project.title }}{% endblock %}
+
+{% block body %}
+    <h1>Runs of project {{ project.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">Back to project</a></p>
+    <p><a href="{{ path('app_run_new', {uuid: project.uuid}) }}">New run</a></p>
+
+    {{ include('_list/controls.html.twig', {route: 'app_runs', routeParams: {uuid: project.uuid}, query: query, page: page}) }}
+
+    {% if page.items %}
+        <table>
+            <thead>
+                <tr>
+                    {{ list.sort_header('app_runs', {uuid: project.uuid}, query, page, 'title', 'Title') }}
+                    <th>Description</th>
+                    {{ list.sort_header('app_runs', {uuid: project.uuid}, query, page, 'skills', 'Skills') }}
+                    {{ list.sort_header('app_runs', {uuid: project.uuid}, query, page, 'testcases', 'Testcases') }}
+                    {{ list.sort_header('app_runs', {uuid: project.uuid}, query, page, 'updatedAt', 'Updated') }}
+                    {{ list.sort_header('app_runs', {uuid: project.uuid}, query, page, 'createdAt', 'Created') }}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in page.items %}
+                    {% set run = row[0] %}
+                    {% set description = run.description ?? '' %}
+                    <tr>
+                        <td><a href="{{ path('app_run_show', {uuid: run.uuid}) }}">{{ run.title }}</a></td>
+                        <td>{{ description|slice(0, 100) }}{{ description|length > 100 ? '…' }}</td>
+                        <td>{{ row.skillCount }}</td>
+                        <td>{{ row.testcaseCount }}</td>
+                        <td>{{ run.updatedAt|date }}</td>
+                        <td>{{ run.createdAt|date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {{ list.pagination('app_runs', {uuid: project.uuid}, query, page) }}
+    {% else %}
+        <p>{{ query.q ? 'No runs found.' : 'No runs yet.' }}</p>
+    {% endif %}
+{% endblock %}

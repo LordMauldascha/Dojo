@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Project;
+use App\Entity\Run;
 use App\Entity\Skill;
 use App\Entity\User;
 use App\Pagination\ListQuery;
@@ -124,6 +125,42 @@ final class SkillRepository extends ServiceEntityRepository
             ->getResult();
 
         return $skills;
+    }
+
+    /**
+     * Number of runs per skill id; non-admins only count runs of projects they can access.
+     *
+     * @param list<mixed> $skills
+     *
+     * @return array<int, int>
+     */
+    public function runCounts(array $skills, User $viewer): array
+    {
+        if ([] === $skills) {
+            return [];
+        }
+
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder()
+            ->select('s.id AS skillId', 'COUNT(r.id) AS runCount')
+            ->from(Run::class, 'r')
+            ->join('r.skills', 's')
+            ->where('s IN (:skills)')
+            ->setParameter('skills', $skills)
+            ->groupBy('s.id');
+        if (UserRole::Admin !== $viewer->getRole()) {
+            $queryBuilder
+                ->andWhere(\sprintf('IDENTITY(r.project) IN (%s)', $this->projects->accessibleProjectIdsDql()))
+                ->setParameter('accessUser', $viewer);
+        }
+
+        $counts = [];
+        /** @var list<array{skillId: int, runCount: int|string}> $rows */
+        $rows = $queryBuilder->getQuery()->getArrayResult();
+        foreach ($rows as $row) {
+            $counts[$row['skillId']] = (int) $row['runCount'];
+        }
+
+        return $counts;
     }
 
     /** @param list<mixed> $skills */

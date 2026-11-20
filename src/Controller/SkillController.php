@@ -14,6 +14,7 @@ use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\ProjectRepository;
 use App\Repository\SkillRepository;
+use App\Run\RunAssignmentPruner;
 use App\Security\UserRole;
 use App\Security\Voter\SkillVoter;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -49,8 +50,11 @@ final class SkillController extends AbstractController
         $viewer = $this->currentUser();
         $accessible = $projects->findAccessibleBy($viewer);
 
+        $page = $skills->paginate($query, $pageSizes->resolve(self::LIST_KEY, $query->perPage), $viewer);
+
         return $this->render('skills/index.html.twig', [
-            'page' => $skills->paginate($query, $pageSizes->resolve(self::LIST_KEY, $query->perPage), $viewer),
+            'page' => $page,
+            'runCounts' => $skills->runCounts($page->items, $viewer),
             'query' => $query,
             'projectChoices' => $accessible,
             'visibleProjectIds' => array_map(static fn (Project $project): ?int => $project->getId(), $accessible),
@@ -125,6 +129,7 @@ final class SkillController extends AbstractController
         #[MapEntity(expr: self::FIND_SKILL)] Skill $skill,
         Request $request,
         ProjectRepository $projects,
+        RunAssignmentPruner $pruner,
         EntityManagerInterface $entityManager,
     ): Response {
         $user = $this->currentUser();
@@ -150,6 +155,7 @@ final class SkillController extends AbstractController
             \in_array($project, $chosen, true) ? $skill->addProject($project) : $skill->removeProject($project);
         }
         $entityManager->flush();
+        $pruner->pruneSkill($skill);
         $this->addFlash('success', 'Projects saved.');
 
         if (!$this->isGranted(SkillVoter::VIEW, $skill)) {
@@ -219,6 +225,7 @@ final class SkillController extends AbstractController
     public function delete(
         #[MapEntity(expr: self::FIND_SKILL)] Skill $skill,
         Request $request,
+        RunAssignmentPruner $pruner,
         EntityManagerInterface $entityManager,
     ): Response {
         if ($request->isMethod('POST')) {
@@ -227,6 +234,7 @@ final class SkillController extends AbstractController
             $title = $skill->getActiveVersion()->getTitle();
             $skill->softDelete();
             $entityManager->flush();
+            $pruner->pruneSkill($skill);
             $this->addFlash('success', \sprintf('Skill "%s" deleted.', $title));
 
             return $this->redirectToRoute('app_skills');
