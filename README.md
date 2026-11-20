@@ -30,3 +30,7 @@ git config core.hooksPath .githooks
 The app is available at http://localhost:8000.
 
 For frontend development run `npm run watch` instead of `npm run build`.
+
+## Documentation
+
+- [Features](docs/Features.md): what the app does, one page per feature in `docs/features/`.
