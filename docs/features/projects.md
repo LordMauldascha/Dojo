@@ -5,7 +5,7 @@ limited (for example software development, IT security, data protection).
 
 ## Data
 
-- **Title**: required, at most 255 characters, unique.
+- **Title**: required, at most 255 characters, unique regardless of letter case (`Security` and `security` are the same title).
 - **Description**: optional, at most 5000 characters.
 - **Groups** and **users** with access (see below).
 - **Skills** assigned to the project, **testcases** belonging to it, and its **runs**.

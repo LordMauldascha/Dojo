@@ -59,6 +59,29 @@ final class ProjectManagementTest extends WebTestCase
         self::assertCount(1, $this->entityManager->getRepository(Project::class)->findAll());
     }
 
+    public function testTitlesAreUniqueIgnoringCase(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $project = $this->persistProject('Security');
+        $other = $this->persistProject('Data protection');
+
+        $crawler = $this->client->request('GET', '/projects/new');
+        $this->client->submit($crawler->selectButton('Save')->form(['project[title]' => 'SECURITY']));
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', 'This project title is already taken.');
+        self::assertCount(2, $this->entityManager->getRepository(Project::class)->findAll());
+
+        $crawler = $this->client->request('GET', '/projects/'.$other->getUuid());
+        $this->client->submit($crawler->selectButton('Save')->form(['project[title]' => 'security']));
+        self::assertResponseStatusCodeSame(422);
+
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        $this->client->submit($crawler->selectButton('Save')->form(['project[title]' => 'SECURITY']));
+        self::assertResponseRedirects('/projects/'.$project->getUuid());
+        $this->entityManager->clear();
+        self::assertSame('SECURITY', $this->findProject('SECURITY')->getTitle());
+    }
+
     public function testAdminEditsProjectAndManagesGroupsAndUsers(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));

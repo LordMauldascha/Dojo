@@ -40,6 +40,7 @@ to projects they have access to.
 ## Conventions
 
 - URLs of groups, projects, skills, testcases and runs contain a random `uuid`, not the database id.
+- A form is submitted only once per page view: a double click or a second Enter press is ignored.
 - Dates are shown as `DD.MM.YYYY HH:MM` in the Europe/Vienna time zone.
 - Skills and testcases are never hard-deleted by users. Deleting hides them, their history stays.
 - No personal data belongs into skills, testcases, run descriptions or any other free text: prompts are meant to be sent

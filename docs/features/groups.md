@@ -5,7 +5,7 @@ once. Only admins see and manage groups.
 
 ## Data
 
-- **Title**: required, at most 100 characters, unique.
+- **Title**: required, at most 100 characters, unique regardless of letter case (`Team` and `team` are the same title).
 - **Users**: any number of users of any role. Admins can be members too; the admin role always overrides what a group
   would grant.
 - Created and last updated time.

@@ -110,6 +110,22 @@ final class SkillManagementTest extends WebTestCase
         self::assertCount(3, $skill->getVersions());
     }
 
+    public function testEnterInTheTitleFieldCannotSubmitTheFormImplicitly(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin);
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+
+        $form = $crawler->filter('#skill_content_title')->closest('form');
+        self::assertInstanceOf(Crawler::class, $form);
+        $buttons = $form->filter('button[type="submit"]');
+        self::assertNotNull($buttons->first()->attr('disabled'), 'the default button must be disabled so Enter submits nothing');
+        $enabled = $buttons->reduce(static fn (Crawler $button): bool => null === $button->attr('disabled'));
+        self::assertSame(['Save as draft', 'Save as final'], $enabled->each(static fn (Crawler $button): string => trim($button->text())));
+    }
+
     public function testRestoreIsRefusedWhileADraftExists(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);

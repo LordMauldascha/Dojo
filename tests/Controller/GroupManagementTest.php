@@ -52,6 +52,28 @@ final class GroupManagementTest extends WebTestCase
         self::assertCount(1, $this->entityManager->getRepository(Group::class)->findAll());
     }
 
+    public function testTitlesAreUniqueIgnoringCase(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $group = $this->persistGroup('Entwicklung');
+        $other = $this->persistGroup('Betrieb');
+
+        $this->submitNewGroup('ENTWICKLUNG');
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', 'This group title is already taken.');
+        self::assertCount(2, $this->entityManager->getRepository(Group::class)->findAll());
+
+        $crawler = $this->client->request('GET', '/admin/groups/'.$other->getUuid());
+        $this->client->submit($crawler->selectButton('Save')->form(['group[title]' => 'entwicklung']));
+        self::assertResponseStatusCodeSame(422);
+
+        $crawler = $this->client->request('GET', '/admin/groups/'.$group->getUuid());
+        $this->client->submit($crawler->selectButton('Save')->form(['group[title]' => 'ENTWICKLUNG']));
+        self::assertResponseRedirects('/admin/groups/'.$group->getUuid());
+        $this->entityManager->clear();
+        self::assertSame('ENTWICKLUNG', $this->findGroup('ENTWICKLUNG')->getTitle());
+    }
+
     public function testAdminRenamesGroupAndManagesMembers(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));

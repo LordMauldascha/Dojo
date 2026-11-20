@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 #[ORM\Table(name: 'project')]
-#[UniqueEntity(fields: ['title'], message: 'This project title is already taken.')]
+#[UniqueEntity(fields: ['titleKey'], errorPath: 'title', message: 'This project title is already taken.')]
 class Project
 {
     #[ORM\Id]
@@ -27,10 +27,14 @@ class Project
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     private Uuid $uuid;
 
-    #[ORM\Column(length: 255, unique: true)]
+    #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
     private string $title = '';
+
+    /** Lower-cased title, unique, so titles differ by more than their letter case. */
+    #[ORM\Column(length: 512, unique: true)]
+    private string $titleKey = '';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 5000)]
@@ -84,8 +88,14 @@ class Project
         $title = trim($title ?? '');
         if ($title !== $this->title) {
             $this->title = $title;
+            $this->titleKey = mb_strtolower($title);
             $this->touch();
         }
+    }
+
+    public function getTitleKey(): string
+    {
+        return $this->titleKey;
     }
 
     public function getDescription(): ?string

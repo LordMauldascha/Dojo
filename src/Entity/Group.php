@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GroupRepository::class)]
 #[ORM\Table(name: 'app_group')]
-#[UniqueEntity(fields: ['title'], message: 'This group title is already taken.')]
+#[UniqueEntity(fields: ['titleKey'], errorPath: 'title', message: 'This group title is already taken.')]
 class Group
 {
     #[ORM\Id]
@@ -26,10 +26,14 @@ class Group
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     private Uuid $uuid;
 
-    #[ORM\Column(length: 100, unique: true)]
+    #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
     private string $title = '';
+
+    /** Lower-cased title, unique, so titles differ by more than their letter case. */
+    #[ORM\Column(length: 512, unique: true)]
+    private string $titleKey = '';
 
     /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class)]
@@ -71,8 +75,14 @@ class Group
         $title = trim($title ?? '');
         if ($title !== $this->title) {
             $this->title = $title;
+            $this->titleKey = mb_strtolower($title);
             $this->touch();
         }
+    }
+
+    public function getTitleKey(): string
+    {
+        return $this->titleKey;
     }
 
     /** @return Collection<int, User> */

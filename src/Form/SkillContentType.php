@@ -32,6 +32,8 @@ final class SkillContentType extends AbstractType
 
         if (null === $options['projects']) {
             $builder
+                // A disabled first submit button turns Enter in a text field into a no-op (implicit submission).
+                ->add('noImplicitSubmit', SubmitType::class, ['label' => false, 'disabled' => true, 'attr' => ['hidden' => true, 'tabindex' => -1], 'row_attr' => ['hidden' => true]])
                 ->add('saveDraft', SubmitType::class, ['label' => 'Save as draft'])
                 ->add('saveFinal', SubmitType::class, ['label' => 'Save as final']);
 

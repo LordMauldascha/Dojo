@@ -35,7 +35,8 @@ safely.
 
 ## In the interface
 
-The detail page has two buttons, *Save as draft* and *Save as final*, plus *Discard draft* when a draft exists. The edit
+The detail page has two buttons, *Save as draft* and *Save as final*, plus *Discard draft* when a draft exists. Pressing
+Enter in a text field submits nothing, so a version is only ever saved with one of the two buttons. The edit
 form always starts from the draft if there is one, else from the active version. The version history lists every version
 with its status (`active`, `draft`), a *View* link and a *Restore* button where restore is allowed.
 

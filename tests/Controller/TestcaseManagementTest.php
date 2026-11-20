@@ -144,6 +144,22 @@ final class TestcaseManagementTest extends WebTestCase
         self::assertCount(1, $this->findTestcase('Greeting')->getVersions());
     }
 
+    public function testEnterInTheTitleFieldCannotSubmitTheFormImplicitly(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $testcase = $this->persistTestcase('Greeting', null, $admin);
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+
+        $form = $crawler->filter('#testcase_content_title')->closest('form');
+        self::assertInstanceOf(Crawler::class, $form);
+        $buttons = $form->filter('button[type="submit"]');
+        self::assertNotNull($buttons->first()->attr('disabled'), 'the default button must be disabled so Enter submits nothing');
+        $enabled = $buttons->reduce(static fn (Crawler $button): bool => null === $button->attr('disabled'));
+        self::assertSame(['Save as draft', 'Save as final'], $enabled->each(static fn (Crawler $button): string => trim($button->text())));
+    }
+
     public function testRestoreIsRefusedWhileADraftExists(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
