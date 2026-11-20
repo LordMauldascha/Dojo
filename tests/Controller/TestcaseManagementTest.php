@@ -4,30 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Entity\Group;
-use App\Entity\Project;
 use App\Entity\Testcase;
 use App\Entity\User;
+use App\Form\Help;
 use App\Security\UserRole;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\AppWebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class TestcaseManagementTest extends WebTestCase
+final class TestcaseManagementTest extends AppWebTestCase
 {
-    private KernelBrowser $client;
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        foreach ([Testcase::class, Project::class, Group::class, User::class] as $class) {
-            $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
-        }
-    }
-
     public function testAdminCreatesTestcaseWithoutProject(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
@@ -351,7 +336,7 @@ final class TestcaseManagementTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $this->client->request('POST', '/testcases/'.$mine->getUuid().'/delete', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->selectButton('Delete')->form());
         self::assertResponseRedirects('/testcases');
         $this->entityManager->clear();
         self::assertTrue($this->findTestcase('Mine')->isDeleted());
@@ -359,7 +344,7 @@ final class TestcaseManagementTest extends WebTestCase
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
         $crawler = $this->client->request('GET', '/testcases/'.$adminDeletes->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->selectButton('Delete')->form());
         self::assertResponseRedirects('/testcases');
         self::assertSame([], $this->titles($this->client->request('GET', '/testcases')));
     }
@@ -443,29 +428,41 @@ final class TestcaseManagementTest extends WebTestCase
         self::assertStringContainsString('project='.$own->getUuid(), (string) $href);
     }
 
-    /** @return list<string> */
-    private function titles(Crawler $crawler): array
+    public function testPromptAndExpectedOutputAreStoredExactlyAsTyped(): void
     {
-        self::assertResponseIsSuccessful();
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $testcase = $this->persistTestcase('Greeting', null, $admin);
+        $this->client->loginUser($admin);
 
-        return $crawler->filter('tbody tr td:first-child')->each(static fn (Crawler $cell): string => trim($cell->text()));
+        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+        $this->submit($crawler, 'Save as final', 'testcase_content', ['prompt' => "  indented prompt\n", 'expectedOutput' => "Done.\n"]);
+
+        $this->entityManager->clear();
+        $active = $this->findTestcase('Greeting')->getActiveVersion();
+        self::assertSame("  indented prompt\n", $active->getPrompt());
+        self::assertSame("Done.\n", $active->getExpectedOutput());
     }
 
-    private function tokenOf(Crawler $crawler, string $formSelector): ?string
+    public function testBlankFieldsAndNullBytesAreRejected(): void
     {
-        $form = $crawler->filter($formSelector);
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $testcase = $this->persistTestcase('Greeting', null, $admin);
+        $this->client->loginUser($admin);
 
-        return 0 === $form->count() ? null : $form->filter('input[name="_token"]')->attr('value');
+        foreach ([['prompt' => " \n "], ['expectedOutput' => "a\0b"], ['title' => "a\0b"]] as $overrides) {
+            $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+            $this->submit($crawler, 'Save as draft', 'testcase_content', $overrides);
+            self::assertResponseStatusCodeSame(422, (string) json_encode($overrides));
+        }
     }
 
-    /** @param array<string, mixed> $overrides */
-    private function submit(Crawler $crawler, string $button, string $formName, array $overrides): void
+    public function testFreeTextFieldsRemindAboutPersonalData(): void
     {
-        $form = $crawler->selectButton($button)->form();
-        /** @var array<string, array<string, mixed>> $values */
-        $values = $form->getPhpValues();
-        $values[$formName] = array_replace($values[$formName], $overrides);
-        $this->client->request($form->getMethod(), $form->getUri(), $values);
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+
+        $crawler = $this->client->request('GET', '/testcases/new');
+
+        self::assertSame(3, substr_count($crawler->filter('body')->text(), Help::NO_PERSONAL_DATA));
     }
 
     private function findTestcase(string $title): Testcase
@@ -476,50 +473,5 @@ final class TestcaseManagementTest extends WebTestCase
             }
         }
         self::fail('Testcase not found: '.$title);
-    }
-
-    private function persistTestcase(string $title, ?Project $project, ?User $creator = null, string $prompt = 'prompt', string $expectedOutput = 'output', ?string $description = null): Testcase
-    {
-        $testcase = new Testcase($title, $description, $prompt, $expectedOutput, $project, $creator);
-        $this->entityManager->persist($testcase);
-        $this->entityManager->flush();
-
-        return $testcase;
-    }
-
-    /** @param list<User> $users */
-    private function persistProject(string $title, array $users = []): Project
-    {
-        $project = new Project();
-        $project->setTitle($title);
-        foreach ($users as $user) {
-            $project->addUser($user);
-        }
-        $this->entityManager->persist($project);
-        $this->entityManager->flush();
-
-        return $project;
-    }
-
-    private function persistGroup(string $title): Group
-    {
-        $group = new Group();
-        $group->setTitle($title);
-        $this->entityManager->persist($group);
-        $this->entityManager->flush();
-
-        return $group;
-    }
-
-    private function persistUser(string $username, UserRole $role = UserRole::User): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setRole($role);
-        $user->setPassword('unused-in-these-tests');
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $user;
     }
 }

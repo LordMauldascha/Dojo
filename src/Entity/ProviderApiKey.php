@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Ai\Provider;
+use App\Repository\ProviderApiKeyRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: ProviderApiKeyRepository::class)]
 #[ORM\Table(name: 'provider_api_key')]
 class ProviderApiKey
 {
@@ -17,23 +18,17 @@ class ProviderApiKey
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::TEXT)]
-    private string $encryptedKey;
-
-    #[ORM\Column(length: 4)]
-    private string $lastFour;
-
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
     public function __construct(
         #[ORM\Column(length: 32, unique: true, enumType: Provider::class)]
         private Provider $provider,
-        string $encryptedKey,
-        string $lastFour,
+        #[ORM\Column(type: Types::TEXT)]
+        private string $encryptedKey,
+        #[ORM\Column(length: 4)]
+        private string $lastFour,
     ) {
-        $this->encryptedKey = $encryptedKey;
-        $this->lastFour = $lastFour;
         $this->updatedAt = new \DateTimeImmutable();
     }
 

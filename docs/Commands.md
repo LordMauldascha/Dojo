@@ -20,7 +20,7 @@ bin/console app:user:create <username> [--admin]
 
 | Argument / option | Description |
 | --- | --- |
-| `username` | 3 to 64 characters: `a-z`, `0-9`, `.`, `_`, `-`. Must be unique. |
+| `username` | 3 to 64 characters: `a-z`, `0-9`, `.`, `_`, `-`. Must be unique. The password asked afterwards needs at least 12 characters. |
 | `--admin` | Create the user with `ROLE_ADMIN` instead of `ROLE_USER` |
 
 There is no built-in admin account. Create the first admin with this command after deploying to a fresh database:

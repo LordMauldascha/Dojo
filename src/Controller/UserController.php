@@ -6,19 +6,21 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\UserCreateType;
+use App\Routing\Requirements;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_ADMIN')]
 final class UserController extends AbstractController
 {
-    use CsrfGuardTrait;
-
     #[Route('/admin/users', name: 'app_admin_users', methods: ['GET', 'POST'])]
     public function index(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher): Response
     {
@@ -43,13 +45,13 @@ final class UserController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/users/{id}/toggle', name: 'app_admin_user_toggle', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function toggle(User $user, Request $request, EntityManagerInterface $entityManager): Response
+    #[Route('/admin/users/{id}/toggle', name: 'app_admin_user_toggle', requirements: ['id' => Requirements::ID], methods: ['POST'])]
+    #[IsCsrfTokenValid(new Expression('"toggle-user-" ~ args["user"].getId()'), methods: 'POST')]
+    public function toggle(User $user, #[CurrentUser] User $current, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCurrentUser($user)) {
+        if ($current->getId() === $user->getId()) {
             return $this->rejectSelfAction();
         }
-        $this->denyUnlessValidToken('toggle-user-'.$user->getId(), $request);
 
         $user->setEnabled(!$user->isEnabled());
         $entityManager->flush();
@@ -58,13 +60,13 @@ final class UserController extends AbstractController
         return $this->redirectToRoute('app_admin_users');
     }
 
-    #[Route('/admin/users/{id}/delete', name: 'app_admin_user_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function delete(User $user, Request $request, EntityManagerInterface $entityManager): Response
+    #[Route('/admin/users/{id}/delete', name: 'app_admin_user_delete', requirements: ['id' => Requirements::ID], methods: ['POST'])]
+    #[IsCsrfTokenValid(new Expression('"delete-user-" ~ args["user"].getId()'), methods: 'POST')]
+    public function delete(User $user, #[CurrentUser] User $current, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCurrentUser($user)) {
+        if ($current->getId() === $user->getId()) {
             return $this->rejectSelfAction();
         }
-        $this->denyUnlessValidToken('delete-user-'.$user->getId(), $request);
 
         $username = $user->getUserIdentifier();
         $entityManager->remove($user);
@@ -72,11 +74,6 @@ final class UserController extends AbstractController
         $this->addFlash('success', \sprintf('User "%s" deleted.', $username));
 
         return $this->redirectToRoute('app_admin_users');
-    }
-
-    private function isCurrentUser(User $user): bool
-    {
-        return $this->getUser()?->getUserIdentifier() === $user->getUserIdentifier();
     }
 
     private function rejectSelfAction(): Response

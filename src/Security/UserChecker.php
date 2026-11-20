@@ -14,12 +14,13 @@ final class UserChecker implements UserCheckerInterface
 {
     public function checkPreAuth(UserInterface $user): void
     {
+    }
+
+    /** Checked after the credentials, so an unauthenticated visitor cannot learn which accounts are disabled. */
+    public function checkPostAuth(UserInterface $user, ?TokenInterface $token = null): void
+    {
         if ($user instanceof User && !$user->isEnabled()) {
             throw new CustomUserMessageAccountStatusException('This account is disabled.');
         }
-    }
-
-    public function checkPostAuth(UserInterface $user, ?TokenInterface $token = null): void
-    {
     }
 }

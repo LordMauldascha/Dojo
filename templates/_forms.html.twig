@@ -1,0 +1,7 @@
+{# A button that sends a POST request protected by a CSRF token (the token id must match the controller attribute). #}
+{% macro post(action, tokenId, label) %}
+    <form method="post" action="{{ action }}">
+        <input type="hidden" name="_token" value="{{ csrf_token(tokenId) }}">
+        <button type="submit">{{ label }}</button>
+    </form>
+{% endmacro %}

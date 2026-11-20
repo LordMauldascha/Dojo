@@ -9,6 +9,7 @@ use App\Entity\Run;
 use App\Entity\Skill;
 use App\Entity\User;
 use App\Pagination\ListQuery;
+use App\Pagination\ListQueryApplier;
 use App\Pagination\Page;
 use App\Security\UserRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -42,23 +43,16 @@ final class SkillRepository extends ServiceEntityRepository
         $queryBuilder = $this->createQueryBuilder('s')->addSelect('v')->join('s.activeVersion', 'v');
         $this->applyAccessFilter($queryBuilder, 's', $viewer);
 
-        if ('' !== $query->q) {
-            $escaped = addcslashes(mb_strtolower($query->q), '%_\\');
-            $queryBuilder
-                ->andWhere('(LOWER(v.title) LIKE :q OR LOWER(v.description) LIKE :q)')
-                ->setParameter('q', '%'.$escaped.'%');
-        }
+        ListQueryApplier::search($queryBuilder, $query, ['v.title', 'v.description']);
 
         if (null !== $query->project && '' !== $query->project) {
-            $accessibleOnly = UserRole::Admin === $viewer->getRole() ? '' : ' AND fp.id IN ('.$this->projects->accessibleProjectIdsDql('f').')';
+            $accessibleOnly = $viewer->isAdmin() ? '' : ' AND fp.id IN ('.$this->projects->accessibleProjectIdsDql('f').')';
             $queryBuilder
                 ->andWhere('s.id IN (SELECT fs.id FROM '.Skill::class.' fs JOIN fs.projects fp WHERE fp.uuid = :filterProject'.$accessibleOnly.')')
                 ->setParameter('filterProject', Uuid::fromString($query->project), UuidType::NAME);
         }
 
-        $sortField = self::SORT_FIELDS[$query->sort ?? ''] ?? self::SORT_FIELDS['title'];
-        $direction = 'desc' === $query->dir ? 'DESC' : 'ASC';
-        $queryBuilder->orderBy($sortField, $direction)->addOrderBy('s.id', 'ASC');
+        ListQueryApplier::sort($queryBuilder, $query, self::SORT_FIELDS, 's.id');
 
         $page = Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
         $this->initializeProjects($page->items);
@@ -70,7 +64,7 @@ final class SkillRepository extends ServiceEntityRepository
     public function applyAccessFilter(QueryBuilder $queryBuilder, string $alias, User $user): void
     {
         $queryBuilder->andWhere($alias.'.deletedAt IS NULL');
-        if (UserRole::Admin === $user->getRole()) {
+        if ($user->isAdmin()) {
             return;
         }
 
@@ -104,6 +98,7 @@ final class SkillRepository extends ServiceEntityRepository
             ->andWhere('s.deletedAt IS NULL')
             ->setParameter('project', $project)
             ->orderBy('v.title', 'ASC')
+            ->addOrderBy('s.id', 'ASC')
             ->getQuery()
             ->getResult();
 
@@ -121,6 +116,7 @@ final class SkillRepository extends ServiceEntityRepository
             ->andWhere('s.id NOT IN (SELECT ps.id FROM '.Skill::class.' ps JOIN ps.projects pp WHERE pp = :project)')
             ->setParameter('project', $project)
             ->orderBy('v.title', 'ASC')
+            ->addOrderBy('s.id', 'ASC')
             ->getQuery()
             ->getResult();
 

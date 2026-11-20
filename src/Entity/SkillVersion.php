@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Versioning\VersionInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -11,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'skill_version')]
 #[ORM\UniqueConstraint(name: 'uniq_skill_version_number', columns: ['skill_id', 'number'])]
 #[ORM\UniqueConstraint(name: 'uniq_skill_one_draft', columns: ['skill_id'], options: ['where' => '(draft = true)'])]
-class SkillVersion
+class SkillVersion implements VersionInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

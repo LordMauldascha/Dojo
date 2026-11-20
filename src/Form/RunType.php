@@ -19,7 +19,7 @@ final class RunType extends AbstractType
     {
         $builder
             ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 255]])
-            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'attr' => ['maxlength' => 2000, 'rows' => 4]])
+            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 2000, 'rows' => 4]])
             ->add('save', SubmitType::class, ['label' => 'Save']);
     }
 

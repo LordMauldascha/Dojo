@@ -6,67 +6,18 @@ if (!Encore.isRuntimeEnvironmentConfigured()) {
     Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
 }
 
-Encore
-    // directory where compiled assets will be stored
-    .setOutputPath('public/build/')
-    // public path used by the web server to access the output path
+Encore.setOutputPath('public/build/')
     .setPublicPath('/build')
-    // only needed for CDN's or sub-directory deploy
-    //.setManifestKeyPrefix('build/')
-
-    /*
-     * ENTRY CONFIG
-     *
-     * Each entry will result in one JavaScript file (e.g. app.js)
-     * and one CSS file (e.g. app.css) if your JavaScript imports CSS.
-     */
+    // one script entry and one style entry
     .addEntry('scripts', './assets/js/app.ts')
     .addStyleEntry('styles', './assets/css/app.scss')
-
-    // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
     .splitEntryChunks()
-
-    // will require an extra script tag for runtime.js
-    // but, you probably want this, unless you're building a single-page app
     .enableSingleRuntimeChunk()
-
-    /*
-     * FEATURE CONFIG
-     *
-     * Enable & configure other features below. For a full
-     * list of features, see:
-     * https://symfony.com/doc/current/frontend.html#adding-more-features
-     */
     .cleanupOutputBeforeBuild()
-    // .enableBuildNotifications()
     .enableSourceMaps(!Encore.isProduction())
-    // enables hashed filenames (e.g. app.abc123.css)
+    // hashed filenames (e.g. app.abc123.css) in production
     .enableVersioning(Encore.isProduction())
-
-    .configureBabel((config) => {
-        config.plugins.push('@babel/plugin-transform-class-properties');
-    })
-
-    // configures @babel/preset-env
-    .configureBabelPresetEnv((config) => {
-        // ...
-    })
-
-    // enables Sass/SCSS support
     .enableSassLoader()
-
-    // uncomment if you use TypeScript
-    .enableTypeScriptLoader()
-
-    // uncomment if you use React
-    //.enableReactPreset()
-
-    // uncomment to get integrity="..." attributes on your script & link tags
-    // requires WebpackEncoreBundle 1.4 or higher
-    //.enableIntegrityHashes(Encore.isProduction())
-
-    // uncomment if you're having problems with a jQuery plugin
-    //.autoProvidejQuery()
-;
+    .enableTypeScriptLoader();
 
 export default await Encore.getWebpackConfig();

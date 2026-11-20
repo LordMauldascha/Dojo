@@ -14,9 +14,9 @@ The required Node version is in `.nvmrc` (`nvm use`).
 | `tsconfig.json`                       | TypeScript configuration (`include`: `assets/**/*`)                    |
 | `vitest.config.ts`                    | Vitest configuration (jsdom, tests in `assets/js/tests`)               |
 | `.prettierrc`                         | Prettier configuration (applies to `assets/` only, see below)          |
-| `assets/js/app.ts`                    | Script entry `scripts`: registers the components                       |
+| `assets/js/app.ts`                    | Script entry `scripts`: loads `@sulu/web`, guards against double submit |
 | `assets/css/app.scss`                 | Style entry `styles`                                                   |
-| `assets/js/components/`               | Components, one class per file                                         |
+| `assets/js/preventDoubleSubmit.ts`    | Blocks a second submit of the same form (double click)                 |
 | `assets/js/tests/`                    | Vitest tests (`*.test.ts`)                                             |
 | `assets/env.d.ts`                     | Type declarations for modules without types (`@sulu/web`)              |
 | `config/packages/webpack_encore.yaml` | Symfony bundle, output path `public/build`, `defer` on all script tags |
@@ -129,7 +129,7 @@ under `assets/`. See [AGENTS.md](../AGENTS.md) for how to enable the hook.
   with `export default await Encore.getWebpackConfig();`. `require()` does not work.
 - **TypeScript is limited to `^5 || ^6`** by the Encore peer dependency. Do not upgrade to a newer major until Encore
   supports it.
-- **Babel 8** with `@babel/preset-env`; `webpack.config.js` adds `@babel/plugin-transform-class-properties`.
+- **Babel 8** with `@babel/preset-env` (Encore defaults, no extra plugins).
 - `ts-loader` reports TypeScript errors as build errors. For modules without types add a declaration to
   `assets/env.d.ts` (`declare module 'package';`).
 

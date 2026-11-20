@@ -1,24 +1,21 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
+
+{% import '_forms.html.twig' as forms %}
 
 {% block title %}API Keys{% endblock %}
 
-{% block body %}
-    <h1>API Keys</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}API Keys{% endblock %}
 
+{% block content %}
     {% for row in rows %}
         <section>
             <h2>{{ row.provider.label }}</h2>
             {% if row.key %}
                 <p>
                     Stored: ••••{{ row.key.lastFour }}
-                    (changed on {{ row.key.updatedAt|date('d.m.Y H:i') }})
+                    (changed on {{ row.key.updatedAt|date }})
                 </p>
-                <form method="post" action="{{ path('app_admin_api_key_delete', {provider: row.provider.value}) }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete-api-key-' ~ row.provider.value) }}">
-                    <button type="submit">Delete</button>
-                </form>
+                {{ forms.post(path('app_admin_api_key_delete', {provider: row.provider.value}), 'delete-api-key-' ~ row.provider.value, 'Delete') }}
             {% else %}
                 <p>No key stored.</p>
             {% endif %}

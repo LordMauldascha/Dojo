@@ -1,0 +1,12 @@
+framework:
+    rate_limiter:
+        write:
+            policy: sliding_window
+            limit: 120
+            interval: '1 minute'
+
+when@test:
+    framework:
+        rate_limiter:
+            write:
+                limit: 1000000

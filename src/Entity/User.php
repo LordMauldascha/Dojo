@@ -71,6 +71,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
         return $this->role;
     }
 
+    public function isAdmin(): bool
+    {
+        return UserRole::Admin === $this->role;
+    }
+
     public function setRole(UserRole $role): void
     {
         $this->role = $role;

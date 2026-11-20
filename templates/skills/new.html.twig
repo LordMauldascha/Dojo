@@ -1,12 +1,10 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}New skill{% endblock %}
 
-{% block body %}
-    <h1>New skill</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}New skill{% endblock %}
 
+{% block content %}
     {% if not hasProjects %}
         <p>No project is available to assign.</p>
     {% endif %}

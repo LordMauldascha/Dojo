@@ -23,19 +23,17 @@ use Symfony\Component\Validator\Constraints\Count;
  */
 final class SkillContentType extends AbstractType
 {
+    use AddsVersionButtons;
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 255]])
-            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'attr' => ['maxlength' => 2000, 'rows' => 3]])
-            ->add('content', TextareaType::class, ['label' => 'SKILL.md', 'attr' => ['maxlength' => 100000, 'rows' => 20]]);
+            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 2000, 'rows' => 3]])
+            ->add('content', TextareaType::class, ['label' => 'SKILL.md', 'trim' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 100000, 'rows' => 20]]);
 
         if (null === $options['projects']) {
-            $builder
-                // A disabled first submit button turns Enter in a text field into a no-op (implicit submission).
-                ->add('noImplicitSubmit', SubmitType::class, ['label' => false, 'disabled' => true, 'attr' => ['hidden' => true, 'tabindex' => -1], 'row_attr' => ['hidden' => true]])
-                ->add('saveDraft', SubmitType::class, ['label' => 'Save as draft'])
-                ->add('saveFinal', SubmitType::class, ['label' => 'Save as final']);
+            $this->addVersionButtons($builder);
 
             return;
         }

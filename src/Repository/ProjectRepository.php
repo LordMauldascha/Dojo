@@ -10,8 +10,8 @@ use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Entity\User;
 use App\Pagination\ListQuery;
+use App\Pagination\ListQueryApplier;
 use App\Pagination\Page;
-use App\Security\UserRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -44,16 +44,9 @@ final class ProjectRepository extends ServiceEntityRepository
             ->addSelect('(SELECT COUNT(tc.id) FROM '.Testcase::class.' tc WHERE tc.project = p AND tc.deletedAt IS NULL) AS testcaseCount');
         $this->applyAccessFilter($queryBuilder, 'p', $viewer);
 
-        if ('' !== $query->q) {
-            $escaped = addcslashes(mb_strtolower($query->q), '%_\\');
-            $queryBuilder
-                ->andWhere('(LOWER(p.title) LIKE :q OR LOWER(p.description) LIKE :q)')
-                ->setParameter('q', '%'.$escaped.'%');
-        }
+        ListQueryApplier::search($queryBuilder, $query, ['p.title', 'p.description']);
 
-        $sortField = self::SORT_FIELDS[$query->sort ?? ''] ?? self::SORT_FIELDS['title'];
-        $direction = 'desc' === $query->dir ? 'DESC' : 'ASC';
-        $queryBuilder->orderBy($sortField, $direction)->addOrderBy('p.id', 'ASC');
+        ListQueryApplier::sort($queryBuilder, $query, self::SORT_FIELDS, 'p.id');
 
         return Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
     }
@@ -61,7 +54,7 @@ final class ProjectRepository extends ServiceEntityRepository
     /** Limits a query to the projects the user may see: all for admins, else direct or via a group. */
     public function applyAccessFilter(QueryBuilder $queryBuilder, string $alias, User $user): void
     {
-        if (UserRole::Admin === $user->getRole()) {
+        if ($user->isAdmin()) {
             return;
         }
 

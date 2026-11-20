@@ -16,7 +16,14 @@ use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 
 final class RunTest extends PhpUnitTestCase
 {
-    public function testConfigurationsAreDeduplicatedAndRemovedByIndex(): void
+    private Project $project;
+
+    protected function setUp(): void
+    {
+        $this->project = new Project();
+    }
+
+    public function testConfigurationsAreDeduplicatedAndRemovedByKey(): void
     {
         $run = $this->newRun();
         $gpt = new LlmConfiguration(Provider::OpenAi, 'gpt-5.4', Effort::High);
@@ -28,8 +35,9 @@ final class RunTest extends PhpUnitTestCase
         $before = $this->configurationKeys($run);
         self::assertCount(3, $before);
 
-        self::assertTrue($run->removeConfigurationAt(1));
-        self::assertFalse($run->removeConfigurationAt(5));
+        self::assertTrue($run->removeConfiguration('openai:gpt-5.4:-'));
+        self::assertFalse($run->removeConfiguration('openai:gpt-5.4:-'));
+        self::assertFalse($run->removeConfiguration('does:not:exist'));
         $after = $this->configurationKeys($run);
         self::assertSame(['openai:gpt-5.4:high', 'claude_oauth:opus:-'], $after);
     }
@@ -52,7 +60,7 @@ final class RunTest extends PhpUnitTestCase
         }
 
         $withoutConfiguration = $this->newRun();
-        $withoutConfiguration->setTestcases([new Testcase('T', null, 'p', 'o')]);
+        $withoutConfiguration->setTestcases([new Testcase('T', null, 'p', 'o', $this->project)]);
         try {
             $withoutConfiguration->start();
             self::fail('start without configuration must fail');
@@ -65,10 +73,10 @@ final class RunTest extends PhpUnitTestCase
 
     public function testStartNumbersVersionsAndSnapshotsTheActiveVersionsIgnoringDrafts(): void
     {
-        $skill = new Skill('Review', null, 'skill v1');
+        $skill = $this->skill('Review', 'skill v1');
         $skill->saveFinal('Review', null, 'skill v2');
         $skill->saveDraft('Review', null, 'skill draft');
-        $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1');
+        $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1', $this->project);
         $testcase->saveDraft('Greeting', null, 'prompt draft', 'output draft');
         $run = $this->newRun();
         $run->setTitle('Nightly');
@@ -92,16 +100,16 @@ final class RunTest extends PhpUnitTestCase
 
     public function testExistingVersionsDoNotChangeWhenTheRunOrItsSkillsChangeLater(): void
     {
-        $skill = new Skill('Review', null, 'skill v1');
+        $skill = $this->skill('Review', 'skill v1');
         $run = $this->newRun();
         $run->setTitle('Nightly');
         $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
         $run->setSkills([$skill]);
-        $run->setTestcases([new Testcase('T', null, 'p', 'o')]);
+        $run->setTestcases([new Testcase('T', null, 'p', 'o', $this->project)]);
         $first = $run->start();
 
         $run->setTitle('Renamed');
-        $run->removeConfigurationAt(0);
+        $run->removeConfiguration('claude_oauth:opus:-');
         $run->addConfiguration(new LlmConfiguration(Provider::Gemini, 'gemini-2.5-pro'));
         $run->setSkills([]);
         $skill->saveFinal('Review', null, 'skill v2');
@@ -118,13 +126,64 @@ final class RunTest extends PhpUnitTestCase
     public function testSetSkillsAndTestcasesSyncTheAssignment(): void
     {
         $run = $this->newRun();
-        $a = new Skill('A', null, 'x');
-        $b = new Skill('B', null, 'x');
+        $a = $this->skill('A', 'x');
+        $b = $this->skill('B', 'x');
 
         $run->setSkills([$a, $b]);
         $run->setSkills([$b]);
 
         self::assertSame([$b], array_values($run->getSkills()->toArray()));
+    }
+
+    public function testStartLeavesOutDeletedAndForeignSkillsAndTestcases(): void
+    {
+        $kept = $this->skill('Kept', 'x');
+        $deleted = $this->skill('Deleted', 'x');
+        $deleted->softDelete();
+        $foreign = new Skill('Foreign', null, 'x');
+        $foreign->addProject(new Project());
+        $testcase = new Testcase('Greeting', null, 'p', 'o', $this->project);
+        $deletedTestcase = new Testcase('Deleted case', null, 'p', 'o', $this->project);
+        $deletedTestcase->softDelete();
+        $foreignTestcase = new Testcase('Foreign case', null, 'p', 'o', new Project());
+        $run = $this->newRun();
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->setSkills([$kept, $deleted, $foreign]);
+        $run->setTestcases([$testcase, $deletedTestcase, $foreignTestcase]);
+
+        $version = $run->start();
+
+        self::assertSame(['Kept'], array_map(static fn ($v): string => $v->getTitle(), $version->getSkillVersions()->toArray()));
+        self::assertSame(['Greeting'], array_map(static fn ($v): string => $v->getTitle(), $version->getTestcaseVersions()->toArray()));
+    }
+
+    public function testStartNeedsAValidTestcaseNotOnlyAnAssignedOne(): void
+    {
+        $deleted = new Testcase('Deleted case', null, 'p', 'o', $this->project);
+        $deleted->softDelete();
+        $run = $this->newRun();
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->setTestcases([$deleted]);
+
+        $this->expectException(\LogicException::class);
+        $run->start();
+    }
+
+    public function testUpdatedAtMovesOnlyWhenTheAssignmentChanges(): void
+    {
+        $run = $this->newRun();
+        $skill = $this->skill('A', 'x');
+        $run->setSkills([$skill]);
+        $before = $run->getUpdatedAt();
+
+        usleep(2000);
+        $run->setSkills([$skill]);
+        $run->setTestcases([]);
+        self::assertEquals($before, $run->getUpdatedAt());
+
+        usleep(2000);
+        $run->setSkills([]);
+        self::assertGreaterThan($before, $run->getUpdatedAt());
     }
 
     /**
@@ -150,6 +209,14 @@ final class RunTest extends PhpUnitTestCase
 
     private function newRun(): Run
     {
-        return new Run(new Project());
+        return new Run($this->project);
+    }
+
+    private function skill(string $title, string $content): Skill
+    {
+        $skill = new Skill($title, null, $content);
+        $skill->addProject($this->project);
+
+        return $skill;
     }
 }

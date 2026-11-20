@@ -7,32 +7,15 @@ namespace App\Tests\Controller;
 use App\Ai\Effort;
 use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
-use App\Entity\Group;
-use App\Entity\Project;
 use App\Entity\Run;
 use App\Entity\Skill;
 use App\Entity\Testcase;
-use App\Entity\User;
+use App\Form\Help;
 use App\Security\UserRole;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
+use App\Tests\Support\AppWebTestCase;
 
-final class RunManagementTest extends WebTestCase
+final class RunManagementTest extends AppWebTestCase
 {
-    private KernelBrowser $client;
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class] as $class) {
-            $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
-        }
-    }
-
     public function testUserCreatesAndEditsARunInTheirProject(): void
     {
         $user = $this->persistUser('alice');
@@ -77,7 +60,7 @@ final class RunManagementTest extends WebTestCase
         $project = $this->persistProject('Security', [$direct]);
         $project->addGroup($group);
         $this->entityManager->flush();
-        $run = $this->persistRun($project, null, 'Nightly', configured: true);
+        $run = $this->persistRun($project, title: 'Nightly', configured: true);
         $skill = $this->persistSkill('Review', [$project]);
         $uuid = (string) $run->getUuid();
 
@@ -98,7 +81,7 @@ final class RunManagementTest extends WebTestCase
             ['GET', '/runs/'.$uuid],
             ['POST', '/runs/'.$uuid],
             ['POST', '/runs/'.$uuid.'/configurations'],
-            ['POST', '/runs/'.$uuid.'/configurations/0/remove'],
+            ['POST', '/runs/'.$uuid.'/configurations/claude_oauth:opus:-/remove'],
             ['POST', '/runs/'.$uuid.'/skills'],
             ['POST', '/runs/'.$uuid.'/testcases'],
             ['POST', '/runs/'.$uuid.'/start'],
@@ -134,8 +117,8 @@ final class RunManagementTest extends WebTestCase
         $creator = $this->persistUser('alice');
         $colleague = $this->persistUser('bob');
         $project = $this->persistProject('Security', [$creator, $colleague]);
-        $mine = $this->persistRun($project, $creator, 'Mine');
-        $adminDeletes = $this->persistRun($project, $creator, 'Admin deletes');
+        $mine = $this->persistRun($project, creator: $creator, title: 'Mine');
+        $adminDeletes = $this->persistRun($project, creator: $creator, title: 'Admin deletes');
 
         $this->client->loginUser($colleague);
         $this->client->request('GET', '/runs/'.$mine->getUuid().'/delete');
@@ -166,7 +149,7 @@ final class RunManagementTest extends WebTestCase
     {
         $user = $this->persistUser('alice');
         $project = $this->persistProject('Security', [$user]);
-        $run = $this->persistRun($project, $user);
+        $run = $this->persistRun($project, creator: $user);
         $path = '/runs/'.$run->getUuid();
         $this->client->loginUser($user);
 
@@ -191,12 +174,12 @@ final class RunManagementTest extends WebTestCase
         self::assertSame(['openai:gpt-5.4:high', 'openai:gpt-5.4:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $this->findRun('Nightly')->getConfigurations()));
 
         $crawler = $this->client->request('GET', $path);
-        $this->client->submit($crawler->filter('form[action$="/configurations/0/remove"]')->form());
+        $this->client->submit($crawler->filter('form[action*="/configurations/"][action$="/remove"]')->form());
         self::assertResponseRedirects($path);
         $this->entityManager->clear();
         self::assertSame(['openai:gpt-5.4:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $this->findRun('Nightly')->getConfigurations()));
 
-        $this->client->request('POST', $path.'/configurations/0/remove', ['_token' => 'invalid']);
+        $this->client->request('POST', $path.'/configurations/openai:gpt-5.4:-/remove', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
     }
 
@@ -212,7 +195,7 @@ final class RunManagementTest extends WebTestCase
         $ownTestcase = $this->persistTestcase('Own testcase', $project);
         $foreignTestcase = $this->persistTestcase('Foreign testcase', $other);
         $this->entityManager->flush();
-        $run = $this->persistRun($project, $user);
+        $run = $this->persistRun($project, creator: $user);
         $path = '/runs/'.$run->getUuid();
         $this->client->loginUser($user);
 
@@ -251,7 +234,7 @@ final class RunManagementTest extends WebTestCase
         $project = $this->persistProject('Security', [$user]);
         $skill = $this->persistSkill('Review', [$project]);
         $testcase = $this->persistTestcase('Greeting', $project);
-        $run = $this->persistRun($project, $user);
+        $run = $this->persistRun($project, creator: $user);
         $path = '/runs/'.$run->getUuid();
         $this->client->loginUser($user);
 
@@ -296,7 +279,7 @@ final class RunManagementTest extends WebTestCase
         $project = $this->persistProject('Security', [$user]);
         $skill = $this->persistSkill('Review', [$project]);
         $testcase = $this->persistTestcase('Greeting', $project);
-        $run = $this->persistRun($project, $user, 'Nightly', [$skill], [$testcase], true);
+        $run = $this->persistRun($project, creator: $user, title: 'Nightly', skills: [$skill], testcases: [$testcase], configured: true);
         $run->start();
         $run->setTitle('Weekly');
         $skill->saveFinal('Review', null, 'content 2');
@@ -333,7 +316,7 @@ final class RunManagementTest extends WebTestCase
     {
         $user = $this->persistUser('alice');
         $project = $this->persistProject('Security', [$user]);
-        $run = $this->persistRun($project, $user);
+        $run = $this->persistRun($project, creator: $user);
         $this->client->loginUser($user);
 
         $this->client->request('GET', '/runs/'.$run->getUuid().'/compare');
@@ -348,14 +331,14 @@ final class RunManagementTest extends WebTestCase
         $project = $this->persistProject('Security', [$user]);
         $other = $this->persistProject('Other', [$user]);
         $skill = $this->persistSkill('Review', [$project]);
-        $this->persistRun($other, $user, 'Elsewhere');
-        $this->persistRun($project, $user, 'Alpha');
-        $this->persistRun($project, $user, 'Beta', [$skill]);
-        $gamma = $this->persistRun($project, $user, 'Gamma_x');
+        $this->persistRun($other, creator: $user, title: 'Elsewhere');
+        $this->persistRun($project, creator: $user, title: 'Alpha');
+        $this->persistRun($project, creator: $user, title: 'Beta', skills: [$skill]);
+        $gamma = $this->persistRun($project, creator: $user, title: 'Gamma_x');
         $gamma->setDescription('handles GDPR requests');
         $big = $this->persistProject('Big', [$user]);
         for ($i = 1; 28 >= $i; ++$i) {
-            $this->persistRun($big, $user, \sprintf('Run %02d', $i));
+            $this->persistRun($big, creator: $user, title: \sprintf('Run %02d', $i));
         }
         $this->entityManager->flush();
         $this->client->loginUser($user);
@@ -383,7 +366,7 @@ final class RunManagementTest extends WebTestCase
         $project = $this->persistProject('Security', [$admin]);
         $skill = $this->persistSkill('Review', [$project]);
         $testcase = $this->persistTestcase('Greeting', $project);
-        $run = $this->persistRun($project, $admin, 'Nightly', [$skill], [$testcase], true);
+        $run = $this->persistRun($project, creator: $admin, title: 'Nightly', skills: [$skill], testcases: [$testcase], configured: true);
         $run->start();
         $run->start();
         $this->entityManager->flush();
@@ -415,9 +398,9 @@ final class RunManagementTest extends WebTestCase
         $own = $this->persistProject('Own', [$user]);
         $hidden = $this->persistProject('Hidden');
         $skill = $this->persistSkill('Review', [$own, $hidden]);
-        $this->persistRun($own, $user, 'Visible one', [$skill]);
-        $this->persistRun($own, $user, 'Visible two', [$skill]);
-        $this->persistRun($hidden, null, 'Hidden run', [$skill]);
+        $this->persistRun($own, creator: $user, title: 'Visible one', skills: [$skill]);
+        $this->persistRun($own, creator: $user, title: 'Visible two', skills: [$skill]);
+        $this->persistRun($hidden, title: 'Hidden run', skills: [$skill]);
 
         $this->client->loginUser($user);
         $crawler = $this->client->request('GET', '/skills');
@@ -428,39 +411,37 @@ final class RunManagementTest extends WebTestCase
         self::assertSame('3', trim($crawler->filter('tbody tr:first-child td:nth-child(4)')->text()));
     }
 
-    /** @return list<string> */
-    private function titles(Crawler $crawler): array
+    public function testRemovingAConfigurationTwiceFromAStalePageRemovesNothingElse(): void
     {
-        self::assertResponseIsSuccessful();
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user);
+        $run->addConfiguration(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4', Effort::High));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $this->entityManager->flush();
+        $this->client->loginUser($user);
 
-        return $crawler->filter('tbody tr td:first-child')->each(static fn (Crawler $cell): string => trim($cell->text()));
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $firstRemoval = $crawler->filter('form[action*="/configurations/"][action$="/remove"]')->first()->form();
+
+        $this->client->submit($firstRemoval);
+        $this->client->submit($firstRemoval);
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'There is no such configuration.');
+        $this->entityManager->clear();
+        self::assertSame(['claude_oauth:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $this->findRun('Nightly')->getConfigurations()));
     }
 
-    /** @param array<string, mixed> $overrides */
-    private function submit(Crawler $crawler, string $button, string $formName, array $overrides): void
+    public function testTheRunDescriptionRemindsAboutPersonalData(): void
     {
-        $form = $crawler->selectButton($button)->form();
-        /** @var array<string, array<string, mixed>> $values */
-        $values = $form->getPhpValues();
-        $values[$formName] = array_replace($values[$formName], $overrides);
-        $this->client->request($form->getMethod(), $form->getUri(), $values);
-    }
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $project = $this->persistProject('Security');
+        $this->client->loginUser($admin);
 
-    /**
-     * @template T of Skill|Testcase
-     *
-     * @param T $entity
-     *
-     * @return T
-     */
-    private function reload(Skill|Testcase $entity): Skill|Testcase
-    {
-        $id = $entity->getId();
-        self::assertIsInt($id);
-        $reloaded = $this->entityManager->find($entity::class, $id);
-        self::assertInstanceOf($entity::class, $reloaded);
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/runs/new');
 
-        return $reloaded;
+        self::assertSame(1, substr_count($crawler->filter('body')->text(), Help::NO_PERSONAL_DATA));
     }
 
     private function findRun(string $title): Run
@@ -469,82 +450,5 @@ final class RunManagementTest extends WebTestCase
         self::assertInstanceOf(Run::class, $run);
 
         return $run;
-    }
-
-    /**
-     * @param list<Skill>    $skills
-     * @param list<Testcase> $testcases
-     */
-    private function persistRun(Project $project, ?User $creator, string $title = 'Nightly', array $skills = [], array $testcases = [], bool $configured = false): Run
-    {
-        $run = new Run($project, $creator);
-        $run->setTitle($title);
-        $run->setSkills($skills);
-        $run->setTestcases($testcases);
-        if ($configured) {
-            $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
-        }
-        $this->entityManager->persist($run);
-        $this->entityManager->flush();
-
-        return $run;
-    }
-
-    /** @param list<Project> $projects */
-    private function persistSkill(string $title, array $projects): Skill
-    {
-        $skill = new Skill($title, null, 'content');
-        foreach ($projects as $project) {
-            $skill->addProject($project);
-        }
-        $this->entityManager->persist($skill);
-        $this->entityManager->flush();
-
-        return $skill;
-    }
-
-    private function persistTestcase(string $title, ?Project $project): Testcase
-    {
-        $testcase = new Testcase($title, null, 'prompt', 'output', $project);
-        $this->entityManager->persist($testcase);
-        $this->entityManager->flush();
-
-        return $testcase;
-    }
-
-    /** @param list<User> $users */
-    private function persistProject(string $title, array $users = []): Project
-    {
-        $project = new Project();
-        $project->setTitle($title);
-        foreach ($users as $user) {
-            $project->addUser($user);
-        }
-        $this->entityManager->persist($project);
-        $this->entityManager->flush();
-
-        return $project;
-    }
-
-    private function persistGroup(string $title): Group
-    {
-        $group = new Group();
-        $group->setTitle($title);
-        $this->entityManager->persist($group);
-        $this->entityManager->flush();
-
-        return $group;
-    }
-
-    private function persistUser(string $username, UserRole $role = UserRole::User): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setRole($role);
-        $user->setPassword('unused-in-these-tests');
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $user;
     }
 }

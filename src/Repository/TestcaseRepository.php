@@ -6,10 +6,11 @@ namespace App\Repository;
 
 use App\Entity\Project;
 use App\Entity\Testcase;
+use App\Entity\TestcaseVersion;
 use App\Entity\User;
 use App\Pagination\ListQuery;
+use App\Pagination\ListQueryApplier;
 use App\Pagination\Page;
-use App\Security\UserRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -45,12 +46,7 @@ final class TestcaseRepository extends ServiceEntityRepository
             ->leftJoin('t.project', 'p');
         $this->applyAccessFilter($queryBuilder, 't', $viewer);
 
-        if ('' !== $query->q) {
-            $escaped = addcslashes(mb_strtolower($query->q), '%_\\');
-            $queryBuilder
-                ->andWhere('(LOWER(v.title) LIKE :q OR LOWER(v.description) LIKE :q)')
-                ->setParameter('q', '%'.$escaped.'%');
-        }
+        ListQueryApplier::search($queryBuilder, $query, ['v.title', 'v.description']);
 
         if (null !== $query->project && '' !== $query->project) {
             $queryBuilder
@@ -58,9 +54,7 @@ final class TestcaseRepository extends ServiceEntityRepository
                 ->setParameter('filterProject', Uuid::fromString($query->project), UuidType::NAME);
         }
 
-        $sortField = self::SORT_FIELDS[$query->sort ?? ''] ?? self::SORT_FIELDS['title'];
-        $direction = 'desc' === $query->dir ? 'DESC' : 'ASC';
-        $queryBuilder->orderBy($sortField, $direction)->addOrderBy('t.id', 'ASC');
+        ListQueryApplier::sort($queryBuilder, $query, self::SORT_FIELDS, 't.id');
 
         return Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
     }
@@ -69,7 +63,7 @@ final class TestcaseRepository extends ServiceEntityRepository
     public function applyAccessFilter(QueryBuilder $queryBuilder, string $alias, User $user): void
     {
         $queryBuilder->andWhere($alias.'.deletedAt IS NULL');
-        if (UserRole::Admin === $user->getRole()) {
+        if ($user->isAdmin()) {
             return;
         }
 
@@ -97,10 +91,37 @@ final class TestcaseRepository extends ServiceEntityRepository
             ->andWhere('t.deletedAt IS NULL')
             ->setParameter('project', $project)
             ->orderBy('v.title', 'ASC')
+            ->addOrderBy('t.id', 'ASC')
             ->getQuery()
             ->getResult();
 
         return $testcases;
+    }
+
+    /**
+     * Ids of the given testcases that have a draft, without loading their versions.
+     *
+     * @param list<mixed> $testcases
+     *
+     * @return list<int>
+     */
+    public function draftIds(array $testcases): array
+    {
+        if ([] === $testcases) {
+            return [];
+        }
+
+        /** @var list<int|string> $ids */
+        $ids = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(v.testcase)')
+            ->from(TestcaseVersion::class, 'v')
+            ->where('v.draft = true')
+            ->andWhere('v.testcase IN (:testcases)')
+            ->setParameter('testcases', $testcases)
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return array_map(intval(...), $ids);
     }
 
     public function countByProject(Project $project): int

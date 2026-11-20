@@ -80,4 +80,15 @@ final class ApiKeyControllerTest extends WebTestCase
         $this->entityManager->clear();
         self::assertNull($this->entityManager->getRepository(ProviderApiKey::class)->findOneBy(['provider' => Provider::Gemini]));
     }
+
+    public function testAKeyShorterThanSixteenCharactersIsRefused(): void
+    {
+        $this->client->loginUser($this->admin());
+        $crawler = $this->client->request('GET', '/admin/api-keys');
+
+        $this->client->submit($crawler->filter('form[name="key_openai"]')->form(['key_openai[apiKey]' => 'fifteen-char-15']));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertCount(0, $this->entityManager->getRepository(ProviderApiKey::class)->findAll());
+    }
 }

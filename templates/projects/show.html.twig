@@ -1,12 +1,12 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
+
+{% import '_forms.html.twig' as forms %}
 
 {% block title %}Project {{ project.title }}{% endblock %}
 
-{% block body %}
-    <h1>Project {{ project.title }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Project {{ project.title }}{% endblock %}
 
+{% block content %}
     <p><a href="{{ path('app_projects') }}">Back to overview</a></p>
 
     {% if canManage %}
@@ -27,10 +27,7 @@
                         <tr>
                             <td>{{ group.title }}</td>
                             <td>
-                                <form method="post" action="{{ path('app_project_group_remove', {uuid: project.uuid, groupUuid: group.uuid}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('remove-project-group-' ~ project.uuid ~ '-' ~ group.uuid) }}">
-                                    <button type="submit">Remove</button>
-                                </form>
+                                {{ forms.post(path('app_project_group_remove', {uuid: project.uuid, groupUuid: group.uuid}), 'remove-project-group-' ~ project.uuid ~ '-' ~ group.uuid, 'Remove') }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -57,10 +54,7 @@
                             <td>{{ user.username }}</td>
                             <td>{{ user.role.label }}</td>
                             <td>
-                                <form method="post" action="{{ path('app_project_user_remove', {uuid: project.uuid, userId: user.id}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('remove-project-user-' ~ project.uuid ~ '-' ~ user.id) }}">
-                                    <button type="submit">Remove</button>
-                                </form>
+                                {{ forms.post(path('app_project_user_remove', {uuid: project.uuid, userId: user.id}), 'remove-project-user-' ~ project.uuid ~ '-' ~ user.id, 'Remove') }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -85,10 +79,7 @@
                         <tr>
                             <td><a href="{{ path('app_skill_show', {uuid: skill.uuid}) }}">{{ skill.activeVersion.title }}</a></td>
                             <td>
-                                <form method="post" action="{{ path('app_project_skill_remove', {uuid: project.uuid, skillUuid: skill.uuid}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('remove-project-skill-' ~ project.uuid ~ '-' ~ skill.uuid) }}">
-                                    <button type="submit">Remove</button>
-                                </form>
+                                {{ forms.post(path('app_project_skill_remove', {uuid: project.uuid, skillUuid: skill.uuid}), 'remove-project-skill-' ~ project.uuid ~ '-' ~ skill.uuid, 'Remove') }}
                             </td>
                         </tr>
                     {% endfor %}

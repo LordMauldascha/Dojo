@@ -10,6 +10,9 @@ namespace App\Ai;
  */
 final readonly class LlmConfiguration
 {
+    /** Route requirement for key(): provider:model:effort. */
+    public const KEY_PATTERN = '[a-z_]+:[A-Za-z0-9._-]+:[a-z-]+';
+
     public function __construct(
         public Provider $provider,
         public string $model,
@@ -17,10 +20,25 @@ final readonly class LlmConfiguration
     ) {
     }
 
+    /** The value of the model select: "provider:model". */
+    public static function choiceValue(Provider $provider, string $model): string
+    {
+        return $provider->value.':'.$model;
+    }
+
+    /** Parses the model select value; null if the provider or model is unknown. */
+    public static function fromChoice(string $choice, ?Effort $effort): ?self
+    {
+        [$providerValue, $model] = explode(':', $choice, 2) + [1 => ''];
+        $provider = Provider::tryFrom($providerValue);
+
+        return null !== $provider && \in_array($model, $provider->models(), true) ? new self($provider, $model, $effort) : null;
+    }
+
     /** Identity of a configuration within a run. */
     public function key(): string
     {
-        return $this->provider->value.':'.$this->model.':'.($this->effort->value ?? '-');
+        return self::choiceValue($this->provider, $this->model).':'.($this->effort->value ?? '-');
     }
 
     public function label(): string

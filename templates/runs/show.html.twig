@@ -1,12 +1,13 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
+
+{% import '_forms.html.twig' as forms %}
 
 {% block title %}Run {{ run.title }}{% endblock %}
 
-{% block body %}
+{% block heading %}Run {{ run.title }}{% endblock %}
+
+{% block content %}
     {% set latest = run.latestVersion %}
-    <h1>Run {{ run.title }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
 
     <p><a href="{{ path('app_runs', {uuid: run.project.uuid}) }}">Back to runs of project {{ run.project.title }}</a></p>
 
@@ -27,10 +28,7 @@
                     <tr>
                         <td>{{ configuration.label }}</td>
                         <td>
-                            <form method="post" action="{{ path('app_run_configuration_remove', {uuid: run.uuid, index: loop.index0}) }}">
-                                <input type="hidden" name="_token" value="{{ csrf_token('remove-run-configuration-' ~ run.uuid ~ '-' ~ loop.index0) }}">
-                                <button type="submit">Remove</button>
-                            </form>
+                            {{ forms.post(path('app_run_configuration_remove', {uuid: run.uuid, key: configuration.key}), 'remove-run-configuration-' ~ run.uuid ~ '-' ~ configuration.key, 'Remove') }}
                         </td>
                     </tr>
                 {% endfor %}
@@ -57,10 +55,7 @@
 
     <h2>Start</h2>
     <p>Starting creates a new version of this run. No LLM is called yet. A run needs at least one testcase and one configuration.</p>
-    <form method="post" action="{{ path('app_run_start', {uuid: run.uuid}) }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('start-run-' ~ run.uuid) }}">
-        <button type="submit">Start</button>
-    </form>
+    {{ forms.post(path('app_run_start', {uuid: run.uuid}), 'start-run-' ~ run.uuid, 'Start') }}
 
     <h2>Versions</h2>
     {% if run.versions|length %}
@@ -82,7 +77,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% if run.versions|length > 1 %}
+        {% if 1 < run.versions|length %}
             <p><a href="{{ path('app_run_compare', {uuid: run.uuid}) }}">Compare versions</a></p>
         {% endif %}
     {% else %}

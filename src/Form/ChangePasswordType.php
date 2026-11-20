@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Form;
 
+use App\Security\PasswordPolicy;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
@@ -28,7 +29,7 @@ final class ChangePasswordType extends AbstractType
                 'first_options' => ['label' => 'New password', 'attr' => ['autocomplete' => 'new-password']],
                 'second_options' => ['label' => 'Repeat new password', 'attr' => ['autocomplete' => 'new-password']],
                 'invalid_message' => 'The passwords do not match.',
-                'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096)],
+                'constraints' => PasswordPolicy::constraints(),
             ])
             ->add('save', SubmitType::class, ['label' => 'Change password']);
     }

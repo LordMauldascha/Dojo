@@ -1,12 +1,10 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}New testcase{% endblock %}
 
-{% block body %}
-    <h1>New testcase</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}New testcase{% endblock %}
 
+{% block content %}
     {% if not hasProjects %}
         <p>No project is available to assign.</p>
     {% endif %}

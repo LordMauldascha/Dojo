@@ -1,12 +1,12 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
+
+{% import '_forms.html.twig' as forms %}
 
 {% block title %}Group {{ group.title }}{% endblock %}
 
-{% block body %}
-    <h1>Group {{ group.title }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Group {{ group.title }}{% endblock %}
 
+{% block content %}
     <p><a href="{{ path('app_admin_groups') }}">Back to overview</a></p>
 
     <h2>Title</h2>
@@ -28,10 +28,7 @@
                         <td>{{ user.username }}</td>
                         <td>{{ user.role.label }}</td>
                         <td>
-                            <form method="post" action="{{ path('app_admin_group_user_remove', {uuid: group.uuid, userId: user.id}) }}">
-                                <input type="hidden" name="_token" value="{{ csrf_token('remove-group-user-' ~ group.uuid ~ '-' ~ user.id) }}">
-                                <button type="submit">Remove</button>
-                            </form>
+                            {{ forms.post(path('app_admin_group_user_remove', {uuid: group.uuid, userId: user.id}), 'remove-group-user-' ~ group.uuid ~ '-' ~ user.id, 'Remove') }}
                         </td>
                     </tr>
                 {% endfor %}

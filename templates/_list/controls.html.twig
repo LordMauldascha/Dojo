@@ -5,7 +5,7 @@
     </label>
     <label>Entries per page
         <select name="perPage">
-            {% for size in [10, 20, 50, 100] %}
+            {% for size in constant('App\\Pagination\\PageSizeResolver::SIZES') %}
                 <option value="{{ size }}"{{ size == page.perPage ? ' selected' }}>{{ size }}</option>
             {% endfor %}
         </select>
@@ -22,6 +22,8 @@
     {% endif %}
     {% if query.sort %}
         <input type="hidden" name="sort" value="{{ query.sort }}">
+    {% endif %}
+    {% if 'asc' != query.dir %}
         <input type="hidden" name="dir" value="{{ query.dir }}">
     {% endif %}
     <button type="submit">Apply</button>

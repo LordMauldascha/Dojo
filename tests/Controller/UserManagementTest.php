@@ -6,25 +6,10 @@ namespace App\Tests\Controller;
 
 use App\Entity\User;
 use App\Security\UserRole;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use App\Tests\Support\AppWebTestCase;
 
-final class UserManagementTest extends WebTestCase
+final class UserManagementTest extends AppWebTestCase
 {
-    private const PASSWORD = 'correct-horse-battery';
-
-    private KernelBrowser $client;
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
-    }
-
     public function testAdminCreatesUserWhoCanLogInAndIsHashed(): void
     {
         $this->client->loginUser($this->admin());
@@ -191,7 +176,7 @@ final class UserManagementTest extends WebTestCase
 
         foreach (['toggle', 'delete'] as $action) {
             $this->client->request('POST', \sprintf('/admin/users/%d/%s', $boss->getId(), $action));
-            self::assertResponseRedirects('/admin/users');
+            self::assertResponseStatusCodeSame(403);
         }
 
         $this->entityManager->clear();
@@ -208,6 +193,27 @@ final class UserManagementTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testADisabledAccountIsOnlyRevealedAfterTheCorrectPassword(): void
+    {
+        $this->persistUser('gina', enabled: false);
+
+        $crawler = $this->client->request('GET', '/login');
+        $this->client->submit($crawler->selectButton('Sign in')->form(['_username' => 'gina', '_password' => 'a-wrong-password']));
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'Invalid credentials.');
+        self::assertSelectorTextNotContains('body', 'disabled');
+    }
+
+    public function testAnOversizedUserIdIsNotFound(): void
+    {
+        $this->client->loginUser($this->admin());
+
+        $this->client->request('POST', '/admin/users/99999999999/toggle');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     private function findUser(string $username): User
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
@@ -219,19 +225,6 @@ final class UserManagementTest extends WebTestCase
     private function admin(): User
     {
         return $this->persistUser('root', UserRole::Admin);
-    }
-
-    private function persistUser(string $username, UserRole $role = UserRole::User, bool $enabled = true): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setRole($role);
-        $user->setEnabled($enabled);
-        $user->setPassword(static::getContainer()->get(UserPasswordHasherInterface::class)->hashPassword($user, self::PASSWORD));
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $user;
     }
 
     private function createUser(string $username, string $password, string $role = 'ROLE_USER'): void

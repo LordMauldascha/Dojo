@@ -2,12 +2,14 @@
 
 $finder = (new PhpCsFixer\Finder())
     ->in([__DIR__.'/src', __DIR__.'/tests', __DIR__.'/config'])
-    ->notPath('bootstrap.php')
+    ->notPath(['bootstrap.php', 'reference.php'])
 ;
 
 return (new PhpCsFixer\Config())
+    ->setRiskyAllowed(true)
     ->setRules([
         '@Symfony' => true,
+        'declare_strict_types' => true,
     ])
     ->setFinder($finder)
 ;

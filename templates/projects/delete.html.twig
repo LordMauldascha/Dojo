@@ -1,17 +1,13 @@
-{% extends 'base.html.twig' %}
+{% extends 'delete.html.twig' %}
+
+{% set action = path('app_project_delete', {uuid: project.uuid}) %}
+{% set tokenId = 'delete-project-' ~ project.uuid %}
+{% set cancelUrl = path('app_project_show', {uuid: project.uuid}) %}
 
 {% block title %}Delete project{% endblock %}
 
-{% block body %}
-    <h1>Delete project {{ project.title }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Delete project {{ project.title }}{% endblock %}
 
+{% block message %}
     <p>The project and its assignments to {{ project.groups|length }} group(s) and {{ project.users|length }} user(s) are deleted. The groups and users themselves are kept. {{ skillCount }} skill(s) lose this project assignment but are kept. {{ testcaseCount }} testcase(s) lose their project and become admin-only. {{ runCount }} run(s) and their versions are deleted.</p>
-
-    <form method="post" action="{{ path('app_project_delete', {uuid: project.uuid}) }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('delete-project-' ~ project.uuid) }}">
-        <button type="submit">Delete permanently</button>
-    </form>
-    <p><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">Cancel</a></p>
 {% endblock %}

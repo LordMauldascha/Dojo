@@ -19,7 +19,7 @@ final class ProjectType extends AbstractType
     {
         $builder
             ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 255]])
-            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'attr' => ['maxlength' => 5000, 'rows' => 5]])
+            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 5000, 'rows' => 5]])
             ->add('save', SubmitType::class, ['label' => 'Save']);
     }
 

@@ -1,17 +1,14 @@
-{% extends 'base.html.twig' %}
+{% extends 'delete.html.twig' %}
+
+{% set action = path('app_skill_delete', {uuid: skill.uuid}) %}
+{% set tokenId = 'delete-skill-' ~ skill.uuid %}
+{% set cancelUrl = path('app_skill_show', {uuid: skill.uuid}) %}
+{% set label = 'Delete' %}
 
 {% block title %}Delete skill{% endblock %}
 
-{% block body %}
-    <h1>Delete skill {{ skill.activeVersion.title }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Delete skill {{ skill.activeVersion.title }}{% endblock %}
 
+{% block message %}
     <p>The skill disappears from all lists and projects. Its version history is kept in the database.</p>
-
-    <form method="post" action="{{ path('app_skill_delete', {uuid: skill.uuid}) }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('delete-skill-' ~ skill.uuid) }}">
-        <button type="submit">Delete permanently</button>
-    </form>
-    <p><a href="{{ path('app_skill_show', {uuid: skill.uuid}) }}">Cancel</a></p>
 {% endblock %}

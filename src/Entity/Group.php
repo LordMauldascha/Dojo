@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\GroupRepository;
+use App\Validator\NoNulByte;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -29,6 +30,7 @@ class Group
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
+    #[NoNulByte]
     private string $title = '';
 
     /** Lower-cased title, unique, so titles differ by more than their letter case. */

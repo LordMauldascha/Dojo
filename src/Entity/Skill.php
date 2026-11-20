@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\SkillRepository;
+use App\Versioning\VersionedInterface;
+use App\Versioning\VersionInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,7 +15,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: SkillRepository::class)]
 #[ORM\Table(name: 'skill')]
-class Skill
+class Skill implements VersionedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -160,9 +162,9 @@ class Skill
     }
 
     /** Copies an old final version as a new final version; the history is kept. */
-    public function restore(SkillVersion $version): SkillVersion
+    public function restore(VersionInterface $version): SkillVersion
     {
-        if ($version->isDraft() || !$this->versions->contains($version)) {
+        if (!$version instanceof SkillVersion || $version->isDraft() || !$this->versions->contains($version)) {
             throw new \InvalidArgumentException('Only a final version of this skill can be restored.');
         }
         if (null !== $this->getDraft()) {
@@ -172,6 +174,27 @@ class Skill
         $this->touch();
 
         return $restored;
+    }
+
+    /**
+     * Applies a project selection made within $editable (the projects the user may change); other assignments stay.
+     * Returns false and changes nothing if that would leave the skill without any project and that is not allowed.
+     *
+     * @param list<Project> $editable
+     * @param list<Project> $chosen
+     */
+    public function replaceProjects(array $editable, array $chosen, bool $mayBeEmpty): bool
+    {
+        $untouched = array_filter($this->projects->toArray(), static fn (Project $project): bool => !\in_array($project, $editable, true));
+        if (!$mayBeEmpty && [] === $untouched && [] === $chosen) {
+            return false;
+        }
+
+        foreach ($editable as $project) {
+            \in_array($project, $chosen, true) ? $this->addProject($project) : $this->removeProject($project);
+        }
+
+        return true;
     }
 
     /** @return Collection<int, Project> */
@@ -184,6 +207,7 @@ class Skill
     {
         if (!$this->projects->contains($project)) {
             $this->projects->add($project);
+            $project->touch();
             $this->touch();
         }
     }
@@ -191,6 +215,7 @@ class Skill
     public function removeProject(Project $project): void
     {
         if ($this->projects->removeElement($project)) {
+            $project->touch();
             $this->touch();
         }
     }

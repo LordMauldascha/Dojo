@@ -10,8 +10,8 @@ listed on their pages; assignments to projects are not versioned.
   `2-draft`.
 - **Save as final** turns the draft into the final version with its number (`2-draft` becomes `2`). Without a draft it
   creates the next final version directly.
-- There is exactly **one draft** per skill or testcase, shared by everybody (not one per user). If two people edit, the
-  last save wins.
+- There is exactly **one draft** per skill or testcase, shared by everybody (not one per user). If two people save at the same moment,
+  the second one gets a message to reload the page and try again; otherwise the last save wins.
 - The **active version** is the latest final version, even if a newer draft exists. Lists, search and runs use the active
   version and ignore drafts.
 - **Discard draft** deletes the draft. The active version does not change; the next draft gets the next number again.

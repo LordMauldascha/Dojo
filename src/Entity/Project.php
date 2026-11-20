@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\ProjectRepository;
+use App\Validator\NoNulByte;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -30,6 +31,7 @@ class Project
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
+    #[NoNulByte]
     private string $title = '';
 
     /** Lower-cased title, unique, so titles differ by more than their letter case. */
@@ -38,6 +40,7 @@ class Project
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 5000)]
+    #[NoNulByte]
     private ?string $description = null;
 
     /** @var Collection<int, Group> */
@@ -165,7 +168,8 @@ class Project
         return $this->updatedAt;
     }
 
-    private function touch(): void
+    /** Also called by Skill when its project assignment changes. */
+    public function touch(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
     }

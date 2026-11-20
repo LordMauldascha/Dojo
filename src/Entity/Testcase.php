@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\TestcaseRepository;
+use App\Versioning\VersionedInterface;
+use App\Versioning\VersionInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,7 +15,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TestcaseRepository::class)]
 #[ORM\Table(name: 'testcase')]
-class Testcase
+class Testcase implements VersionedInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -169,9 +171,9 @@ class Testcase
     }
 
     /** Copies an old final version as a new final version; the history is kept. */
-    public function restore(TestcaseVersion $version): TestcaseVersion
+    public function restore(VersionInterface $version): TestcaseVersion
     {
-        if ($version->isDraft() || !$this->versions->contains($version)) {
+        if (!$version instanceof TestcaseVersion || $version->isDraft() || !$this->versions->contains($version)) {
             throw new \InvalidArgumentException('Only a final version of this testcase can be restored.');
         }
         if (null !== $this->getDraft()) {

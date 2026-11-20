@@ -1,12 +1,12 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
+
+{% import '_forms.html.twig' as forms %}
 
 {% block title %}Users{% endblock %}
 
-{% block body %}
-    <h1>Users</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Users{% endblock %}
 
+{% block content %}
     <h2>Existing users</h2>
     {% if users %}
         <table>
@@ -26,14 +26,8 @@
                         <td>{{ user.enabled ? 'active' : 'disabled' }}</td>
                         <td>
                             {% if user.userIdentifier != app.user.userIdentifier %}
-                                <form method="post" action="{{ path('app_admin_user_toggle', {id: user.id}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle-user-' ~ user.id) }}">
-                                    <button type="submit">{{ user.enabled ? 'Disable' : 'Enable' }}</button>
-                                </form>
-                                <form method="post" action="{{ path('app_admin_user_delete', {id: user.id}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
-                                    <button type="submit">Delete</button>
-                                </form>
+                                {{ forms.post(path('app_admin_user_toggle', {id: user.id}), 'toggle-user-' ~ user.id, user.enabled ? 'Disable' : 'Enable') }}
+                                {{ forms.post(path('app_admin_user_delete', {id: user.id}), 'delete-user-' ~ user.id, 'Delete') }}
                             {% endif %}
                         </td>
                     </tr>

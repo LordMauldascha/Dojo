@@ -12,25 +12,21 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_USER')]
 final class AccountController extends AbstractController
 {
-    #[Route('/account', name: 'app_account')]
+    #[Route('/account', name: 'app_account', methods: ['GET'])]
     public function index(): Response
     {
         return $this->render('account/index.html.twig');
     }
 
     #[Route('/account/password', name: 'app_account_password', methods: ['GET', 'POST'])]
-    public function password(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher): Response
+    public function password(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher, #[CurrentUser] User $user): Response
     {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('Only database users can change their password.');
-        }
-
         $form = $this->createForm(ChangePasswordType::class);
         $form->handleRequest($request);
 

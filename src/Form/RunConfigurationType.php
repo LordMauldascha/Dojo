@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Ai\Effort;
+use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -25,7 +26,7 @@ final class RunConfigurationType extends AbstractType
         $choices = [];
         foreach (Provider::cases() as $provider) {
             foreach ($provider->models() as $model) {
-                $choices[$provider->displayName()][$model] = $provider->value.':'.$model;
+                $choices[$provider->displayName()][$model] = LlmConfiguration::choiceValue($provider, $model);
             }
         }
 

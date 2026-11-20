@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\User;
+use App\Security\PasswordPolicy;
 use App\Security\UserRole;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
@@ -14,7 +15,6 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /** @extends AbstractType<User> */
 final class UserCreateType extends AbstractType
@@ -29,7 +29,7 @@ final class UserCreateType extends AbstractType
                 'first_options' => ['label' => 'Password', 'attr' => ['autocomplete' => 'new-password']],
                 'second_options' => ['label' => 'Repeat password', 'attr' => ['autocomplete' => 'new-password']],
                 'invalid_message' => 'The passwords do not match.',
-                'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096)],
+                'constraints' => PasswordPolicy::constraints(),
             ])
             ->add('role', EnumType::class, [
                 'class' => UserRole::class,

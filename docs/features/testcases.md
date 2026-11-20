@@ -10,11 +10,11 @@ created without a run.
 | --- | --- | --- |
 | Title | required, at most 255 characters | yes |
 | Description | optional, at most 2000 characters | yes |
-| Prompt | required, at most 100 000 characters | yes |
-| Expected output | required, at most 100 000 characters | yes |
+| Prompt | required, at most 100 000 characters; stored exactly as typed | yes |
+| Expected output | required, at most 100 000 characters; stored exactly as typed | yes |
 | Project | 0 or 1; controls who may see and edit the testcase; no project means admin only | no |
 
-Also stored: creator, created, updated and deleted time. The prompt field reminds users to use synthetic data and no
+Also stored: creator, created, updated and deleted time. The free-text fields remind users to use synthetic data and no
 personal data, because prompts are later sent to LLM providers.
 
 There is no separate admin-only flag. For an admin-only testcase use no project, or a project without groups and users.
@@ -46,7 +46,7 @@ covers title and description of the active version. See [Overview tables](overvi
 
 - A testcase can be part of several runs, but only of runs in its own project. Moving it to another project or clearing
   the project removes it from the runs of the old project.
-- Deleting a testcase is a soft delete (history stays, old run versions still show it as deleted) and removes it from
+- Deleting a testcase (button *Delete*) is a soft delete (history stays, old run versions still show it as deleted) and removes it from
   all runs.
 - Deleting a project does not delete its testcases; they lose the project and become admin only.
 

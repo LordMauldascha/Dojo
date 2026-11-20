@@ -1,14 +1,12 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% import '_list/macros.html.twig' as list %}
 
 {% block title %}Projects{% endblock %}
 
-{% block body %}
-    <h1>Projects</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Projects{% endblock %}
 
+{% block content %}
     {% if is_granted('ROLE_ADMIN') %}
         <p><a href="{{ path('app_project_new') }}">New project</a></p>
     {% endif %}
@@ -32,10 +30,9 @@
             <tbody>
                 {% for row in page.items %}
                     {% set project = row[0] %}
-                    {% set description = project.description ?? '' %}
                     <tr>
                         <td><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">{{ project.title }}</a></td>
-                        <td>{{ description|slice(0, 100) }}{{ description|length > 100 ? '…' }}</td>
+                        <td>{{ list.excerpt(project.description) }}</td>
                         <td>{{ row.userCount }}</td>
                         <td>{{ row.groupCount }}</td>
                         <td><a href="{{ path('app_skills', {project: project.uuid}) }}">{{ row.skillCount }}</a></td>

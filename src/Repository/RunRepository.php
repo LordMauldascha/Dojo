@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Project;
 use App\Entity\Run;
 use App\Pagination\ListQuery;
+use App\Pagination\ListQueryApplier;
 use App\Pagination\Page;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -36,16 +37,9 @@ final class RunRepository extends ServiceEntityRepository
             ->where('r.project = :project')
             ->setParameter('project', $project);
 
-        if ('' !== $query->q) {
-            $escaped = addcslashes(mb_strtolower($query->q), '%_\\');
-            $queryBuilder
-                ->andWhere('(LOWER(r.title) LIKE :q OR LOWER(r.description) LIKE :q)')
-                ->setParameter('q', '%'.$escaped.'%');
-        }
+        ListQueryApplier::search($queryBuilder, $query, ['r.title', 'r.description']);
 
-        $sortField = self::SORT_FIELDS[$query->sort ?? ''] ?? self::SORT_FIELDS['title'];
-        $direction = 'desc' === $query->dir ? 'DESC' : 'ASC';
-        $queryBuilder->orderBy($sortField, $direction)->addOrderBy('r.id', 'ASC');
+        ListQueryApplier::sort($queryBuilder, $query, self::SORT_FIELDS, 'r.id');
 
         return Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
     }

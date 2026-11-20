@@ -1,12 +1,10 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}Overview{% endblock %}
 
-{% block body %}
-    <h1>Overview</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}Overview{% endblock %}
 
+{% block content %}
     <h2>Provider</h2>
     <table>
         <thead>
@@ -21,7 +19,7 @@
                 <tr>
                     <td>{{ row.provider.label }}</td>
                     <td>{{ row.key ? 'set' : 'not set' }}</td>
-                    <td>{{ row.key ? row.key.updatedAt|date('d.m.Y H:i') : '–' }}</td>
+                    <td>{{ row.key ? row.key.updatedAt|date : '–' }}</td>
                 </tr>
             {% endfor %}
         </tbody>

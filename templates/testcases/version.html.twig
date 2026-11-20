@@ -1,12 +1,10 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}Testcase {{ version.title }} – version {{ version.label }}{% endblock %}
 
-{% block body %}
-    <h1>{{ version.title }} – version {{ version.label }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}{{ version.title }} – version {{ version.label }}{% endblock %}
 
+{% block content %}
     <p><a href="{{ path('app_testcase_show', {uuid: testcase.uuid}) }}">Back to testcase</a></p>
 
     <p>Saved: {{ version.savedAt|date }}</p>

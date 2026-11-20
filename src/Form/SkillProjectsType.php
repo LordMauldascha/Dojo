@@ -5,32 +5,11 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\Project;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 
-/** @extends AbstractType<array{projects: list<Project>}> */
-final class SkillProjectsType extends AbstractType
+final class SkillProjectsType extends AbstractChecklistType
 {
-    public function buildForm(FormBuilderInterface $builder, array $options): void
+    protected function definition(): array
     {
-        $builder
-            ->add('projects', EntityType::class, [
-                'class' => Project::class,
-                'choices' => $options['available_projects'],
-                'choice_label' => 'title',
-                'label' => 'Projects',
-                'multiple' => true,
-                'expanded' => true,
-                'required' => false,
-            ])
-            ->add('save', SubmitType::class, ['label' => 'Save projects']);
-    }
-
-    public function configureOptions(OptionsResolver $resolver): void
-    {
-        $resolver->setRequired('available_projects')->setAllowedTypes('available_projects', 'array');
+        return ['class' => Project::class, 'field' => 'projects', 'label' => 'Projects', 'submit' => 'Save projects', 'choice_label' => 'title'];
     }
 }

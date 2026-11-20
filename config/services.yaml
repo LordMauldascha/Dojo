@@ -21,6 +21,9 @@ services:
 
     Sulu\Twig\Extensions\ComponentExtension: ~
 
+    app.null_logger:
+        class: Psr\Log\NullLogger
+
     # ai-bundle has no config key for the Claude Code bridge, so the platform is built via its factory
     Symfony\AI\Platform\PlatformInterface:
         public: true
@@ -30,7 +33,8 @@ services:
                 ANTHROPIC_API_KEY: '%env(ANTHROPIC_API_KEY)%'
                 CLAUDE_CODE_OAUTH_TOKEN: '%env(CLAUDE_CODE_OAUTH_TOKEN)%'
             $eventDispatcher: '@event_dispatcher'
-            $logger: '@logger'
+            # the platform logs the full command line including the prompt, which must not reach the logs
+            $logger: '@app.null_logger'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

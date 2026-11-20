@@ -12,22 +12,25 @@ use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\GroupRepository;
 use App\Repository\ProjectRepository;
+use App\Routing\Requirements;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_ADMIN')]
 #[Route('/admin/groups')]
 final class GroupController extends AbstractController
 {
-    use CsrfGuardTrait;
+    use SafeFlushTrait;
 
     private const LIST_KEY = 'groups';
 
@@ -55,7 +58,9 @@ final class GroupController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($group);
-            $entityManager->flush();
+            if (!$this->flushOrConflict($entityManager)) {
+                return $this->redirectToRoute('app_admin_group_new');
+            }
             $this->addFlash('success', \sprintf('Group "%s" created.', $group->getTitle()));
 
             return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
@@ -64,9 +69,9 @@ final class GroupController extends AbstractController
         return $this->render('admin/groups/new.html.twig', ['form' => $form]);
     }
 
-    #[Route('/{uuid}', name: 'app_admin_group_show', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/{uuid:group}', name: 'app_admin_group_show', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
     public function show(
-        #[MapEntity(mapping: ['uuid' => 'uuid'])] Group $group,
+        Group $group,
         Request $request,
         GroupRepository $groups,
         EntityManagerInterface $entityManager,
@@ -75,8 +80,9 @@ final class GroupController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-            $this->addFlash('success', 'Group saved.');
+            if ($this->flushOrConflict($entityManager)) {
+                $this->addFlash('success', 'Group saved.');
+            }
 
             return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
         }
@@ -88,9 +94,9 @@ final class GroupController extends AbstractController
         ]);
     }
 
-    #[Route('/{uuid}/users', name: 'app_admin_group_user_add', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
+    #[Route('/{uuid:group}/users', name: 'app_admin_group_user_add', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     public function addUser(
-        #[MapEntity(mapping: ['uuid' => 'uuid'])] Group $group,
+        Group $group,
         Request $request,
         GroupRepository $groups,
         EntityManagerInterface $entityManager,
@@ -99,26 +105,25 @@ final class GroupController extends AbstractController
         $form->handleRequest($request);
 
         $user = $form->isSubmitted() && $form->isValid() ? $form->get('user')->getData() : null;
-        if ($user instanceof User) {
-            $group->addUser($user);
-            $entityManager->flush();
-            $this->addFlash('success', \sprintf('User "%s" added.', $user->getUserIdentifier()));
-        } else {
+        if (!$user instanceof User) {
             $this->addFlash('error', 'The user could not be added.');
+        } else {
+            $group->addUser($user);
+            if ($this->flushOrConflict($entityManager)) {
+                $this->addFlash('success', \sprintf('User "%s" added.', $user->getUserIdentifier()));
+            }
         }
 
         return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
     }
 
-    #[Route('/{uuid}/users/{userId}/remove', name: 'app_admin_group_user_remove', requirements: ['uuid' => Requirement::UUID, 'userId' => Requirement::DIGITS], methods: ['POST'])]
+    #[Route('/{uuid:group}/users/{userId}/remove', name: 'app_admin_group_user_remove', requirements: ['uuid' => Requirement::UUID, 'userId' => Requirements::ID], methods: ['POST'])]
+    #[IsCsrfTokenValid(new Expression('"remove-group-user-" ~ args["group"].getUuid() ~ "-" ~ args["user"].getId()'), methods: 'POST')]
     public function removeUser(
-        #[MapEntity(mapping: ['uuid' => 'uuid'])] Group $group,
+        Group $group,
         #[MapEntity(id: 'userId')] User $user,
-        Request $request,
         EntityManagerInterface $entityManager,
     ): Response {
-        $this->denyUnlessValidToken('remove-group-user-'.$group->getUuid().'-'.$user->getId(), $request);
-
         $group->removeUser($user);
         $entityManager->flush();
         $this->addFlash('success', \sprintf('User "%s" removed.', $user->getUserIdentifier()));
@@ -126,36 +131,35 @@ final class GroupController extends AbstractController
         return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
     }
 
-    #[Route('/{uuid}/delete', name: 'app_admin_group_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/{uuid:group}/delete', name: 'app_admin_group_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[IsCsrfTokenValid(new Expression('"delete-group-" ~ args["group"].getUuid()'), methods: 'POST')]
     public function delete(
-        #[MapEntity(mapping: ['uuid' => 'uuid'])] Group $group,
+        Group $group,
         Request $request,
         ProjectRepository $projects,
         EntityManagerInterface $entityManager,
     ): Response {
-        if ($request->isMethod('POST')) {
-            $this->denyUnlessValidToken('delete-group-'.$group->getUuid(), $request);
-
-            $title = $group->getTitle();
-            $entityManager->remove($group);
-            $entityManager->flush();
-            $this->addFlash('success', \sprintf('Group "%s" deleted.', $title));
-
-            return $this->redirectToRoute('app_admin_groups');
+        if (!$request->isMethod('POST')) {
+            return $this->render('admin/groups/delete.html.twig', [
+                'group' => $group,
+                'projects' => $projects->findByGroup($group),
+            ]);
         }
 
-        return $this->render('admin/groups/delete.html.twig', [
-            'group' => $group,
-            'projects' => $projects->findByGroup($group),
-        ]);
+        $title = $group->getTitle();
+        $entityManager->remove($group);
+        $entityManager->flush();
+        $this->addFlash('success', \sprintf('Group "%s" deleted.', $title));
+
+        return $this->redirectToRoute('app_admin_groups');
     }
 
-    /** @return FormInterface<array{user: User|null}|null> */
+    /** @return FormInterface<array<string, mixed>|null> */
     private function createAddUserForm(Group $group, GroupRepository $groups): FormInterface
     {
         return $this->createForm(AddUserType::class, null, [
             'action' => $this->generateUrl('app_admin_group_user_add', ['uuid' => $group->getUuid()]),
-            'available_users' => $groups->findAssignableUsers($group),
+            'choices' => $groups->findAssignableUsers($group),
         ]);
     }
 }

@@ -16,14 +16,14 @@ LLMs is not built yet, so starting only creates the version.
 
 An entry is a combination, so a model always belongs to its provider. The model select on the run page is grouped by
 provider. The effort is optional and one of `low`, `medium`, `high`, `xhigh`, `max`. The same combination cannot be added
-twice; entries are removed one by one.
+twice; entries are removed one by one, identified by provider, model and effort (not by their position in the list).
 
 Providers, their models and the effort levels are defined in code (`App\Ai\Provider::models()`, `App\Ai\Effort`) and
 are available in every project. Adding a model is a code change.
 
 ### Skills and testcases of a run
 
-Only skills and testcases of the run's project can be selected, and deleted ones are not offered. This also holds
+Only skills and testcases of the run's project can be selected, and deleted ones are not offered. Starting a run also leaves out anything deleted or no longer in the project. This also holds
 afterwards: a skill or testcase is removed from a run automatically when it
 
 - is removed from the run's project (skill) or moved to another project or cleared (testcase),

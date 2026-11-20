@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Ai;
 
 use App\Ai\Provider;
-use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use PHPUnit\Framework\TestCase;
 
-final class ProviderTest extends PhpUnitTestCase
+final class ProviderTest extends TestCase
 {
     public function testEveryProviderOffersUniqueNonEmptyModelsAndADisplayName(): void
     {

@@ -5,23 +5,30 @@ declare(strict_types=1);
 namespace App\Form\Model;
 
 use App\Entity\TestcaseVersion;
+use App\Validator\NoNulByte;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final class TestcaseData
 {
+    use NormalizesText;
+
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
+    #[NoNulByte]
     public ?string $title = null;
 
     #[Assert\Length(max: 2000)]
+    #[NoNulByte]
     public ?string $description = null;
 
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(normalizer: 'trim')]
     #[Assert\Length(max: 100000)]
+    #[NoNulByte]
     public ?string $prompt = null;
 
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(normalizer: 'trim')]
     #[Assert\Length(max: 100000)]
+    #[NoNulByte]
     public ?string $expectedOutput = null;
 
     public static function fromVersion(TestcaseVersion $version): self
@@ -33,18 +40,6 @@ final class TestcaseData
         $data->expectedOutput = $version->getExpectedOutput();
 
         return $data;
-    }
-
-    public function normalizedTitle(): string
-    {
-        return trim($this->title ?? '');
-    }
-
-    public function normalizedDescription(): ?string
-    {
-        $description = trim($this->description ?? '');
-
-        return '' === $description ? null : $description;
     }
 
     public function normalizedPrompt(): string

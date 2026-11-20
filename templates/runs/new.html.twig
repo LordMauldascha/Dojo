@@ -1,12 +1,10 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}New run{% endblock %}
 
-{% block body %}
-    <h1>New run in project {{ project.title }}</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}New run in project {{ project.title }}{% endblock %}
 
+{% block content %}
     {{ form(form) }}
     <p><a href="{{ path('app_runs', {uuid: project.uuid}) }}">Back to runs</a></p>
 {% endblock %}

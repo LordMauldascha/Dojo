@@ -1,0 +1,37 @@
+{# Version history of a skill or testcase. Expects: entity, versionRoute, restoreRoute, restoreTokenPrefix. #}
+{% import '_forms.html.twig' as forms %}
+
+{% set active = entity.activeVersion %}
+{% set draft = entity.draft %}
+
+<h2>Version history</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Version</th>
+            <th>Title</th>
+            <th>Saved</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for version in entity.versions|reverse %}
+            <tr>
+                <td>{{ version.label }}</td>
+                <td>{{ version.title }}</td>
+                <td>{{ version.savedAt|date }}</td>
+                <td>{{ version.draft ? 'draft' : (version.number == active.number ? 'active' : '') }}</td>
+                <td>
+                    <a href="{{ path(versionRoute, {uuid: entity.uuid, number: version.number}) }}">View</a>
+                    {% if not version.draft and version.number != active.number and not draft %}
+                        {{ forms.post(path(restoreRoute, {uuid: entity.uuid, number: version.number}), restoreTokenPrefix ~ entity.uuid ~ '-' ~ version.number, 'Restore') }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if draft %}
+    <p>Restoring is possible once the draft is saved as final or discarded.</p>
+{% endif %}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Entity;
 
+use App\Entity\Project;
 use App\Entity\Skill;
 use PHPUnit\Framework\TestCase;
 
@@ -117,5 +118,47 @@ final class SkillTest extends TestCase
         $skill->softDelete();
 
         self::assertTrue($skill->isDeleted());
+    }
+
+    public function testAssigningAndRemovingAProjectTouchesTheProject(): void
+    {
+        $project = new Project();
+        $skill = new Skill('Review', null, 'content');
+        $before = $project->getUpdatedAt();
+
+        usleep(2000);
+        $skill->addProject($project);
+        $afterAdding = $project->getUpdatedAt();
+        usleep(2000);
+        $skill->removeProject($project);
+
+        self::assertGreaterThan($before, $afterAdding);
+        self::assertGreaterThan($afterAdding, $project->getUpdatedAt());
+    }
+
+    public function testReplacingProjectsKeepsTheAssignmentsTheEditorCannotChange(): void
+    {
+        $mine = new Project();
+        $foreign = new Project();
+        $skill = new Skill('Review', null, 'content');
+        $skill->addProject($mine);
+        $skill->addProject($foreign);
+
+        self::assertTrue($skill->replaceProjects([$mine], [], false));
+
+        self::assertSame([$foreign], array_values($skill->getProjects()->toArray()));
+    }
+
+    public function testReplacingProjectsRefusesToLeaveTheSkillWithoutAnyProject(): void
+    {
+        $mine = new Project();
+        $skill = new Skill('Review', null, 'content');
+        $skill->addProject($mine);
+
+        self::assertFalse($skill->replaceProjects([$mine], [], false));
+        self::assertSame([$mine], array_values($skill->getProjects()->toArray()));
+
+        self::assertTrue($skill->replaceProjects([$mine], [], true));
+        self::assertCount(0, $skill->getProjects());
     }
 }

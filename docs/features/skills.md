@@ -9,7 +9,7 @@ A skill is an LLM skill: a title, a description and the text of its `SKILL.md`. 
 | --- | --- | --- |
 | Title | required, at most 255 characters | yes |
 | Description | optional, at most 2000 characters | yes |
-| SKILL.md | required, at most 100 000 characters | yes |
+| SKILL.md | required, at most 100 000 characters; stored exactly as typed (line breaks normalised, no trimming) | yes |
 | Projects | 0 to n; the assignment only controls who may see and edit the skill | no |
 
 Also stored: creator, created, updated and deleted time.
@@ -40,12 +40,12 @@ The overview searches the title and description of the active version and can be
 The Runs column counts the runs that use the skill, limited to runs in projects the viewer can access. Shared behavior:
 [Overview tables](overview-tables.md).
 
-The edit form on the detail page starts from the draft if one exists, otherwise from the active version. The version
+When the skill is also assigned to projects the user cannot see, the page says how many; changes apply there too. The edit form on the detail page starts from the draft if one exists, otherwise from the active version. The version
 history lists all versions with their status, offers *View* and, when no draft exists, *Restore*.
 
 ## Deleting a skill
 
-Deleting is a soft delete: the skill disappears from all lists, project pages and run assignment forms, but its
+Deleting (button *Delete*) is a soft delete: the skill disappears from all lists, project pages and run assignment forms, but its
 versions stay in the database so that old run versions can still show it (marked as deleted). The skill is removed from
 all runs it was assigned to. There is no undelete in the interface.
 

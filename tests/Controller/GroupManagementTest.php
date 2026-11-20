@@ -8,25 +8,10 @@ use App\Entity\Group;
 use App\Entity\Project;
 use App\Entity\User;
 use App\Security\UserRole;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
+use App\Tests\Support\AppWebTestCase;
 
-final class GroupManagementTest extends WebTestCase
+final class GroupManagementTest extends AppWebTestCase
 {
-    private KernelBrowser $client;
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        $this->entityManager->createQuery('DELETE FROM '.Project::class)->execute();
-        $this->entityManager->createQuery('DELETE FROM '.Group::class)->execute();
-        $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
-    }
-
     public function testAdminCreatesGroupAndLandsOnDetailPage(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
@@ -309,12 +294,40 @@ final class GroupManagementTest extends WebTestCase
         self::assertSame(['q' => 'ent', 'sort' => 'title', 'dir' => 'desc', 'perPage' => '20', 'page' => '1'], $params);
     }
 
-    /** @return list<string> */
-    private function titles(Crawler $crawler): array
+    public function testTheFirstClickOnTheDefaultSortedTitleColumnReversesTheOrder(): void
     {
-        self::assertResponseIsSuccessful();
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $this->persistGroup('Entwicklung');
 
-        return $crawler->filter('tbody tr td:first-child')->each(static fn (Crawler $cell): string => trim($cell->text()));
+        $crawler = $this->client->request('GET', '/admin/groups');
+        $header = $crawler->filter('thead th')->first();
+
+        self::assertSame('ascending', $header->attr('aria-sort'));
+        parse_str((string) parse_url((string) $header->filter('a')->attr('href'), \PHP_URL_QUERY), $params);
+        self::assertSame('title', $params['sort']);
+        self::assertSame('desc', $params['dir']);
+    }
+
+    public function testPaginationKeepsADescendingDirectionWithoutAnExplicitSortColumn(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        for ($i = 1; 12 >= $i; ++$i) {
+            $this->persistGroup(\sprintf('Group %02d', $i));
+        }
+
+        $crawler = $this->client->request('GET', '/admin/groups', ['dir' => 'desc']);
+        self::assertStringContainsString('dir=desc', (string) $crawler->filter('nav[aria-label="Pagination"] a[rel="next"]')->attr('href'));
+
+        self::assertSame(['Group 02', 'Group 01'], $this->titles($this->client->request('GET', '/admin/groups', ['dir' => 'desc', 'page' => 2])));
+    }
+
+    public function testSearchTermWithANullByteIsRejected(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+
+        $this->client->request('GET', '/admin/groups', ['q' => "a\0b"]);
+
+        self::assertResponseStatusCodeSame(422);
     }
 
     private function submitNewGroup(string $title): void
@@ -338,27 +351,5 @@ final class GroupManagementTest extends WebTestCase
         self::assertInstanceOf(Group::class, $group);
 
         return $group;
-    }
-
-    private function persistGroup(string $title): Group
-    {
-        $group = new Group();
-        $group->setTitle($title);
-        $this->entityManager->persist($group);
-        $this->entityManager->flush();
-
-        return $group;
-    }
-
-    private function persistUser(string $username, UserRole $role = UserRole::User): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setRole($role);
-        $user->setPassword('unused-in-these-tests');
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $user;
     }
 }

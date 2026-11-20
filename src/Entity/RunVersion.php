@@ -68,11 +68,6 @@ class RunVersion
         return $this->id;
     }
 
-    public function getRun(): Run
-    {
-        return $this->run;
-    }
-
     public function getNumber(): int
     {
         return $this->number;

@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Ai\LlmConfiguration;
 use App\Repository\RunRepository;
+use App\Validator\NoNulByte;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -29,10 +30,12 @@ class Run
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
+    #[NoNulByte]
     private string $title = '';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 2000)]
+    #[NoNulByte]
     private ?string $description = null;
 
     /** @var list<array{provider: string, model: string, effort: string|null}> */
@@ -151,15 +154,18 @@ class Run
         return true;
     }
 
-    public function removeConfigurationAt(int $index): bool
+    public function removeConfiguration(string $key): bool
     {
-        if (!isset($this->configurations[$index])) {
-            return false;
-        }
-        array_splice($this->configurations, $index, 1);
-        $this->touch();
+        foreach ($this->getConfigurations() as $index => $configuration) {
+            if ($configuration->key() === $key) {
+                array_splice($this->configurations, $index, 1);
+                $this->touch();
 
-        return true;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @return Collection<int, Skill> */
@@ -171,17 +177,9 @@ class Run
     /** @param list<Skill> $skills */
     public function setSkills(array $skills): void
     {
-        foreach ($this->skills->toArray() as $skill) {
-            if (!\in_array($skill, $skills, true)) {
-                $this->skills->removeElement($skill);
-            }
+        if ($this->sync($this->skills, $skills)) {
+            $this->touch();
         }
-        foreach ($skills as $skill) {
-            if (!$this->skills->contains($skill)) {
-                $this->skills->add($skill);
-            }
-        }
-        $this->touch();
     }
 
     /** @return Collection<int, Testcase> */
@@ -193,17 +191,9 @@ class Run
     /** @param list<Testcase> $testcases */
     public function setTestcases(array $testcases): void
     {
-        foreach ($this->testcases->toArray() as $testcase) {
-            if (!\in_array($testcase, $testcases, true)) {
-                $this->testcases->removeElement($testcase);
-            }
+        if ($this->sync($this->testcases, $testcases)) {
+            $this->touch();
         }
-        foreach ($testcases as $testcase) {
-            if (!$this->testcases->contains($testcase)) {
-                $this->testcases->add($testcase);
-            }
-        }
-        $this->touch();
     }
 
     /** @return Collection<int, RunVersion> */
@@ -230,10 +220,16 @@ class Run
         return false === $latest ? null : $latest;
     }
 
-    /** Snapshots the run with the latest final version of every assigned skill and testcase (drafts are ignored). */
+    /**
+     * Snapshots the run with the latest final version of every assigned skill and testcase (drafts are ignored).
+     * Items that were deleted or do not belong to the run's project are left out, even if a prune is still pending.
+     */
     public function start(): RunVersion
     {
-        if ($this->testcases->isEmpty()) {
+        $skills = array_filter($this->skills->toArray(), fn (Skill $skill): bool => !$skill->isDeleted() && $skill->getProjects()->contains($this->project));
+        $testcases = array_filter($this->testcases->toArray(), fn (Testcase $testcase): bool => !$testcase->isDeleted() && $testcase->getProject() === $this->project);
+
+        if ([] === $testcases) {
             throw new \LogicException('A run needs at least one testcase to start.');
         }
         if ([] === $this->configurations) {
@@ -246,8 +242,8 @@ class Run
             $this->title,
             $this->description,
             $this->configurations,
-            array_values($this->skills->map(static fn (Skill $skill): SkillVersion => $skill->getActiveVersion())->toArray()),
-            array_values($this->testcases->map(static fn (Testcase $testcase): TestcaseVersion => $testcase->getActiveVersion())->toArray()),
+            array_values(array_map(static fn (Skill $skill): SkillVersion => $skill->getActiveVersion(), $skills)),
+            array_values(array_map(static fn (Testcase $testcase): TestcaseVersion => $testcase->getActiveVersion(), $testcases)),
         );
         $this->versions->add($version);
 
@@ -262,6 +258,33 @@ class Run
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param Collection<int, T> $collection
+     * @param list<T>            $items
+     *
+     * @return bool whether the collection changed
+     */
+    private function sync(Collection $collection, array $items): bool
+    {
+        $changed = false;
+        foreach ($collection->toArray() as $existing) {
+            if (!\in_array($existing, $items, true)) {
+                $collection->removeElement($existing);
+                $changed = true;
+            }
+        }
+        foreach ($items as $item) {
+            if (!$collection->contains($item)) {
+                $collection->add($item);
+                $changed = true;
+            }
+        }
+
+        return $changed;
     }
 
     private function touch(): void

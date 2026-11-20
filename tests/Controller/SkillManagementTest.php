@@ -4,30 +4,17 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Entity\Group;
 use App\Entity\Project;
 use App\Entity\Skill;
 use App\Entity\User;
+use App\Form\Help;
+use App\Repository\SkillRepository;
 use App\Security\UserRole;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\AppWebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class SkillManagementTest extends WebTestCase
+final class SkillManagementTest extends AppWebTestCase
 {
-    private KernelBrowser $client;
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        foreach ([Skill::class, Project::class, Group::class, User::class] as $class) {
-            $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
-        }
-    }
-
     public function testAdminCreatesSkillWithoutProject(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
@@ -330,7 +317,7 @@ final class SkillManagementTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $this->client->request('POST', '/skills/'.$mine->getUuid().'/delete', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->selectButton('Delete')->form());
         self::assertResponseRedirects('/skills');
         $this->entityManager->clear();
         self::assertTrue($this->findSkill('Mine')->isDeleted());
@@ -338,7 +325,7 @@ final class SkillManagementTest extends WebTestCase
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
         $crawler = $this->client->request('GET', '/skills/'.$adminSkill->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->selectButton('Delete')->form());
         self::assertResponseRedirects('/skills');
         self::assertSame([], $this->titles($this->client->request('GET', '/skills')));
     }
@@ -418,12 +405,95 @@ final class SkillManagementTest extends WebTestCase
         self::assertStringContainsString('project='.$own->getUuid(), (string) $href);
     }
 
-    /** @return list<string> */
-    private function titles(Crawler $crawler): array
+    public function testContentIsStoredExactlyAsTyped(): void
     {
-        self::assertResponseIsSuccessful();
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin);
+        $this->client->loginUser($admin);
 
-        return $crawler->filter('tbody tr td:first-child')->each(static fn (Crawler $cell): string => trim($cell->text()));
+        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+        $this->submit($crawler, 'Save as final', 'skill_content', ['content' => "  indented\nsecond line\n"]);
+
+        $this->entityManager->clear();
+        self::assertSame("  indented\nsecond line\n", $this->findSkill('Review')->getActiveVersion()->getContent());
+    }
+
+    public function testBlankContentAndNullBytesAreRejected(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin);
+        $this->client->loginUser($admin);
+
+        foreach ([['content' => "   \n  "], ['content' => "a\0b"], ['title' => "a\0b"], ['description' => "a\0b"]] as $overrides) {
+            $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+            $this->submit($crawler, 'Save as draft', 'skill_content', $overrides);
+            self::assertResponseStatusCodeSame(422, (string) json_encode($overrides));
+        }
+
+        $this->entityManager->clear();
+        self::assertCount(1, $this->findSkill('Review')->getVersions());
+    }
+
+    public function testSkillsWithTheSameTitleKeepTheirCreationOrder(): void
+    {
+        $project = $this->persistProject('Security');
+        $ids = [];
+        for ($i = 0; 3 > $i; ++$i) {
+            $ids[] = $this->persistSkill('Review', [$project])->getId();
+        }
+
+        $found = array_map(static fn (Skill $skill): ?int => $skill->getId(), static::getContainer()->get(SkillRepository::class)->findByProject($project));
+
+        self::assertSame($ids, $found);
+    }
+
+    public function testTheEditorIsToldAboutProjectsHeCannotSee(): void
+    {
+        $user = $this->persistUser('alice');
+        $visible = $this->persistProject('Own', [$user]);
+        $hidden = $this->persistProject('Hidden');
+        $shared = $this->persistSkill('Shared', [$visible, $hidden]);
+        $own = $this->persistSkill('Only own', [$visible]);
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/skills/'.$shared->getUuid());
+        self::assertSelectorTextContains('body', 'also assigned to 1 project(s) you cannot see');
+
+        $this->client->request('GET', '/skills/'.$own->getUuid());
+        self::assertSelectorTextNotContains('body', 'you cannot see');
+    }
+
+    public function testAnInvalidCsrfTokenIsRefusedWithoutLoggingTheUserOut(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin);
+        $this->client->loginUser($admin);
+
+        $this->client->request('POST', '/skills/'.$skill->getUuid().'/draft/discard', ['_token' => 'invalid']);
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->request('GET', '/skills');
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testFreeTextFieldsRemindAboutPersonalData(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+
+        $crawler = $this->client->request('GET', '/skills/new');
+
+        self::assertSame(2, substr_count($crawler->filter('body')->text(), Help::NO_PERSONAL_DATA));
+    }
+
+    public function testAnOversizedVersionNumberIsNotFound(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin);
+        $this->client->loginUser($admin);
+
+        $this->client->request('GET', '/skills/'.$skill->getUuid().'/versions/99999999999');
+
+        self::assertResponseStatusCodeSame(404);
     }
 
     /** @return list<string> */
@@ -435,23 +505,6 @@ final class SkillManagementTest extends WebTestCase
         return $titles;
     }
 
-    private function tokenOf(Crawler $crawler, string $formSelector): ?string
-    {
-        $form = $crawler->filter($formSelector);
-
-        return 0 === $form->count() ? null : $form->filter('input[name="_token"]')->attr('value');
-    }
-
-    /** @param array<string, mixed> $overrides */
-    private function submit(Crawler $crawler, string $button, string $formName, array $overrides): void
-    {
-        $form = $crawler->selectButton($button)->form();
-        /** @var array<string, array<string, mixed>> $values */
-        $values = $form->getPhpValues();
-        $values[$formName] = array_replace($values[$formName], $overrides);
-        $this->client->request($form->getMethod(), $form->getUri(), $values);
-    }
-
     private function findSkill(string $title): Skill
     {
         foreach ($this->entityManager->getRepository(Skill::class)->findAll() as $skill) {
@@ -460,54 +513,5 @@ final class SkillManagementTest extends WebTestCase
             }
         }
         self::fail('Skill not found: '.$title);
-    }
-
-    /** @param list<Project> $projects */
-    private function persistSkill(string $title, array $projects, ?User $creator = null, string $content = 'content', ?string $description = null): Skill
-    {
-        $skill = new Skill($title, $description, $content, $creator);
-        foreach ($projects as $project) {
-            $skill->addProject($project);
-        }
-        $this->entityManager->persist($skill);
-        $this->entityManager->flush();
-
-        return $skill;
-    }
-
-    /** @param list<User> $users */
-    private function persistProject(string $title, array $users = []): Project
-    {
-        $project = new Project();
-        $project->setTitle($title);
-        foreach ($users as $user) {
-            $project->addUser($user);
-        }
-        $this->entityManager->persist($project);
-        $this->entityManager->flush();
-
-        return $project;
-    }
-
-    private function persistGroup(string $title): Group
-    {
-        $group = new Group();
-        $group->setTitle($title);
-        $this->entityManager->persist($group);
-        $this->entityManager->flush();
-
-        return $group;
-    }
-
-    private function persistUser(string $username, UserRole $role = UserRole::User): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setRole($role);
-        $user->setPassword('unused-in-these-tests');
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $user;
     }
 }

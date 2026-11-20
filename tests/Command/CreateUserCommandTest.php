@@ -63,12 +63,13 @@ final class CreateUserCommandTest extends KernelTestCase
         self::assertCount(0, $this->entityManager->getRepository(User::class)->findAll());
     }
 
-    public function testAcceptsShortPassword(): void
+    public function testRejectsPasswordShorterThanTwelveCharacters(): void
     {
-        $tester = $this->createViaCommand(['username' => 'carol'], ['a', 'a']);
+        $tester = $this->createViaCommand(['username' => 'carol', '--admin' => true], ['short-pw-11', 'short-pw-11']);
 
-        self::assertSame(0, $tester->getStatusCode());
-        self::assertTrue(password_verify('a', $this->findUser('carol')?->getPassword() ?? ''));
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('too short', $tester->getDisplay());
+        self::assertNull($this->findUser('carol'));
     }
 
     public function testRejectsMismatchingRepeat(): void

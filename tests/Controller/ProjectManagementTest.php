@@ -9,28 +9,13 @@ use App\Entity\Project;
 use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Entity\User;
+use App\Form\Help;
 use App\Security\UserRole;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\AppWebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class ProjectManagementTest extends WebTestCase
+final class ProjectManagementTest extends AppWebTestCase
 {
-    private KernelBrowser $client;
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        $this->client = static::createClient();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        $this->entityManager->createQuery('DELETE FROM '.Testcase::class)->execute();
-        $this->entityManager->createQuery('DELETE FROM '.Skill::class)->execute();
-        $this->entityManager->createQuery('DELETE FROM '.Project::class)->execute();
-        $this->entityManager->createQuery('DELETE FROM '.Group::class)->execute();
-        $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
-    }
-
     public function testAdminCreatesProjectAndLandsOnDetailPage(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
@@ -203,7 +188,7 @@ final class ProjectManagementTest extends WebTestCase
         $user = $this->persistUser('alice');
         $group = $this->persistGroup('Team one');
         $group->addUser($this->persistUser('bob'));
-        $project = $this->persistProject('Security', 'Pentests');
+        $project = $this->persistProject('Security', description: 'Pentests');
         $project->addUser($user);
         $project->addGroup($group);
         $this->entityManager->flush();
@@ -297,9 +282,9 @@ final class ProjectManagementTest extends WebTestCase
     public function testAdminSeesAllProjectsAndSearchHitsDescription(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
-        $this->persistProject('Alpha', 'handles GDPR requests');
-        $this->persistProject('Beta', null);
-        $this->persistProject('Gamma_x', 'other');
+        $this->persistProject('Alpha', description: 'handles GDPR requests');
+        $this->persistProject('Beta');
+        $this->persistProject('Gamma_x', description: 'other');
 
         $matches = $this->titles($this->client->request('GET', '/projects'));
         sort($matches);
@@ -492,12 +477,13 @@ final class ProjectManagementTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    /** @return list<string> */
-    private function titles(Crawler $crawler): array
+    public function testTheDescriptionFieldRemindsAboutPersonalData(): void
     {
-        self::assertResponseIsSuccessful();
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
 
-        return $crawler->filter('tbody tr td:first-child')->each(static fn (Crawler $cell): string => trim($cell->text()));
+        $crawler = $this->client->request('GET', '/projects/new');
+
+        self::assertSame(1, substr_count($crawler->filter('body')->text(), Help::NO_PERSONAL_DATA));
     }
 
     private function findProject(string $title): Project
@@ -506,60 +492,5 @@ final class ProjectManagementTest extends WebTestCase
         self::assertInstanceOf(Project::class, $project);
 
         return $project;
-    }
-
-    private function persistProject(string $title, ?string $description = null): Project
-    {
-        $project = new Project();
-        $project->setTitle($title);
-        $project->setDescription($description);
-        $this->entityManager->persist($project);
-        $this->entityManager->flush();
-
-        return $project;
-    }
-
-    /** @param list<Project> $projects */
-    private function persistSkill(string $title, array $projects = []): Skill
-    {
-        $skill = new Skill($title, null, 'content');
-        foreach ($projects as $project) {
-            $skill->addProject($project);
-        }
-        $this->entityManager->persist($skill);
-        $this->entityManager->flush();
-
-        return $skill;
-    }
-
-    private function persistTestcase(string $title, ?Project $project): Testcase
-    {
-        $testcase = new Testcase($title, null, 'prompt', 'output', $project);
-        $this->entityManager->persist($testcase);
-        $this->entityManager->flush();
-
-        return $testcase;
-    }
-
-    private function persistGroup(string $title): Group
-    {
-        $group = new Group();
-        $group->setTitle($title);
-        $this->entityManager->persist($group);
-        $this->entityManager->flush();
-
-        return $group;
-    }
-
-    private function persistUser(string $username, UserRole $role = UserRole::User): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setRole($role);
-        $user->setPassword('unused-in-these-tests');
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $user;
     }
 }

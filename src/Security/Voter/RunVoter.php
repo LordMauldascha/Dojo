@@ -7,7 +7,6 @@ namespace App\Security\Voter;
 use App\Entity\Run;
 use App\Entity\User;
 use App\Repository\ProjectRepository;
-use App\Security\UserRole;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -40,7 +39,7 @@ final class RunVoter extends Voter
             return false;
         }
 
-        if (UserRole::Admin === $user->getRole()) {
+        if ($user->isAdmin()) {
             return true;
         }
 

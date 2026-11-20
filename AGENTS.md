@@ -128,6 +128,31 @@ git config core.hooksPath .githooks
 - [docs/CI.md](docs/CI.md): the GitHub Actions pipeline (`.github/workflows/ci.yml`). Keep it up to date when
   `.github/` changes.
 
+## Before production and before runs call LLM providers
+
+These points depend on the deployment or on code that does not exist yet, so they are rules for the next step, not code:
+
+- **Production setup**: set `APP_ENV=prod`, a real `APP_SECRET` (the kernel refuses to boot in prod without one),
+  `API_KEY_ENCRYPTION_KEY` and the database password (`POSTGRES_PASSWORD`). Behind a reverse proxy that terminates TLS set
+  `TRUSTED_PROXIES` (comma separated) and configure trusted hosts. Do not ship the `Dockerfile` as it is: it uses the
+  development `php.ini`, runs as root and bind-mounts the code. Add a production stage (`php.ini-production`, non-root
+  user, `composer install --no-dev --classmap-authoritative`).
+- **Dev stack**: `compose.override.yaml` publishes the app, database and mail catcher on `127.0.0.1` only. Keep it that way;
+  the web profiler has no authentication and shows request data. Do not keep real provider keys in `.env.local` while
+  developing, the keys stored in the database are enough.
+- **Runs that call an LLM**: route every call through one gateway service that passes `tools: []` and a fixed option
+  whitelist to the platform, hands the process only the one credential of the provider and never forwards user-controlled
+  option names. Run the container as a non-root user. Prompts must not reach logs or the process list (the Claude Code
+  platform logger is a `NullLogger` on purpose). Add a quota per project and user before a run can start paid calls. Pick one
+  source of provider keys (database or environment), not both.
+- **Shared skills**: a skill in several projects is editable by members of any one of them and changes the input of runs in
+  all of them. The skill page shows how many projects the editor cannot see. Decide whether that is acceptable before runs execute.
+- **Personal data**: free text may contain personal data despite the hints. Versions and run snapshots are immutable and
+  there is no purge in the interface, so a deletion request needs a database intervention.
+- **Supply chain**: run `composer audit` and `npm audit` regularly. GitHub Actions are pinned by tag, not by commit.
+- **Kept on purpose**: the versioning code exists twice (`Skill`, `Testcase`); packages for mail, notifications and
+  messaging stay installed for planned features.
+
 ## AI usage and data protection
 
 Prompts sent via `app:ask-claude` or the `PlatformInterface` leave the application and go to Anthropic. Never put

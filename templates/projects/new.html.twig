@@ -1,12 +1,10 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}New project{% endblock %}
 
-{% block body %}
-    <h1>New project</h1>
-    {{ include('_nav.html.twig') }}
-    {{ include('_flashes.html.twig') }}
+{% block heading %}New project{% endblock %}
 
+{% block content %}
     {{ form(form) }}
     <p><a href="{{ path('app_projects') }}">Back to overview</a></p>
 {% endblock %}

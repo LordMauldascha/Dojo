@@ -16,13 +16,15 @@ use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 
 final class RunVersionDifferTest extends PhpUnitTestCase
 {
+    private Project $project;
     private Testcase $testcase;
     private Run $run;
 
     protected function setUp(): void
     {
-        $this->testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1');
-        $this->run = new Run(new Project());
+        $this->project = new Project();
+        $this->testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1', $this->project);
+        $this->run = new Run($this->project);
         $this->run->setTitle('Nightly');
         $this->run->setDescription('All reviews');
         $this->run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus', Effort::High));
@@ -55,7 +57,7 @@ final class RunVersionDifferTest extends PhpUnitTestCase
     public function testAddedAndRemovedConfigurationsAreReported(): void
     {
         $first = $this->run->start();
-        $this->run->removeConfigurationAt(0);
+        $this->run->removeConfiguration('claude_oauth:opus:high');
         $this->run->addConfiguration(new LlmConfiguration(Provider::Gemini, 'gemini-2.5-pro'));
         $this->run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
         $second = $this->run->start();
@@ -68,9 +70,9 @@ final class RunVersionDifferTest extends PhpUnitTestCase
 
     public function testSkillsAddedRemovedAndChangedAreReported(): void
     {
-        $kept = new Skill('Kept', null, 'v1');
-        $dropped = new Skill('Dropped', null, 'v1');
-        $new = new Skill('New', null, 'v1');
+        $kept = $this->skill('Kept');
+        $dropped = $this->skill('Dropped');
+        $new = $this->skill('New');
         $this->run->setSkills([$kept, $dropped]);
         $first = $this->run->start();
 
@@ -91,7 +93,7 @@ final class RunVersionDifferTest extends PhpUnitTestCase
 
     public function testTestcasesAddedRemovedAndChangedAreReported(): void
     {
-        $extra = new Testcase('Extra', null, 'p', 'o');
+        $extra = new Testcase('Extra', null, 'p', 'o', $this->project);
         $first = $this->run->start();
 
         $this->testcase->saveFinal('Greeting', null, 'prompt 2', 'output 2');
@@ -112,7 +114,7 @@ final class RunVersionDifferTest extends PhpUnitTestCase
 
     public function testSoftDeletedSkillsStayVisibleInTheDiff(): void
     {
-        $skill = new Skill('Review', null, 'v1');
+        $skill = $this->skill('Review');
         $this->run->setSkills([$skill]);
         $first = $this->run->start();
         $skill->softDelete();
@@ -124,5 +126,13 @@ final class RunVersionDifferTest extends PhpUnitTestCase
         self::assertCount(1, $diff->skillsRemoved);
         self::assertSame('Review', $diff->skillsRemoved[0]->getTitle());
         self::assertTrue($diff->skillsRemoved[0]->getSkill()->isDeleted());
+    }
+
+    private function skill(string $title): Skill
+    {
+        $skill = new Skill($title, null, 'v1');
+        $skill->addProject($this->project);
+
+        return $skill;
     }
 }

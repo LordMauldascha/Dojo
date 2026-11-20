@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\User;
+use App\Security\PasswordPolicy;
 use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\Argument;
@@ -55,6 +56,11 @@ final class CreateUserCommand extends Command
             $io->error('The passwords are empty or do not match.');
 
             return Command::FAILURE;
+        }
+
+        $violations = $this->validator->validate($password, PasswordPolicy::constraints());
+        if (0 < \count($violations)) {
+            return $this->fail($io, $violations);
         }
 
         $user->setPassword($this->hasher->hashPassword($user, $password));

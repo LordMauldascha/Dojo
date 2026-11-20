@@ -1,0 +1,10 @@
+{# Frame of every signed-in page: heading, navigation and flash messages, then the page content. #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>{% block heading %}{% endblock %}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    {% block content %}{% endblock %}
+{% endblock %}

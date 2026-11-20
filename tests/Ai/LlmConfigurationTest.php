@@ -7,9 +7,9 @@ namespace App\Tests\Ai;
 use App\Ai\Effort;
 use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
-use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use PHPUnit\Framework\TestCase;
 
-final class LlmConfigurationTest extends PhpUnitTestCase
+final class LlmConfigurationTest extends TestCase
 {
     public function testKeyDistinguishesProviderModelAndEffort(): void
     {
@@ -41,5 +41,29 @@ final class LlmConfigurationTest extends PhpUnitTestCase
     {
         self::assertSame('OpenAI / gpt-4.1 / no effort', (new LlmConfiguration(Provider::OpenAi, 'gpt-4.1'))->label());
         self::assertSame('Claude (OAuth) / opus / effort max', (new LlmConfiguration(Provider::ClaudeOAuth, 'opus', Effort::Max))->label());
+    }
+
+    public function testChoiceValueIsParsedBackAndUnknownValuesAreRefused(): void
+    {
+        $choice = LlmConfiguration::choiceValue(Provider::Gemini, 'gemini-2.5-pro');
+
+        self::assertSame('gemini:gemini-2.5-pro', $choice);
+        self::assertSame('gemini:gemini-2.5-pro:medium', LlmConfiguration::fromChoice($choice, Effort::Medium)?->key());
+        self::assertSame('gemini:gemini-2.5-pro:-', LlmConfiguration::fromChoice($choice, null)?->key());
+        self::assertNull(LlmConfiguration::fromChoice('gemini:opus', null));
+        self::assertNull(LlmConfiguration::fromChoice('nobody:model', null));
+        self::assertNull(LlmConfiguration::fromChoice('no-colon', null));
+    }
+
+    public function testEveryKeyMatchesTheRoutePatternOfTheRemoveRoute(): void
+    {
+        foreach (Provider::cases() as $provider) {
+            foreach ($provider->models() as $model) {
+                foreach ([null, ...Effort::cases()] as $effort) {
+                    $key = (new LlmConfiguration($provider, $model, $effort))->key();
+                    self::assertMatchesRegularExpression('/^'.LlmConfiguration::KEY_PATTERN.'$/', $key);
+                }
+            }
+        }
     }
 }
