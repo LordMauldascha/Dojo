@@ -1,6 +1,7 @@
 <nav>
     <a href="{{ path('app_home') }}">Overview</a>
     <a href="{{ path('app_projects') }}">Projects</a>
+    <a href="{{ path('app_skills') }}">Skills</a>
     <a href="{{ path('app_account') }}">My account</a>
     {% if is_granted('ROLE_ADMIN') %}
         <a href="{{ path('app_admin_api_keys') }}">API Keys</a>

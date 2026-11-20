@@ -23,6 +23,7 @@
                     <th>Description</th>
                     {{ list.sort_header('app_projects', {}, query, page, 'users', 'Users') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'groups', 'Groups') }}
+                    {{ list.sort_header('app_projects', {}, query, page, 'skills', 'Skills') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'updatedAt', 'Updated') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'createdAt', 'Created') }}
                 </tr>
@@ -36,6 +37,7 @@
                         <td>{{ description|slice(0, 100) }}{{ description|length > 100 ? '…' }}</td>
                         <td>{{ row.userCount }}</td>
                         <td>{{ row.groupCount }}</td>
+                        <td><a href="{{ path('app_skills', {project: project.uuid}) }}">{{ row.skillCount }}</a></td>
                         <td>{{ project.updatedAt|date }}</td>
                         <td>{{ project.createdAt|date }}</td>
                     </tr>

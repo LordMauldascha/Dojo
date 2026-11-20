@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Skill {{ skill.activeVersion.title }}{% endblock %}
+
+{% block body %}
+    {% set active = skill.activeVersion %}
+    {% set draft = skill.draft %}
+    <h1>Skill {{ active.title }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_skills') }}">Back to overview</a></p>
+
+    <p>Active version: {{ active.label }}</p>
+    {% if draft %}
+        <p>Draft {{ draft.label }} exists and is shown in the form below. It is ignored until it is saved as final.</p>
+    {% endif %}
+
+    <h2>Edit</h2>
+    {{ form(form) }}
+    {% if draft %}
+        <form method="post" action="{{ path('app_skill_draft_discard', {uuid: skill.uuid}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('discard-skill-draft-' ~ skill.uuid) }}">
+            <button type="submit">Discard draft</button>
+        </form>
+    {% endif %}
+
+    <h2>Projects</h2>
+    {{ form(projectsForm) }}
+
+    <h2>Version history</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Version</th>
+                <th>Title</th>
+                <th>Saved</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for version in skill.versions|reverse %}
+                <tr>
+                    <td>{{ version.label }}</td>
+                    <td>{{ version.title }}</td>
+                    <td>{{ version.savedAt|date }}</td>
+                    <td>{{ version.draft ? 'draft' : (version.number == active.number ? 'active' : '') }}</td>
+                    <td>
+                        <a href="{{ path('app_skill_version', {uuid: skill.uuid, number: version.number}) }}">View</a>
+                        {% if not version.draft and version.number != active.number and not draft %}
+                            <form method="post" action="{{ path('app_skill_restore', {uuid: skill.uuid, number: version.number}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('restore-skill-' ~ skill.uuid ~ '-' ~ version.number) }}">
+                                <button type="submit">Restore</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if draft %}
+        <p>Restoring is possible once the draft is saved as final or discarded.</p>
+    {% endif %}
+
+    {% if canDelete %}
+        <h2>Delete skill</h2>
+        <p><a href="{{ path('app_skill_delete', {uuid: skill.uuid}) }}">Delete</a></p>
+    {% endif %}
+{% endblock %}

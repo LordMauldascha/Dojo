@@ -3,12 +3,12 @@
     {% set active = field == query.sort %}
     {% set nextDir = active and 'asc' == query.dir ? 'desc' : 'asc' %}
     <th{% if active %} aria-sort="{{ 'asc' == query.dir ? 'ascending' : 'descending' }}"{% endif %}>
-        <a href="{{ path(route, routeParams|merge({q: query.q ?: null, sort: field, dir: nextDir, perPage: page.perPage, page: 1})) }}">{{ label }}</a>
+        <a href="{{ path(route, routeParams|merge({q: query.q ?: null, project: query.project ?: null, sort: field, dir: nextDir, perPage: page.perPage, page: 1})) }}">{{ label }}</a>
     </th>
 {% endmacro %}
 
 {% macro pagination(route, routeParams, query, page) %}
-    {% set base = {q: query.q ?: null, sort: query.sort, dir: query.sort ? query.dir : null, perPage: page.perPage} %}
+    {% set base = {q: query.q ?: null, project: query.project ?: null, sort: query.sort, dir: query.sort ? query.dir : null, perPage: page.perPage} %}
     <nav aria-label="Pagination">
         {% if page.page > 1 %}
             <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page - 1})) }}" rel="prev">Previous</a>

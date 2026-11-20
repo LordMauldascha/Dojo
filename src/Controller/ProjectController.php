@@ -6,13 +6,16 @@ namespace App\Controller;
 
 use App\Entity\Group;
 use App\Entity\Project;
+use App\Entity\Skill;
 use App\Entity\User;
 use App\Form\AddGroupType;
+use App\Form\AddSkillType;
 use App\Form\AddUserType;
 use App\Form\ProjectType;
 use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\ProjectRepository;
+use App\Repository\SkillRepository;
 use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -74,14 +77,17 @@ final class ProjectController extends AbstractController
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Project $project,
         Request $request,
         ProjectRepository $projects,
+        SkillRepository $skills,
         EntityManagerInterface $entityManager,
     ): Response {
+        $projectSkills = $skills->findByProject($project);
+
         if (!$this->isGranted(ProjectVoter::MANAGE, $project)) {
             if ($request->isMethod('POST')) {
                 throw $this->createAccessDeniedException();
             }
 
-            return $this->render('projects/show.html.twig', ['project' => $project, 'canManage' => false]);
+            return $this->render('projects/show.html.twig', ['project' => $project, 'canManage' => false, 'skills' => $projectSkills]);
         }
 
         $form = $this->createForm(ProjectType::class, $project);
@@ -97,9 +103,11 @@ final class ProjectController extends AbstractController
         return $this->render('projects/show.html.twig', [
             'project' => $project,
             'canManage' => true,
+            'skills' => $projectSkills,
             'form' => $form,
             'addGroupForm' => $this->createAddGroupForm($project, $projects),
             'addUserForm' => $this->createAddUserForm($project, $projects),
+            'addSkillForm' => $this->createAddSkillForm($project, $skills),
         ]);
     }
 
@@ -183,11 +191,52 @@ final class ProjectController extends AbstractController
         return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
     }
 
+    #[Route('/{uuid}/skills', name: 'app_project_skill_add', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
+    public function addSkill(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Project $project,
+        Request $request,
+        SkillRepository $skills,
+        EntityManagerInterface $entityManager,
+    ): Response {
+        $form = $this->createAddSkillForm($project, $skills);
+        $form->handleRequest($request);
+
+        $skill = $form->isSubmitted() && $form->isValid() ? $form->get('skill')->getData() : null;
+        if ($skill instanceof Skill) {
+            $skill->addProject($project);
+            $entityManager->flush();
+            $this->addFlash('success', \sprintf('Skill "%s" added.', $skill->getActiveVersion()->getTitle()));
+        } else {
+            $this->addFlash('error', 'The skill could not be added.');
+        }
+
+        return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
+    }
+
+    #[Route('/{uuid}/skills/{skillUuid}/remove', name: 'app_project_skill_remove', requirements: ['uuid' => Requirement::UUID, 'skillUuid' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
+    public function removeSkill(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Project $project,
+        #[MapEntity(expr: 'repository.findActiveByUuid(skillUuid)')] Skill $skill,
+        Request $request,
+        EntityManagerInterface $entityManager,
+    ): Response {
+        $this->denyUnlessValidToken('remove-project-skill-'.$project->getUuid().'-'.$skill->getUuid(), $request);
+
+        $skill->removeProject($project);
+        $entityManager->flush();
+        $this->addFlash('success', \sprintf('Skill "%s" removed.', $skill->getActiveVersion()->getTitle()));
+
+        return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
+    }
+
     #[Route('/{uuid}/delete', name: 'app_project_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
     #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
     public function delete(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Project $project,
         Request $request,
+        SkillRepository $skills,
         EntityManagerInterface $entityManager,
     ): Response {
         if ($request->isMethod('POST')) {
@@ -201,7 +250,7 @@ final class ProjectController extends AbstractController
             return $this->redirectToRoute('app_projects');
         }
 
-        return $this->render('projects/delete.html.twig', ['project' => $project]);
+        return $this->render('projects/delete.html.twig', ['project' => $project, 'skillCount' => \count($skills->findByProject($project))]);
     }
 
     /** @return FormInterface<array{group: Group|null}|null> */
@@ -210,6 +259,15 @@ final class ProjectController extends AbstractController
         return $this->createForm(AddGroupType::class, null, [
             'action' => $this->generateUrl('app_project_group_add', ['uuid' => $project->getUuid()]),
             'available_groups' => $projects->findAssignableGroups($project),
+        ]);
+    }
+
+    /** @return FormInterface<array{skill: Skill|null}|null> */
+    private function createAddSkillForm(Project $project, SkillRepository $skills): FormInterface
+    {
+        return $this->createForm(AddSkillType::class, null, [
+            'action' => $this->generateUrl('app_project_skill_add', ['uuid' => $project->getUuid()]),
+            'available_skills' => $skills->findAssignableToProject($project),
         ]);
     }
 

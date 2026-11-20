@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Group;
 use App\Entity\Project;
+use App\Entity\Skill;
 use App\Entity\User;
 use App\Pagination\ListQuery;
 use App\Pagination\Page;
@@ -21,6 +22,7 @@ final class ProjectRepository extends ServiceEntityRepository
         'title' => 'p.title',
         'users' => 'userCount',
         'groups' => 'groupCount',
+        'skills' => 'skillCount',
         'updatedAt' => 'p.updatedAt',
         'createdAt' => 'p.createdAt',
     ];
@@ -30,12 +32,13 @@ final class ProjectRepository extends ServiceEntityRepository
         parent::__construct($registry, Project::class);
     }
 
-    /** Items are rows of the form [0 => Project, 'userCount' => int|string, 'groupCount' => int|string]. */
+    /** Items are rows of the form [0 => Project, 'userCount', 'groupCount', 'skillCount' => int|string]. */
     public function paginate(ListQuery $query, int $perPage, User $viewer): Page
     {
         $queryBuilder = $this->createQueryBuilder('p')
             ->addSelect('SIZE(p.users) AS userCount')
-            ->addSelect('SIZE(p.groups) AS groupCount');
+            ->addSelect('SIZE(p.groups) AS groupCount')
+            ->addSelect('(SELECT COUNT(sk.id) FROM '.Skill::class.' sk JOIN sk.projects skp WHERE skp = p AND sk.deletedAt IS NULL) AS skillCount');
         $this->applyAccessFilter($queryBuilder, 'p', $viewer);
 
         if ('' !== $query->q) {
@@ -60,13 +63,34 @@ final class ProjectRepository extends ServiceEntityRepository
         }
 
         $queryBuilder
-            ->andWhere(\sprintf(
-                '(%1$s.id IN (SELECT dp.id FROM %2$s dp JOIN dp.users du WHERE du = :accessUser)'
-                .' OR %1$s.id IN (SELECT gp.id FROM %2$s gp JOIN gp.groups gg JOIN gg.users gu WHERE gu = :accessUser))',
-                $alias,
-                Project::class,
-            ))
+            ->andWhere(\sprintf('%s.id IN (%s)', $alias, $this->accessibleProjectIdsDql()))
             ->setParameter('accessUser', $user);
+    }
+
+    /**
+     * DQL subselect of the project ids the user bound to :accessUser may see (for non-admins).
+     * The suffix makes the aliases unique when the fragment is used more than once in a query.
+     */
+    public function accessibleProjectIdsDql(string $suffix = ''): string
+    {
+        return \sprintf(
+            'SELECT ap%2$s.id FROM %1$s ap%2$s WHERE ap%2$s.id IN (SELECT dp%2$s.id FROM %1$s dp%2$s JOIN dp%2$s.users du%2$s WHERE du%2$s = :accessUser)'
+            .' OR ap%2$s.id IN (SELECT gp%2$s.id FROM %1$s gp%2$s JOIN gp%2$s.groups gg%2$s JOIN gg%2$s.users gu%2$s WHERE gu%2$s = :accessUser)',
+            Project::class,
+            $suffix,
+        );
+    }
+
+    /** @return list<Project> */
+    public function findAccessibleBy(User $user): array
+    {
+        $queryBuilder = $this->createQueryBuilder('p')->orderBy('p.title', 'ASC');
+        $this->applyAccessFilter($queryBuilder, 'p', $user);
+
+        /** @var list<Project> $projects */
+        $projects = $queryBuilder->getQuery()->getResult();
+
+        return $projects;
     }
 
     public function isAccessibleBy(Project $project, User $user): bool

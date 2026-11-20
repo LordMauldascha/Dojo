@@ -71,6 +71,35 @@
         {% endif %}
         {{ form(addUserForm) }}
 
+        <h2>Skills</h2>
+        {% if skills %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for skill in skills %}
+                        <tr>
+                            <td><a href="{{ path('app_skill_show', {uuid: skill.uuid}) }}">{{ skill.activeVersion.title }}</a></td>
+                            <td>
+                                <form method="post" action="{{ path('app_project_skill_remove', {uuid: project.uuid, skillUuid: skill.uuid}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('remove-project-skill-' ~ project.uuid ~ '-' ~ skill.uuid) }}">
+                                    <button type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No skills assigned.</p>
+        {% endif %}
+        {{ form(addSkillForm) }}
+        <p><a href="{{ path('app_skills', {project: project.uuid}) }}">Open in skill overview</a></p>
+
         <h2>Delete project</h2>
         <p><a href="{{ path('app_project_delete', {uuid: project.uuid}) }}">Delete</a></p>
     {% else %}
@@ -80,5 +109,6 @@
         <h2>Access</h2>
         <p>Groups: {{ project.groups|length }}</p>
         <p>Users: {{ project.users|length }}</p>
+        <p>Skills: {{ skills|length }} (<a href="{{ path('app_skills', {project: project.uuid}) }}">open in skill overview</a>)</p>
     {% endif %}
 {% endblock %}

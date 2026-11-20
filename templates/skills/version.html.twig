@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Skill {{ version.title }} – version {{ version.label }}{% endblock %}
+
+{% block body %}
+    <h1>{{ version.title }} – version {{ version.label }}</h1>
+    {{ include('_nav.html.twig') }}
+    {{ include('_flashes.html.twig') }}
+
+    <p><a href="{{ path('app_skill_show', {uuid: skill.uuid}) }}">Back to skill</a></p>
+
+    <p>Saved: {{ version.savedAt|date }}</p>
+
+    <h2>Description</h2>
+    <p>{{ version.description ?? 'No description.' }}</p>
+
+    <h2>SKILL.md</h2>
+    <pre>{{ version.content }}</pre>
+{% endblock %}

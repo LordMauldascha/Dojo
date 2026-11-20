@@ -43,6 +43,7 @@ security:
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/account, roles: ROLE_USER }
         - { path: ^/projects, roles: ROLE_USER }
+        - { path: ^/skills, roles: ROLE_USER }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 

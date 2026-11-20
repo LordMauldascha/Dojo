@@ -19,6 +19,8 @@ final readonly class ListQuery
         public string $dir = 'asc',
         #[Assert\Length(max: 100)]
         public string $q = '',
+        #[Assert\Uuid]
+        public ?string $project = null,
     ) {
     }
 }

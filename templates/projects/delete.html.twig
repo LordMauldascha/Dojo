@@ -7,7 +7,7 @@
     {{ include('_nav.html.twig') }}
     {{ include('_flashes.html.twig') }}
 
-    <p>The project and its assignments to {{ project.groups|length }} group(s) and {{ project.users|length }} user(s) are deleted. The groups and users themselves are kept.</p>
+    <p>The project and its assignments to {{ project.groups|length }} group(s) and {{ project.users|length }} user(s) are deleted. The groups and users themselves are kept. {{ skillCount }} skill(s) lose this project assignment but are kept.</p>
 
     <form method="post" action="{{ path('app_project_delete', {uuid: project.uuid}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('delete-project-' ~ project.uuid) }}">

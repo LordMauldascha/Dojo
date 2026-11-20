@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Group;
 use App\Entity\Project;
+use App\Entity\Skill;
 use App\Entity\User;
 use App\Security\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,6 +23,7 @@ final class ProjectManagementTest extends WebTestCase
     {
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->entityManager->createQuery('DELETE FROM '.Skill::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Project::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.Group::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
@@ -317,6 +319,87 @@ final class ProjectManagementTest extends WebTestCase
         self::assertSame(['Project 12'], $this->titles($this->client->request('GET', '/projects', ['q' => '12'])));
     }
 
+    public function testAdminAddsAndRemovesSkillsOnProjectDetail(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $project = $this->persistProject('Security');
+        $skill = $this->persistSkill('Review');
+        $path = '/projects/'.$project->getUuid();
+
+        $crawler = $this->client->request('GET', $path);
+        $this->client->submit($crawler->filter('form[action$="/skills"]')->form(['add_skill[skill]' => (string) $skill->getId()]));
+        self::assertResponseRedirects($path);
+        $crawler = $this->client->request('GET', $path);
+        self::assertSelectorTextContains('body', 'Review');
+        self::assertSelectorExists('a[href*="/skills?project="]');
+        $this->entityManager->clear();
+        self::assertCount(1, $this->entityManager->getRepository(Skill::class)->findAll()[0]->getProjects());
+
+        $this->client->submit($crawler->filter('form[action*="/skills/"]')->form());
+        self::assertResponseRedirects($path);
+        $this->entityManager->clear();
+        self::assertCount(0, $this->entityManager->getRepository(Skill::class)->findAll()[0]->getProjects());
+        self::assertCount(1, $this->entityManager->getRepository(Skill::class)->findAll());
+    }
+
+    public function testNonAdminCannotManageSkillsOfAProjectButSeesTheCount(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security');
+        $project->addUser($user);
+        $this->entityManager->flush();
+        $skill = $this->persistSkill('Review', [$project]);
+        $deleted = $this->persistSkill('Gone', [$project]);
+        $deleted->softDelete();
+        $this->entityManager->flush();
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorTextContains('body', 'Skills: 1');
+        self::assertSelectorNotExists('form');
+
+        $this->client->request('POST', '/projects/'.$project->getUuid().'/skills');
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('POST', \sprintf('/projects/%s/skills/%s/remove', $project->getUuid(), $skill->getUuid()));
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testProjectListCountsOnlyNonDeletedSkillsAndSortsBySkillCount(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $many = $this->persistProject('B-many');
+        $one = $this->persistProject('C-one');
+        $this->persistProject('A-none');
+        $this->persistSkill('S1', [$many, $one]);
+        $this->persistSkill('S2', [$many]);
+        $deleted = $this->persistSkill('S3', [$many]);
+        $deleted->softDelete();
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/projects', ['sort' => 'skills', 'dir' => 'desc']);
+
+        self::assertSame(['B-many', 'C-one', 'A-none'], $this->titles($crawler));
+        self::assertSame(['2', '1', '0'], $crawler->filter('tbody tr td:nth-child(5)')->each(static fn (Crawler $cell): string => trim($cell->text())));
+    }
+
+    public function testDeletingAProjectKeepsItsSkills(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $project = $this->persistProject('Security');
+        $this->persistSkill('Review', [$project]);
+
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/delete');
+        self::assertSelectorTextContains('body', '1 skill(s) lose this project assignment');
+        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+
+        self::assertResponseRedirects('/projects');
+        $this->entityManager->clear();
+        $skills = $this->entityManager->getRepository(Skill::class)->findAll();
+        self::assertCount(1, $skills);
+        self::assertCount(0, $skills[0]->getProjects());
+        self::assertFalse($skills[0]->isDeleted());
+    }
+
     /** @return list<string> */
     private function titles(Crawler $crawler): array
     {
@@ -342,6 +425,19 @@ final class ProjectManagementTest extends WebTestCase
         $this->entityManager->flush();
 
         return $project;
+    }
+
+    /** @param list<Project> $projects */
+    private function persistSkill(string $title, array $projects = []): Skill
+    {
+        $skill = new Skill($title, null, 'content');
+        foreach ($projects as $project) {
+            $skill->addProject($project);
+        }
+        $this->entityManager->persist($skill);
+        $this->entityManager->flush();
+
+        return $skill;
     }
 
     private function persistGroup(string $title): Group

@@ -1,4 +1,4 @@
-{# Search and page size of an overview. Expects: route, routeParams (optional), query (ListQuery), page (Page). #}
+{# Search and page size of an overview. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter). #}
 <form method="get" action="{{ path(route, routeParams|default({})) }}">
     <label>Search
         <input type="search" name="q" value="{{ query.q }}" maxlength="100">
@@ -10,6 +10,16 @@
             {% endfor %}
         </select>
     </label>
+    {% if projectChoices is defined %}
+        <label>Project
+            <select name="project">
+                <option value="">All projects</option>
+                {% for project in projectChoices %}
+                    <option value="{{ project.uuid.toRfc4122 }}"{{ project.uuid.toRfc4122 == query.project ? ' selected' }}>{{ project.title }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    {% endif %}
     {% if query.sort %}
         <input type="hidden" name="sort" value="{{ query.sort }}">
         <input type="hidden" name="dir" value="{{ query.dir }}">
