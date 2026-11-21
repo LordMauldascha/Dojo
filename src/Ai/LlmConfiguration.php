@@ -26,6 +26,23 @@ final readonly class LlmConfiguration
         return $provider->value.':'.$model;
     }
 
+    /**
+     * Options of a model select, grouped by provider name.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function modelChoices(): array
+    {
+        $choices = [];
+        foreach (Provider::cases() as $provider) {
+            foreach ($provider->models() as $model) {
+                $choices[$provider->displayName()][$model] = self::choiceValue($provider, $model);
+            }
+        }
+
+        return $choices;
+    }
+
     /** Parses the model select value; null if the provider or model is unknown. */
     public static function fromChoice(string $choice, ?Effort $effort): ?self
     {

@@ -49,12 +49,12 @@ final class UserManagementTest extends AppWebTestCase
     {
         $this->client->loginUser($this->persistUser('carol'));
 
-        foreach (['/admin/api-keys', '/admin/users'] as $path) {
+        foreach (['/admin/llm-configuration', '/admin/users'] as $path) {
             $this->client->request('GET', $path);
             self::assertResponseStatusCodeSame(403);
         }
 
-        $this->client->request('POST', '/admin/api-keys/openai/delete');
+        $this->client->request('POST', '/admin/llm-configuration/keys/openai/delete');
         self::assertResponseStatusCodeSame(403);
     }
 
@@ -120,7 +120,7 @@ final class UserManagementTest extends AppWebTestCase
         self::assertSame(UserRole::Admin, $boss->getRole());
 
         $this->client->loginUser($boss);
-        $this->client->request('GET', '/admin/api-keys');
+        $this->client->request('GET', '/admin/llm-configuration');
         self::assertResponseIsSuccessful();
     }
 

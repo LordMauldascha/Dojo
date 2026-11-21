@@ -15,7 +15,8 @@ created without a run.
 | Projects | 0 to n; the assignment only controls who may see and edit the testcase; no project means admin only; it is set on the testcase page, the project page shows only a count | no |
 
 Output criteria describe what the output must meet (one criterion per line is a convention, not enforced). They are the
-basis for an LLM judge that will rate run outputs; no judge exists yet.
+basis for the LLM judge that will rate run outputs. Admins choose its provider and model in the
+[LLM configuration](llm-configuration.md); the judge itself does not run yet.
 
 Also stored: creator, created, updated and deleted time. The free-text fields remind users to use synthetic data and no
 personal data, because prompts are later sent to LLM providers.

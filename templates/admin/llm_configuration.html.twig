@@ -2,11 +2,16 @@
 
 {% import '_forms.html.twig' as forms %}
 
-{% block title %}API Keys{% endblock %}
+{% block title %}LLM Configuration{% endblock %}
 
-{% block heading %}API Keys{% endblock %}
+{% block heading %}LLM Configuration{% endblock %}
 
 {% block content %}
+    <h2>LLM judge</h2>
+    <p class="help-text">The model that rates run outputs against the output criteria of a testcase. {% if judge %}Current: {{ judge.provider.displayName }} / {{ judge.model }}.{% else %}Not set.{% endif %}</p>
+    {{ form(judgeForm) }}
+
+    <h2>API keys</h2>
     <p class="help-text">Keys are stored encrypted and never shown again. A run can use a provider once one of its credentials is set.</p>
 
     <div class="provider-grid">
@@ -37,7 +42,7 @@
                         <div class="credential-actions">
                             <button type="button" command="show-modal" commandfor="{{ dialogId }}">{{ row.key ? 'Replace key' : 'Set key' }}</button>
                             {% if row.key %}
-                                {{ forms.confirm_post(path('app_admin_api_key_delete', {credential: credential.value}), 'delete-api-key-' ~ credential.value, 'Delete', 'Delete ' ~ credential.label ~ '?', 'The stored key is removed. Runs with this provider cannot use it until a new key is saved.') }}
+                                {{ forms.confirm_post(path('app_admin_llm_configuration_key_delete', {credential: credential.value}), 'delete-api-key-' ~ credential.value, 'Delete', 'Delete ' ~ credential.label ~ '?', 'The stored key is removed. Runs with this provider cannot use it until a new key is saved.') }}
                             {% endif %}
                         </div>
 

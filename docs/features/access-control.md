@@ -13,7 +13,7 @@
 
 | Area | Admin | User with project access | Other users |
 | --- | --- | --- | --- |
-| Users, groups, API keys | everything | no access | no access |
+| Users, groups, LLM configuration | everything | no access | no access |
 | Projects | create, edit, delete, assign groups and users | view (counts only, no member names) | no access |
 | Skills | see, edit, delete all (also without project) | see and edit skills of their projects, delete own | no access |
 | Testcases | see, edit, delete all (also without project) | see and edit testcases of their projects, delete own | no access |
@@ -46,4 +46,4 @@ Do not put personal data into skills, testcases, run texts or descriptions. Prom
 free-text field that can reach a prompt shows the hint "Use synthetic data, no personal data." Versions and run snapshots
 are immutable and cannot be purged in the interface; removing personal data from them needs a database intervention.
 Usernames are the only personal identifiers the app stores; API keys are stored encrypted (see
-[API keys](api-keys.md)).
+[LLM configuration](llm-configuration.md)).

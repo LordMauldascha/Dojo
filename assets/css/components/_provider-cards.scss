@@ -1,6 +1,6 @@
 @use '../variables' as *;
 
-// API keys page: one card per provider, a block per credential inside.
+// LLM configuration page, API keys section: one card per provider, a block per credential inside.
 .provider-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));

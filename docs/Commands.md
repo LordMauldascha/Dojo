@@ -47,7 +47,7 @@ bin/console app:api-keys:import-env
 | Claude OAuth token (Claude Code) | `CLAUDE_CODE_OAUTH_TOKEN` |
 
 Per credential: an empty variable is skipped, and a key already stored in the database is kept, not overwritten.
-To replace a stored key, use the API key management at `/admin/api-keys`.
+To replace a stored key, use the API keys section of the LLM configuration page at `/admin/llm-configuration`.
 
 ## `app:ask-claude`
 

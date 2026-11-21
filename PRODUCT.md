@@ -28,7 +28,7 @@ Server-rendered Symfony app (Twig, Webpack Encore). Runs locally in Docker (app 
 
 - Entities: user, group, project, skill, testcase, run, run version, provider API key. Access derives from project membership and is enforced server-side (voters).
 - Prompts are meant to be sent to LLM providers later: no personal data in skills, testcases, descriptions or any free text. Use synthetic data (GDPR).
-- Provider API keys are stored encrypted and managed by admins.
+- Provider API keys are stored encrypted and, with the LLM judge model, managed by admins on the LLM Configuration page.
 - Providers, models and effort levels are defined in code, not in the interface.
 - Not built yet: calling the LLMs, comparing their outputs.
 

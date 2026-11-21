@@ -1,6 +1,6 @@
-# API keys
+# LLM configuration
 
-Credentials for the LLM providers. Admins manage them at `/admin/api-keys`; nobody else has access.
+Credentials for the LLM providers and the model of the LLM judge. Admins manage them at `/admin/llm-configuration`; nobody else has access.
 
 ## Providers and credentials
 
@@ -18,9 +18,16 @@ Claude Code (`symfony/ai-claude-code-platform`) runs the Claude Code CLI. It nee
 set, the API key wins. There is no separate Anthropic provider: `symfony/ai-anthropic-platform` is not installed, the
 Anthropic API key is a credential of Claude Code.
 
-## Page
+## LLM judge
 
-`/admin/api-keys` shows one card per provider. Each credential has a status (`••••` plus the last four characters and the
+The judge rates run outputs against the output criteria of a testcase. The page has one select, grouped by provider, with
+all models of all providers (the same list as for run configurations). *Save* stores the choice in the table
+`judge_setting`, a single global row. Until a choice is saved the page shows *Not set*. The judge is global, not per
+project, and has no effort setting. The choice is only stored so far: nothing calls the judge yet.
+
+## API keys page section
+
+Below the judge form, `/admin/llm-configuration` shows one card per provider. Each credential has a status (`••••` plus the last four characters and the
 time of the last change, or *Not set*) and the buttons *Set key* / *Replace key* (opens a dialog with the key field; an
 invalid key reopens it with the error) and *Delete*. A provider with at least one stored credential gets a green dot.
 

@@ -14,7 +14,7 @@
     </div>
     {% if is_granted('ROLE_ADMIN') %}
         <div class="app-nav-group">
-            {{ _self.link('app_admin_api_keys', 'API Keys', ['app_admin_api_key']) }}
+            {{ _self.link('app_admin_llm_configuration', 'LLM Configuration', ['app_admin_llm_configuration']) }}
             {{ _self.link('app_admin_users', 'Users', ['app_admin_user']) }}
             {{ _self.link('app_admin_groups', 'Groups', ['app_admin_group']) }}
         </div>

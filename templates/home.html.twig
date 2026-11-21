@@ -73,7 +73,7 @@
     {% if admin is not null %}
         <h2>Administration</h2>
         <p>
-            <a href="{{ path('app_admin_api_keys') }}">Provider keys</a>:
+            <a href="{{ path('app_admin_llm_configuration') }}">Provider keys</a>:
             {{ admin.providerCount - admin.missing|length }} of {{ admin.providerCount }} set{% if admin.missing %}, missing: {{ admin.missing|map(provider => provider.displayName)|join(', ') }}{% endif %}
         </p>
         <p><a href="{{ path('app_admin_users') }}">Users</a>: {{ admin.userCount }}</p>

@@ -72,7 +72,7 @@ of projects the viewer can access.
 
 ## Provider cards
 
-The API keys page shows one card per provider (`.provider-grid`, `.provider-card` in `_provider-cards.scss`): flat surface,
+The API keys section of the LLM configuration page shows one card per provider (`.provider-grid`, `.provider-card` in `_provider-cards.scss`): flat surface,
 hairline border, `--radius-md`. The heading carries a status dot (`.status-dot--final` when any credential of the provider is
 stored, `.status-dot--off`, an empty ring, when none is). Each credential is a `.credential` block with label, environment
 variable, status and the buttons *Set key* / *Replace key* (opens a form dialog, same pattern as the user dialog) and

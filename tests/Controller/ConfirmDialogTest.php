@@ -37,7 +37,7 @@ final class ConfirmDialogTest extends AppWebTestCase
 
         $expected = [
             '/admin/users' => 1,
-            '/admin/api-keys' => 1,
+            '/admin/llm-configuration' => 1,
             '/admin/groups/'.$group->getUuid() => 1,
             '/projects/'.$project->getUuid() => 1,
             '/skills/'.$skill->getUuid() => 2,

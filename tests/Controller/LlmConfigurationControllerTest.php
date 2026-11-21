@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Ai\Credential;
+use App\Ai\Provider;
+use App\Entity\JudgeSetting;
 use App\Entity\ProviderApiKey;
 use App\Entity\User;
 use App\Security\ApiKeyEncryptor;
@@ -14,7 +16,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class ApiKeyControllerTest extends WebTestCase
+final class LlmConfigurationControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private EntityManagerInterface $entityManager;
@@ -24,6 +26,7 @@ final class ApiKeyControllerTest extends WebTestCase
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
+        $this->entityManager->createQuery('DELETE FROM '.JudgeSetting::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
     }
 
@@ -41,19 +44,100 @@ final class ApiKeyControllerTest extends WebTestCase
 
     public function testAnonymousIsRedirectedToLogin(): void
     {
-        $this->client->request('GET', '/admin/api-keys');
+        $this->client->request('GET', '/admin/llm-configuration');
 
         self::assertResponseRedirects('http://localhost/login');
+    }
+
+    public function testNonAdminIsForbidden(): void
+    {
+        $user = new User();
+        $user->setUsername('member');
+        $user->setRole(UserRole::User);
+        $user->setPassword('x');
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/admin/llm-configuration');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testJudgeIsNotSetByDefault(): void
+    {
+        $this->client->loginUser($this->admin());
+        $this->client->request('GET', '/admin/llm-configuration');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'LLM Configuration');
+        self::assertSelectorTextContains('body', 'Not set.');
+    }
+
+    public function testSavingTheJudgeStoresProviderAndModelAndPreselectsIt(): void
+    {
+        $this->client->loginUser($this->admin());
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
+
+        $this->client->submit($crawler->filter('form[name="judge"]')->form(['judge[model]' => 'gemini:gemini-2.5-pro']));
+        self::assertResponseRedirects('/admin/llm-configuration');
+
+        $this->entityManager->clear();
+        $stored = $this->entityManager->getRepository(JudgeSetting::class)->findAll();
+        self::assertCount(1, $stored);
+        self::assertSame(Provider::Gemini, $stored[0]->getProvider());
+        self::assertSame('gemini-2.5-pro', $stored[0]->getModel());
+
+        $crawler = $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Current: Google Gemini / gemini-2.5-pro.');
+        self::assertSame('gemini:gemini-2.5-pro', $crawler->filter('form[name="judge"]')->form()->getValues()['judge[model]']);
+    }
+
+    public function testSavingTheJudgeAgainUpdatesTheSameRow(): void
+    {
+        $this->client->loginUser($this->admin());
+        foreach (['openai:gpt-5.5', 'claude_code:sonnet'] as $choice) {
+            $crawler = $this->client->request('GET', '/admin/llm-configuration');
+            $this->client->submit($crawler->filter('form[name="judge"]')->form(['judge[model]' => $choice]));
+            self::assertResponseRedirects('/admin/llm-configuration');
+        }
+
+        $this->entityManager->clear();
+        $stored = $this->entityManager->getRepository(JudgeSetting::class)->findAll();
+        self::assertCount(1, $stored);
+        self::assertSame(Provider::ClaudeCode, $stored[0]->getProvider());
+        self::assertSame('sonnet', $stored[0]->getModel());
+    }
+
+    public function testAnUnknownJudgeModelIsRefusedAndNothingIsStored(): void
+    {
+        $this->client->loginUser($this->admin());
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
+        $form = $crawler->filter('form[name="judge"]')->form();
+        $form->disableValidation();
+
+        $this->client->submit($form, ['judge[model]' => 'openai:no-such-model']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertCount(0, $this->entityManager->getRepository(JudgeSetting::class)->findAll());
+    }
+
+    public function testTheOldApiKeysUrlIsGone(): void
+    {
+        $this->client->loginUser($this->admin());
+        $this->client->request('GET', '/admin/api-keys');
+
+        self::assertResponseStatusCodeSame(404);
     }
 
     public function testSavedKeyIsStoredEncryptedAndShownMasked(): void
     {
         $this->client->loginUser($this->admin());
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
         self::assertResponseIsSuccessful();
 
         $this->client->submit($crawler->filter('form[name="key_openai"]')->form(['key_openai[apiKey]' => 'sk-test-abcdef123456']));
-        self::assertResponseRedirects('/admin/api-keys');
+        self::assertResponseRedirects('/admin/llm-configuration');
 
         $this->entityManager->clear();
         $stored = $this->entityManager->getRepository(ProviderApiKey::class)->findOneBy(['credential' => Credential::OpenAi]);
@@ -74,10 +158,10 @@ final class ApiKeyControllerTest extends WebTestCase
         $this->entityManager->persist(new ProviderApiKey(Credential::Gemini, $encryptor->encrypt('gemini-key-0000'), '0000'));
         $this->entityManager->flush();
 
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
         $this->client->submit($crawler->filter('form[action$="/gemini/delete"]')->form());
 
-        self::assertResponseRedirects('/admin/api-keys');
+        self::assertResponseRedirects('/admin/llm-configuration');
         $this->entityManager->clear();
         self::assertNull($this->entityManager->getRepository(ProviderApiKey::class)->findOneBy(['credential' => Credential::Gemini]));
     }
@@ -85,7 +169,7 @@ final class ApiKeyControllerTest extends WebTestCase
     public function testAKeyShorterThanSixteenCharactersIsRefused(): void
     {
         $this->client->loginUser($this->admin());
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
         $this->client->submit($crawler->filter('form[name="key_openai"]')->form(['key_openai[apiKey]' => 'fifteen-char-15']));
 
@@ -96,7 +180,7 @@ final class ApiKeyControllerTest extends WebTestCase
     public function testPageShowsOneCardPerProviderWithClaudeCodeHoldingBothAnthropicCredentials(): void
     {
         $this->client->loginUser($this->admin());
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
         self::assertResponseIsSuccessful();
         self::assertSame(['OpenAI', 'Google Gemini', 'DeepSeek', 'Claude Code'], $crawler->filter('.provider-card > h2')->each(static fn (Crawler $h): string => trim($h->text())));
@@ -115,7 +199,7 @@ final class ApiKeyControllerTest extends WebTestCase
         $this->entityManager->persist(new ProviderApiKey(Credential::ClaudeOAuth, $encryptor->encrypt('oauth-token-00000000'), '0000'));
         $this->entityManager->flush();
 
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
         self::assertSelectorExists('.provider-card:last-child .status-dot--final');
         self::assertSelectorTextContains('.provider-card:last-child', '••••0000');
@@ -124,7 +208,7 @@ final class ApiKeyControllerTest extends WebTestCase
         self::assertSame('Replace key', trim($credentials->eq(1)->filter('.credential-actions button[command="show-modal"]')->text()));
 
         $this->client->submit($crawler->filter('form[action$="/claude_oauth/delete"]')->form());
-        self::assertResponseRedirects('/admin/api-keys');
+        self::assertResponseRedirects('/admin/llm-configuration');
         $this->entityManager->clear();
         self::assertCount(0, $this->entityManager->getRepository(ProviderApiKey::class)->findAll());
     }
@@ -132,11 +216,11 @@ final class ApiKeyControllerTest extends WebTestCase
     public function testSavingTheAnthropicApiKeyStoresItAsItsOwnCredential(): void
     {
         $this->client->loginUser($this->admin());
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
         $this->client->submit($crawler->filter('form[name="key_anthropic"]')->form(['key_anthropic[apiKey]' => 'sk-ant-test-abcdef123456']));
 
-        self::assertResponseRedirects('/admin/api-keys');
+        self::assertResponseRedirects('/admin/llm-configuration');
         $this->entityManager->clear();
         self::assertNotNull($this->entityManager->getRepository(ProviderApiKey::class)->findOneBy(['credential' => Credential::Anthropic]));
         self::assertNull($this->entityManager->getRepository(ProviderApiKey::class)->findOneBy(['credential' => Credential::ClaudeOAuth]));
@@ -145,7 +229,7 @@ final class ApiKeyControllerTest extends WebTestCase
     public function testAnInvalidKeyReopensItsDialog(): void
     {
         $this->client->loginUser($this->admin());
-        $crawler = $this->client->request('GET', '/admin/api-keys');
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
         self::assertStringNotContainsString('"showOnLoad":true', (string) $this->client->getResponse()->getContent());
 
         $this->client->submit($crawler->filter('form[name="key_claude_oauth"]')->form(['key_claude_oauth[apiKey]' => 'short']));
