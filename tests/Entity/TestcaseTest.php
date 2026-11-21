@@ -32,7 +32,7 @@ final class TestcaseTest extends PhpUnitTestCase
         self::assertSame($draft, $same);
         self::assertSame('2-draft', $same->getLabel());
         self::assertSame('prompt 2b', $same->getPrompt());
-        self::assertSame('output 2b', $same->getExpectedOutput());
+        self::assertSame('output 2b', $same->getOutputCriteria());
         self::assertCount(2, $testcase->getVersions());
         self::assertSame('prompt 2b', $testcase->getEditableVersion()->getPrompt());
     }
@@ -91,7 +91,7 @@ final class TestcaseTest extends PhpUnitTestCase
 
         self::assertSame('3', $restored->getLabel());
         self::assertSame('prompt 1', $restored->getPrompt());
-        self::assertSame('output 1', $restored->getExpectedOutput());
+        self::assertSame('output 1', $restored->getOutputCriteria());
         self::assertSame($restored, $testcase->getActiveVersion());
         self::assertCount(3, $testcase->getVersions());
     }

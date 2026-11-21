@@ -81,7 +81,7 @@ final class TestcaseController extends AbstractController
                 $data->normalizedTitle(),
                 $data->normalizedDescription(),
                 $data->normalizedPrompt(),
-                $data->normalizedExpectedOutput(),
+                $data->normalizedOutputCriteria(),
                 $user,
             );
             foreach (FormData::entities(Project::class, $form->get('projects')->getData()) as $project) {
@@ -114,7 +114,7 @@ final class TestcaseController extends AbstractController
             $data = $form->getData();
             $draftButton = $form->get('saveDraft');
             $asDraft = $draftButton instanceof ClickableInterface && $draftButton->isClicked();
-            $args = [$data->normalizedTitle(), $data->normalizedDescription(), $data->normalizedPrompt(), $data->normalizedExpectedOutput()];
+            $args = [$data->normalizedTitle(), $data->normalizedDescription(), $data->normalizedPrompt(), $data->normalizedOutputCriteria()];
             $version = $asDraft ? $testcase->saveDraft(...$args) : $testcase->saveFinal(...$args);
             if ($this->flushOrConflict($entityManager)) {
                 $this->addFlash('success', \sprintf('Saved as %s %s.', $asDraft ? 'draft' : 'version', $version->getLabel()));

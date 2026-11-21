@@ -29,7 +29,7 @@ final class TestcaseData
     #[Assert\NotBlank(normalizer: 'trim')]
     #[Assert\Length(max: 100000)]
     #[NoNulByte]
-    public ?string $expectedOutput = null;
+    public ?string $outputCriteria = null;
 
     public static function fromVersion(TestcaseVersion $version): self
     {
@@ -37,7 +37,7 @@ final class TestcaseData
         $data->title = $version->getTitle();
         $data->description = $version->getDescription();
         $data->prompt = $version->getPrompt();
-        $data->expectedOutput = $version->getExpectedOutput();
+        $data->outputCriteria = $version->getOutputCriteria();
 
         return $data;
     }
@@ -47,8 +47,8 @@ final class TestcaseData
         return $this->prompt ?? '';
     }
 
-    public function normalizedExpectedOutput(): string
+    public function normalizedOutputCriteria(): string
     {
-        return $this->expectedOutput ?? '';
+        return $this->outputCriteria ?? '';
     }
 }

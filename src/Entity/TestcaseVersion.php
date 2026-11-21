@@ -37,7 +37,7 @@ class TestcaseVersion implements VersionInterface
         #[ORM\Column(type: Types::TEXT)]
         private string $prompt,
         #[ORM\Column(type: Types::TEXT)]
-        private string $expectedOutput,
+        private string $outputCriteria,
     ) {
         $this->savedAt = new \DateTimeImmutable();
     }
@@ -83,9 +83,9 @@ class TestcaseVersion implements VersionInterface
         return $this->prompt;
     }
 
-    public function getExpectedOutput(): string
+    public function getOutputCriteria(): string
     {
-        return $this->expectedOutput;
+        return $this->outputCriteria;
     }
 
     public function getSavedAt(): \DateTimeImmutable
@@ -93,12 +93,12 @@ class TestcaseVersion implements VersionInterface
         return $this->savedAt;
     }
 
-    public function setFields(string $title, ?string $description, string $prompt, string $expectedOutput): void
+    public function setFields(string $title, ?string $description, string $prompt, string $outputCriteria): void
     {
         $this->title = $title;
         $this->description = $description;
         $this->prompt = $prompt;
-        $this->expectedOutput = $expectedOutput;
+        $this->outputCriteria = $outputCriteria;
         $this->savedAt = new \DateTimeImmutable();
     }
 

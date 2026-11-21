@@ -23,14 +23,14 @@ final class TestcaseManagementTest extends AppWebTestCase
             'title' => 'Greeting',
             'description' => 'Says hello',
             'prompt' => 'Say hello',
-            'expectedOutput' => 'Hello',
+            'outputCriteria' => 'Hello',
         ]);
 
         $testcase = $this->findTestcase('Greeting');
         self::assertResponseRedirects('/testcases/'.$testcase->getUuid());
         self::assertSame('1', $testcase->getActiveVersion()->getLabel());
         self::assertSame('Say hello', $testcase->getActiveVersion()->getPrompt());
-        self::assertSame('Hello', $testcase->getActiveVersion()->getExpectedOutput());
+        self::assertSame('Hello', $testcase->getActiveVersion()->getOutputCriteria());
         self::assertCount(0, $testcase->getProjects());
         self::assertSame('root', $testcase->getCreatedBy()?->getUsername());
     }
@@ -42,7 +42,7 @@ final class TestcaseManagementTest extends AppWebTestCase
         $second = $this->persistProject('Second', [$user]);
         $foreign = $this->persistProject('Foreign');
         $this->client->loginUser($user);
-        $fields = ['title' => 'Greeting', 'prompt' => 'Say hello', 'expectedOutput' => 'Hello'];
+        $fields = ['title' => 'Greeting', 'prompt' => 'Say hello', 'outputCriteria' => 'Hello'];
 
         $crawler = $this->client->request('GET', '/testcases/new');
         $this->submit($crawler, 'Create testcase', 'testcase_content', $fields);
@@ -78,7 +78,7 @@ final class TestcaseManagementTest extends AppWebTestCase
         $crawler = $this->client->request('GET', $path);
         self::assertNull($this->tokenOf($crawler, 'form[action*="/restore"]'), 'no restore button while only the active version exists');
 
-        $this->submit($crawler, 'Save as draft', 'testcase_content', ['prompt' => 'prompt 2', 'expectedOutput' => 'output 2']);
+        $this->submit($crawler, 'Save as draft', 'testcase_content', ['prompt' => 'prompt 2', 'outputCriteria' => 'output 2']);
         self::assertResponseRedirects($path);
         $crawler = $this->client->request('GET', $path);
         self::assertSelectorTextContains('body', 'Draft 2-draft exists');
@@ -99,11 +99,11 @@ final class TestcaseManagementTest extends AppWebTestCase
         self::assertNull($this->findTestcase('Greeting')->getDraft());
 
         $crawler = $this->client->request('GET', $path);
-        $this->submit($crawler, 'Save as final', 'testcase_content', ['prompt' => 'prompt 2 final', 'expectedOutput' => 'output 2 final']);
+        $this->submit($crawler, 'Save as final', 'testcase_content', ['prompt' => 'prompt 2 final', 'outputCriteria' => 'output 2 final']);
         $this->entityManager->clear();
         $testcase = $this->findTestcase('Greeting');
         self::assertSame('2', $testcase->getActiveVersion()->getLabel());
-        self::assertSame('output 2 final', $testcase->getActiveVersion()->getExpectedOutput());
+        self::assertSame('output 2 final', $testcase->getActiveVersion()->getOutputCriteria());
 
         $crawler = $this->client->request('GET', $path);
         $this->client->submit($crawler->filter('form[action*="/versions/1/restore"]')->form());
@@ -115,6 +115,19 @@ final class TestcaseManagementTest extends AppWebTestCase
         self::assertCount(3, $testcase->getVersions());
     }
 
+    public function testFormAsksForOutputCriteriaAndNotForAnExpectedOutput(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $testcase = $this->persistTestcase('Greeting', null, $admin);
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+
+        self::assertSame('Output criteria', trim($crawler->filter('label[for="testcase_content_outputCriteria"]')->text()));
+        self::assertSelectorNotExists('label:contains("Expected output")');
+        self::assertStringContainsString('LLM judge', $crawler->filter('#testcase_content_outputCriteria_help')->text());
+    }
+
     public function testInvalidFieldsAreRejectedForDraftAndFinal(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
@@ -123,7 +136,7 @@ final class TestcaseManagementTest extends AppWebTestCase
 
         foreach (['Save as draft', 'Save as final'] as $button) {
             $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
-            $this->submit($crawler, $button, 'testcase_content', ['prompt' => '', 'expectedOutput' => '   ']);
+            $this->submit($crawler, $button, 'testcase_content', ['prompt' => '', 'outputCriteria' => '   ']);
             self::assertResponseStatusCodeSame(422);
         }
 
@@ -489,19 +502,19 @@ final class TestcaseManagementTest extends AppWebTestCase
         self::assertStringContainsString('project='.$own->getUuid(), (string) $href);
     }
 
-    public function testPromptAndExpectedOutputAreStoredExactlyAsTyped(): void
+    public function testPromptAndOutputCriteriaAreStoredExactlyAsTyped(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
         $testcase = $this->persistTestcase('Greeting', null, $admin);
         $this->client->loginUser($admin);
 
         $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
-        $this->submit($crawler, 'Save as final', 'testcase_content', ['prompt' => "  indented prompt\n", 'expectedOutput' => "Done.\n"]);
+        $this->submit($crawler, 'Save as final', 'testcase_content', ['prompt' => "  indented prompt\n", 'outputCriteria' => "Done.\n"]);
 
         $this->entityManager->clear();
         $active = $this->findTestcase('Greeting')->getActiveVersion();
         self::assertSame("  indented prompt\n", $active->getPrompt());
-        self::assertSame("Done.\n", $active->getExpectedOutput());
+        self::assertSame("Done.\n", $active->getOutputCriteria());
     }
 
     public function testBlankFieldsAndNullBytesAreRejected(): void
@@ -510,7 +523,7 @@ final class TestcaseManagementTest extends AppWebTestCase
         $testcase = $this->persistTestcase('Greeting', null, $admin);
         $this->client->loginUser($admin);
 
-        foreach ([['prompt' => " \n "], ['expectedOutput' => "a\0b"], ['title' => "a\0b"]] as $overrides) {
+        foreach ([['prompt' => " \n "], ['outputCriteria' => "a\0b"], ['title' => "a\0b"]] as $overrides) {
             $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
             $this->submit($crawler, 'Save as draft', 'testcase_content', $overrides);
             self::assertResponseStatusCodeSame(422, (string) json_encode($overrides));

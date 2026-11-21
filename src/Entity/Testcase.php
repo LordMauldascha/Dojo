@@ -60,7 +60,7 @@ class Testcase implements VersionedInterface
         string $title,
         ?string $description,
         string $prompt,
-        string $expectedOutput,
+        string $outputCriteria,
         #[ORM\ManyToOne(targetEntity: User::class)]
         #[ORM\JoinColumn(name: 'created_by_id', nullable: true, onDelete: 'SET NULL')]
         private ?User $createdBy = null,
@@ -69,7 +69,7 @@ class Testcase implements VersionedInterface
         $this->versions = new ArrayCollection();
         $this->projects = new ArrayCollection();
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
-        $this->addVersion(false, $title, $description, $prompt, $expectedOutput);
+        $this->addVersion(false, $title, $description, $prompt, $outputCriteria);
     }
 
     public function getId(): ?int
@@ -127,13 +127,13 @@ class Testcase implements VersionedInterface
     }
 
     /** Creates the draft, or overwrites the existing one in place. */
-    public function saveDraft(string $title, ?string $description, string $prompt, string $expectedOutput): TestcaseVersion
+    public function saveDraft(string $title, ?string $description, string $prompt, string $outputCriteria): TestcaseVersion
     {
         $draft = $this->getDraft();
         if (null === $draft) {
-            $draft = $this->addVersion(true, $title, $description, $prompt, $expectedOutput);
+            $draft = $this->addVersion(true, $title, $description, $prompt, $outputCriteria);
         } else {
-            $draft->setFields($title, $description, $prompt, $expectedOutput);
+            $draft->setFields($title, $description, $prompt, $outputCriteria);
         }
         $this->touch();
 
@@ -141,13 +141,13 @@ class Testcase implements VersionedInterface
     }
 
     /** The draft becomes the final version with its number; without a draft a new final version is created. */
-    public function saveFinal(string $title, ?string $description, string $prompt, string $expectedOutput): TestcaseVersion
+    public function saveFinal(string $title, ?string $description, string $prompt, string $outputCriteria): TestcaseVersion
     {
         $draft = $this->getDraft();
         if (null === $draft) {
-            $version = $this->addVersion(false, $title, $description, $prompt, $expectedOutput);
+            $version = $this->addVersion(false, $title, $description, $prompt, $outputCriteria);
         } else {
-            $draft->setFields($title, $description, $prompt, $expectedOutput);
+            $draft->setFields($title, $description, $prompt, $outputCriteria);
             $draft->publish();
             $version = $draft;
             $this->activeVersion = $version;
@@ -175,7 +175,7 @@ class Testcase implements VersionedInterface
         if (null !== $this->getDraft()) {
             throw new \LogicException('A draft exists: save it as final or discard it first.');
         }
-        $restored = $this->addVersion(false, $version->getTitle(), $version->getDescription(), $version->getPrompt(), $version->getExpectedOutput());
+        $restored = $this->addVersion(false, $version->getTitle(), $version->getDescription(), $version->getPrompt(), $version->getOutputCriteria());
         $this->touch();
 
         return $restored;
@@ -245,10 +245,10 @@ class Testcase implements VersionedInterface
         $this->deletedAt = new \DateTimeImmutable();
     }
 
-    private function addVersion(bool $draft, string $title, ?string $description, string $prompt, string $expectedOutput): TestcaseVersion
+    private function addVersion(bool $draft, string $title, ?string $description, string $prompt, string $outputCriteria): TestcaseVersion
     {
         $number = 1 + array_reduce($this->versions->toArray(), static fn (int $max, TestcaseVersion $v): int => max($max, $v->getNumber()), 0);
-        $version = new TestcaseVersion($this, $number, $draft, $title, $description, $prompt, $expectedOutput);
+        $version = new TestcaseVersion($this, $number, $draft, $title, $description, $prompt, $outputCriteria);
         $this->versions->add($version);
         if (!$draft) {
             $this->activeVersion = $version;

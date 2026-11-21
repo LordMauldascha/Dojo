@@ -87,9 +87,9 @@ abstract class AppWebTestCase extends WebTestCase
     }
 
     /** @param Project|list<Project>|null $projects a single project, several or none (admin-only) */
-    protected function persistTestcase(string $title, Project|array|null $projects = null, ?User $creator = null, string $prompt = 'prompt', string $expectedOutput = 'output', ?string $description = null): Testcase
+    protected function persistTestcase(string $title, Project|array|null $projects = null, ?User $creator = null, string $prompt = 'prompt', string $outputCriteria = 'output', ?string $description = null): Testcase
     {
-        $testcase = new Testcase($title, $description, $prompt, $expectedOutput, $creator);
+        $testcase = new Testcase($title, $description, $prompt, $outputCriteria, $creator);
         foreach ($projects instanceof Project ? [$projects] : ($projects ?? []) as $project) {
             $testcase->addProject($project);
         }

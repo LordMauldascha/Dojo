@@ -16,7 +16,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Count;
 
 /**
- * Title, description, prompt and expected output. With the "projects" option (list of selectable projects) the form
+ * Title, description, prompt and output criteria. With the "projects" option (list of selectable projects) the form
  * also asks for the projects and offers a single create button, else the draft/final buttons.
  *
  * @extends AbstractType<TestcaseData>
@@ -36,7 +36,7 @@ final class TestcaseContentType extends AbstractType
                 'help' => Help::NO_PERSONAL_DATA,
                 'attr' => ['maxlength' => 100000, 'rows' => 10],
             ])
-            ->add('expectedOutput', TextareaType::class, ['label' => 'Expected output', 'trim' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 100000, 'rows' => 10]]);
+            ->add('outputCriteria', TextareaType::class, ['label' => 'Output criteria', 'trim' => false, 'help' => 'One criterion per line. The LLM judge checks the output against them. '.Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 100000, 'rows' => 10]]);
 
         if (null === $options['projects']) {
             $this->addVersionButtons($builder);

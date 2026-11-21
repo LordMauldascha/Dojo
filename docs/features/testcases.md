@@ -1,6 +1,6 @@
 # Testcases
 
-A testcase is a prompt together with the output that is expected for it. Testcases are versioned (see
+A testcase is a prompt together with the criteria its output must meet. Testcases are versioned (see
 [Versioning](versioning.md)), belong to any number of [projects](projects.md) (none means admin only) and are selected on [runs](runs.md). They are
 created without a run.
 
@@ -11,8 +11,11 @@ created without a run.
 | Title | required, at most 255 characters | yes |
 | Description | optional, at most 2000 characters | yes |
 | Prompt | required, at most 100 000 characters; stored exactly as typed | yes |
-| Expected output | required, at most 100 000 characters; stored exactly as typed | yes |
+| Output criteria | required, at most 100 000 characters; stored exactly as typed | yes |
 | Projects | 0 to n; the assignment only controls who may see and edit the testcase; no project means admin only; it is set on the testcase page, the project page shows only a count | no |
+
+Output criteria describe what the output must meet (one criterion per line is a convention, not enforced). They are the
+basis for an LLM judge that will rate run outputs; no judge exists yet.
 
 Also stored: creator, created, updated and deleted time. The free-text fields remind users to use synthetic data and no
 personal data, because prompts are later sent to LLM providers.

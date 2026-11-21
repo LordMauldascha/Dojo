@@ -136,9 +136,9 @@ final class RunVersionDifferTest extends PhpUnitTestCase
         return $skill;
     }
 
-    private function makeTestcase(string $title, string $prompt, string $expectedOutput, Project $project): Testcase
+    private function makeTestcase(string $title, string $prompt, string $outputCriteria, Project $project): Testcase
     {
-        $testcase = new Testcase($title, null, $prompt, $expectedOutput);
+        $testcase = new Testcase($title, null, $prompt, $outputCriteria);
         $testcase->addProject($project);
 
         return $testcase;
