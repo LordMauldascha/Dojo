@@ -48,8 +48,8 @@ final class ConfirmDialogTest extends AppWebTestCase
             $crawler = $this->client->request('GET', $path);
 
             self::assertResponseIsSuccessful($path);
-            self::assertCount($count, $crawler->filter('button[command="show-modal"][commandfor]'), $path);
-            self::assertCount($count, $crawler->filter('dialog[aria-labelledby]:not(#unsaved-dialog)'), $path);
+            self::assertCount($count, $crawler->filter('button[command="show-modal"][commandfor^="confirm-"]'), $path);
+            self::assertCount($count, $crawler->filter('dialog[aria-labelledby]:not(#unsaved-dialog):not(#user-dialog)'), $path);
             self::assertCount($count, $crawler->filter('dialog:not(#unsaved-dialog) form[method="post"] input[name="_token"]'), $path);
             self::assertCount($count, $crawler->filter('dialog:not(#unsaved-dialog) button[command="close"][autofocus]'), $path);
             $targets = $crawler->filter('button[command="show-modal"]')->each(static fn (Crawler $button): ?string => $button->attr('commandfor'));

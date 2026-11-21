@@ -6,12 +6,16 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\UserCreateType;
+use App\Pagination\ListQuery;
+use App\Pagination\PageSizeResolver;
+use App\Repository\UserRepository;
 use App\Routing\Requirements;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -21,9 +25,18 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 final class UserController extends AbstractController
 {
+    private const LIST_KEY = 'users';
+
     #[Route('/admin/users', name: 'app_admin_users', methods: ['GET', 'POST'])]
-    public function index(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher): Response
-    {
+    public function index(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $hasher,
+        UserRepository $users,
+        PageSizeResolver $pageSizes,
+        #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
+        ListQuery $query = new ListQuery(),
+    ): Response {
         $user = new User();
         $form = $this->createForm(UserCreateType::class, $user);
         $form->handleRequest($request);
@@ -40,7 +53,8 @@ final class UserController extends AbstractController
         }
 
         return $this->render('admin/users.html.twig', [
-            'users' => $entityManager->getRepository(User::class)->findBy([], ['username' => 'ASC']),
+            'page' => $users->paginate($query, $pageSizes->resolve(self::LIST_KEY, $query->perPage)),
+            'query' => $query,
             'form' => $form,
         ]);
     }

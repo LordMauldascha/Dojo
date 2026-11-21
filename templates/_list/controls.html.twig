@@ -1,4 +1,4 @@
-{# Toolbar of an overview: search, page size and the main action. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter), newPath and newLabel (optional, the "New ..." button). #}
+{# Toolbar of an overview: search, page size and the main action. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter), newPath and newLabel (optional, the "New ..." button), newDialog (optional id of a dialog the button opens instead of linking to newPath). #}
 <div class="toolbar">
     <form method="get" action="{{ path(route, routeParams|default({})) }}">
         <label>Search
@@ -29,7 +29,9 @@
         {% endif %}
         <button type="submit">Apply</button>
     </form>
-    {% if newPath is defined %}
+    {% if newDialog is defined %}
+        <button type="button" class="button button-primary" command="show-modal" commandfor="{{ newDialog }}">{{ newLabel }}</button>
+    {% elseif newPath is defined %}
         <a class="button button-primary" href="{{ newPath }}">{{ newLabel }}</a>
     {% endif %}
 </div>

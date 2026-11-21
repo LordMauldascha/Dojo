@@ -36,10 +36,11 @@ page size and project filter.
 
 | List | Searches | Sortable columns |
 | --- | --- | --- |
+| Users (admins) | username | Username, Role, Status |
 | Groups | title | Title, Users, Updated, Created |
 | Projects | title, description | Title, Users, Groups, Skills, Testcases, Updated, Created |
 | Skills | title and description of the active version | Title, Updated, Created |
-| Testcases | title and description of the active version | Title, Projects, Version, Updated, Created |
+| Testcases | title and description of the active version | Title, Updated, Created |
 | Runs (of one project) | title, description | Title, Skills, Testcases, Updated, Created |
 
 The project filter on skills and testcases only offers projects the user has access to; for other projects the list

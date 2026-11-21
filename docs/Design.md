@@ -95,6 +95,9 @@ user confirms. Styles: `assets/css/components/_dialog.scss`, backdrop token `--c
   `prepare_component('dialog', { id: '...', showOnLoad: form.vars.submitted })`
   (`assets/js/components/dialog.ts`) to reopen it after an invalid submit.
 
+The toolbar's *New ...* button normally links to a page. With `newDialog` (the id of a dialog) in `_list/controls.html.twig`
+it is a `button[command="show-modal"]` that opens a form dialog instead; the users page uses it for *New user*.
+
 ## Password fields
 
 Every `input[type=password]` gets an eye button (`assets/js/services/passwordToggle.ts`, styles `.password-field` and

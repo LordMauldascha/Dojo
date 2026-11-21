@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\User;
 use App\Security\UserRole;
 use App\Tests\Support\AppWebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 final class UserManagementTest extends AppWebTestCase
 {
@@ -226,6 +227,69 @@ final class UserManagementTest extends AppWebTestCase
         return $user;
     }
 
+    public function testUserListIsSortedSearchedAndPaginated(): void
+    {
+        $this->client->loginUser($this->admin());
+        $this->persistUser('alice');
+        $this->persistUser('bob', UserRole::Admin);
+        $this->persistUser('carol', enabled: false);
+
+        self::assertSame(['alice', 'bob', 'carol', 'root'], $this->usernames($this->client->request('GET', '/admin/users')));
+        self::assertSame(['root', 'carol', 'bob', 'alice'], $this->usernames($this->client->request('GET', '/admin/users', ['dir' => 'desc'])));
+        self::assertSame(['root', 'bob', 'alice', 'carol'], $this->usernames($this->client->request('GET', '/admin/users', ['sort' => 'role'])));
+        self::assertSame(['root', 'alice', 'bob', 'carol'], $this->usernames($this->client->request('GET', '/admin/users', ['sort' => 'status', 'dir' => 'desc'])));
+
+        self::assertSame(['alice'], $this->usernames($this->client->request('GET', '/admin/users', ['q' => 'ALI'])));
+        self::assertSame([], $this->usernames($this->client->request('GET', '/admin/users', ['q' => '%'])));
+        self::assertSelectorTextContains('main', 'No users found.');
+
+        self::assertSelectorExists('.toolbar button[command="show-modal"][commandfor="user-dialog"]');
+        self::assertSelectorTextContains('.toolbar', 'New user');
+    }
+
+    public function testUserListPaginates(): void
+    {
+        $this->client->loginUser($this->admin());
+        for ($i = 1; $i <= 11; ++$i) {
+            $this->persistUser(\sprintf('user%02d', $i));
+        }
+
+        self::assertCount(10, $this->usernames($this->client->request('GET', '/admin/users')));
+        self::assertSelectorTextContains('nav[aria-label="Pagination"]', 'Page 1 of 2 (12 entries)');
+        self::assertSame(['user10', 'user11'], $this->usernames($this->client->request('GET', '/admin/users', ['page' => 2])));
+        self::assertCount(12, $this->usernames($this->client->request('GET', '/admin/users', ['perPage' => 20])));
+    }
+
+    public function testInvalidListQueryIsRejected(): void
+    {
+        $this->client->loginUser($this->admin());
+
+        $this->client->request('GET', '/admin/users', ['perPage' => 7]);
+        self::assertResponseStatusCodeSame(422);
+        $this->client->request('GET', '/admin/users', ['dir' => 'sideways']);
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testInvalidNewUserReopensTheDialogAndKeepsTheInput(): void
+    {
+        $this->client->loginUser($this->admin());
+
+        $crawler = $this->client->request('GET', '/admin/users');
+        self::assertStringContainsString('"showOnLoad":false', (string) $this->client->getResponse()->getContent());
+        self::assertSelectorExists('dialog#user-dialog form[name="user_create"]');
+
+        $this->client->submit($crawler->filter('dialog')->selectButton('Create user')->form([
+            'user_create[username]' => 'Bad Name',
+            'user_create[plainPassword][first]' => self::PASSWORD,
+            'user_create[plainPassword][second]' => self::PASSWORD,
+        ]));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertStringContainsString('"showOnLoad":true', (string) $this->client->getResponse()->getContent());
+        self::assertSelectorTextContains('dialog#user-dialog', 'Allowed are 3 to 64 characters');
+        self::assertSame('Bad Name', $this->client->getCrawler()->filter('dialog#user-dialog input[name="user_create[username]"]')->attr('value'));
+    }
+
     private function admin(): User
     {
         return $this->persistUser('root', UserRole::Admin);
@@ -240,5 +304,11 @@ final class UserManagementTest extends AppWebTestCase
             'user_create[plainPassword][second]' => $password,
             'user_create[role]' => $role,
         ]));
+    }
+
+    /** @return list<string> */
+    private function usernames(Crawler $crawler): array
+    {
+        return $crawler->filter('tbody tr td:nth-child(1)')->each(static fn (Crawler $cell): string => trim($cell->text()));
     }
 }

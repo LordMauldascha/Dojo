@@ -1,25 +1,27 @@
 {% extends 'layout.html.twig' %}
 
 {% import '_forms.html.twig' as forms %}
+{% import '_list/macros.html.twig' as list %}
 
 {% block title %}Users{% endblock %}
 
 {% block heading %}Users{% endblock %}
 
 {% block content %}
-    <h2>Existing users</h2>
-    {% if users %}
+    {{ include('_list/controls.html.twig', {route: 'app_admin_users', query: query, page: page, newDialog: 'user-dialog', newLabel: 'New user'}) }}
+
+    {% if page.items %}
         <table>
             <thead>
                 <tr>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Status</th>
+                    {{ list.sort_header('app_admin_users', {}, query, page, 'title', 'Username') }}
+                    {{ list.sort_header('app_admin_users', {}, query, page, 'role', 'Role') }}
+                    {{ list.sort_header('app_admin_users', {}, query, page, 'status', 'Status') }}
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for user in users %}
+                {% for user in page.items %}
                     <tr>
                         <td>{{ user.username }}</td>
                         <td>{{ user.role.label }}</td>
@@ -34,10 +36,24 @@
                 {% endfor %}
             </tbody>
         </table>
+        {{ list.pagination('app_admin_users', {}, query, page) }}
     {% else %}
-        <p>No users yet.</p>
+        <p>{{ query.q ? 'No users found.' : 'No users yet.' }}</p>
     {% endif %}
 
-    <h2>Create new user</h2>
-    {{ form(form) }}
+    <dialog id="{{ prepare_component('dialog', {id: 'user-dialog', showOnLoad: form.vars.submitted}) }}" aria-labelledby="user-dialog-title" closedby="any">
+        <h2 id="user-dialog-title">New user</h2>
+        {{ form_start(form) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.username) }}
+            {{ form_errors(form.plainPassword) }}
+            {{ form_row(form.plainPassword.first) }}
+            {{ form_row(form.plainPassword.second) }}
+            {{ form_row(form.role) }}
+            <div class="dialog-actions">
+                <button type="button" command="close" commandfor="user-dialog">Cancel</button>
+                {{ form_widget(form.save) }}
+            </div>
+        {{ form_end(form) }}
+    </dialog>
 {% endblock %}
