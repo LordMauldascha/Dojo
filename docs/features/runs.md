@@ -69,7 +69,8 @@ Each start creates the next version (1, 2, 3, ...). A version stores:
 
 Because final versions of skills and testcases never change (see [Versioning](versioning.md)), a run version always shows
 exactly what was started, even if the skill or testcase is edited or deleted later. Deleted ones are marked
-`(deleted)`.
+`(deleted)`. A skill is handed to the LLM as `SkillVersion::getSkillFile()`: generated header plus instructions (see
+[Skills](skills.md)). No code calls an LLM with it yet.
 
 ### Compare
 

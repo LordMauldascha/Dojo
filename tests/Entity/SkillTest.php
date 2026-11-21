@@ -49,6 +49,16 @@ final class SkillTest extends TestCase
         self::assertSame('3-draft', $skill->saveDraft('Review', null, 'content 3')->getLabel());
     }
 
+    public function testSkillFileIsTheGeneratedHeaderAndTheInstructions(): void
+    {
+        $skill = new Skill('Code Review', 'Reviews code.', "# Steps\n1. Read");
+
+        self::assertSame(
+            "---\nname: code-review\ndescription: Reviews code.\n---\n\n# Steps\n1. Read",
+            $skill->getActiveVersion()->getSkillFile(),
+        );
+    }
+
     public function testFinalSaveWithoutDraftCreatesNextVersion(): void
     {
         $skill = new Skill('Review', null, 'content 1');

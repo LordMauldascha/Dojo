@@ -13,7 +13,7 @@ The whole interface is in English. Each feature has its own page in [features/](
 | [API keys](features/api-keys.md) | Provider credentials, stored encrypted, managed by admins |
 | [Groups](features/groups.md) | Named sets of users that are assigned to projects |
 | [Projects](features/projects.md) | The central unit: members, skills, testcases, runs |
-| [Skills](features/skills.md) | SKILL.md texts with version history, assigned to projects |
+| [Skills](features/skills.md) | Skill instructions with generated SKILL.md header, version history, assigned to projects |
 | [Testcases](features/testcases.md) | Prompt and expected output with version history, assigned to projects |
 | [Runs](features/runs.md) | LLM configurations plus skills and testcases, snapshot on every start, version compare |
 | [Versioning](features/versioning.md) | Draft and final versions of skills and testcases |

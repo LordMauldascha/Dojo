@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Skill\SkillHeader;
 use App\Versioning\VersionInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -79,6 +80,12 @@ class SkillVersion implements VersionInterface
     public function getContent(): string
     {
         return $this->content;
+    }
+
+    /** The complete SKILL.md: generated header, blank line, instructions. */
+    public function getSkillFile(): string
+    {
+        return SkillHeader::render($this->title, $this->description)."\n\n".$this->content;
     }
 
     public function getSavedAt(): \DateTimeImmutable

@@ -7,6 +7,7 @@ import UnsavedChanges from './components/unsavedChanges';
 import commandButtons from './services/commandButtons';
 import passwordToggle from './services/passwordToggle';
 import preventDoubleSubmit from './services/preventDoubleSubmit';
+import skillHeader from './services/skillHeader';
 
 web.registerComponent('dialog', Dialog);
 web.registerComponent('smash-logout', SmashLogout);
@@ -17,3 +18,4 @@ web.registerComponent('unsaved-changes', UnsavedChanges);
 web.registerService('command-buttons', commandButtons);
 web.registerService('password-toggle', passwordToggle);
 web.registerService('prevent-double-submit', preventDoubleSubmit);
+web.registerService('skill-header', skillHeader);

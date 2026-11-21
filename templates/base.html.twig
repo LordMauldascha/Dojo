@@ -46,6 +46,7 @@
         {% do prepare_service('prevent-double-submit', 'enable') %}
         {% do prepare_service('command-buttons', 'support') %}
         {% do prepare_service('password-toggle', 'enable') %}
+        {% do prepare_service('skill-header', 'enable') %}
 
         {% block javascripts %}
             {{ encore_entry_script_tags('scripts') }}

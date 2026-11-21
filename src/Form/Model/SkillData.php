@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Form\Model;
 
 use App\Entity\SkillVersion;
+use App\Skill\SkillHeader;
 use App\Validator\NoNulByte;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 final class SkillData
 {
@@ -25,6 +27,16 @@ final class SkillData
     #[Assert\Length(max: 100000)]
     #[NoNulByte]
     public ?string $content = null;
+
+    #[Assert\Callback]
+    public function validateTitleName(ExecutionContextInterface $context): void
+    {
+        if ('' !== $this->normalizedTitle() && null === SkillHeader::name($this->normalizedTitle())) {
+            $context->buildViolation('The title may only contain letters, digits, spaces and hyphens (ä, ö, ü, ß become ae, oe, ue, ss).')
+                ->atPath('title')
+                ->addViolation();
+        }
+    }
 
     public static function fromVersion(SkillVersion $version): self
     {

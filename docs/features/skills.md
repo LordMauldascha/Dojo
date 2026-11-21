@@ -1,6 +1,6 @@
 # Skills
 
-A skill is an LLM skill: a title, a description and the text of its `SKILL.md`. Skills are versioned (see
+A skill is an LLM skill: a title, a description and its instructions (the body of a `SKILL.md`). Skills are versioned (see
 [Versioning](versioning.md)), can be assigned to several [projects](projects.md) and are used by [runs](runs.md).
 
 ## Data
@@ -9,10 +9,30 @@ A skill is an LLM skill: a title, a description and the text of its `SKILL.md`. 
 | --- | --- | --- |
 | Title | required, at most 255 characters | yes |
 | Description | optional, at most 2000 characters | yes |
-| SKILL.md | required, at most 100 000 characters; stored exactly as typed (line breaks normalised, no trimming) | yes |
+| Instructions | required, at most 100 000 characters; stored exactly as typed (line breaks normalised, no trimming) | yes |
 | Projects | 0 to n; the assignment only controls who may see and edit the skill; it is set on the skill page, the project page shows only a count | no |
 
 Also stored: creator, created, updated and deleted time.
+
+### Skills Header
+
+Above the instructions the form shows a read-only *Skills Header*: the YAML front matter of a `SKILL.md`, built from
+title and description. It is not stored; it is always calculated (`App\Skill\SkillHeader`) and updated live while typing
+(`assets/js/services/skillHeader.ts`, same rules). `SkillVersion::getSkillFile()` returns header, blank line and
+instructions; code that sends a skill to an LLM must use it.
+
+```
+---
+name: commit-writer
+description: Writes conventional commit messages.
+---
+```
+
+- `name` is the title in lower case, ä/ö/ü/ß replaced by ae/oe/ue/ss, blanks replaced by `-`. Only letters, digits,
+  single hyphens inside the name and blanks are allowed; anything else is refused when saving. Skills created before this
+  rule can only be saved after the title was corrected; a stored title that is invalid gives an empty `name`.
+- `description`: lines are trimmed, empty lines dropped, further lines indented by two blanks. A description with `: `,
+  ` #` or a leading YAML indicator is written as a folded block (`description: >-`). An empty description is `""`.
 
 ## Who sees and edits a skill
 
@@ -30,7 +50,7 @@ Also stored: creator, created, updated and deleted time.
 | Page | URL | Purpose |
 | --- | --- | --- |
 | Overview | `/skills` | Search, sort, project filter; columns Title, Description, Projects, Version, Runs, Updated, Created |
-| New skill | `/skills/new` | Create version 1 with title, description, SKILL.md and projects |
+| New skill | `/skills/new` | Create version 1 with title, description, instructions and projects |
 | Skill | `/skills/{uuid}` | Tiles (active version, projects, runs using it), edit and save as draft or final, discard the draft, change projects, version history |
 | Version | `/skills/{uuid}/versions/{number}` | Read-only view of one version |
 

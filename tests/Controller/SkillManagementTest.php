@@ -113,6 +113,55 @@ final class SkillManagementTest extends AppWebTestCase
         self::assertSame(['Save as draft', 'Save as final'], $enabled->each(static fn (Crawler $button): string => trim($button->text())));
     }
 
+    public function testFormShowsTheReadonlyHeaderAboveTheInstructions(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Code Review', [], $admin, '# Body', 'Reviews: code');
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+
+        $names = $crawler->filter('form textarea')->each(static fn (Crawler $field): ?string => $field->attr('name'));
+        self::assertSame(['skill_content[description]', 'skill_content[skillHeader]', 'skill_content[content]'], $names);
+        $header = $crawler->filter('textarea[name="skill_content[skillHeader]"]');
+        self::assertNotNull($header->attr('readonly'));
+        self::assertSame("---\nname: code-review\ndescription: >-\n  Reviews: code\n---", trim($header->text(normalizeWhitespace: false)));
+        self::assertSame('Skills Header', trim($crawler->filter('label[for="skill_content_skillHeader"]')->text()));
+        self::assertSame('Instructions', trim($crawler->filter('label[for="skill_content_content"]')->text()));
+        self::assertSelectorNotExists('label:contains("SKILL.md")');
+    }
+
+    public function testTitleWithUmlautsIsAcceptedAndOtherCharactersAreRefused(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $crawler = $this->client->request('GET', '/skills/new');
+
+        $this->submit($crawler, 'Create skill', 'skill_content', ['title' => 'a,b', 'content' => 'x']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', 'The title may only contain letters, digits, spaces and hyphens');
+        self::assertNull($this->entityManager->getRepository(Skill::class)->findOneBy([]));
+
+        $this->submit($crawler, 'Create skill', 'skill_content', ['title' => 'Über Größe', 'content' => 'x']);
+        self::assertResponseRedirects();
+        self::assertSame('Über Größe', $this->findSkill('Über Größe')->getActiveVersion()->getTitle());
+    }
+
+    public function testSubmittedHeaderValueIsIgnored(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin, 'content 1', 'Reviews code');
+        $path = '/skills/'.$skill->getUuid();
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', $path);
+        $this->submit($crawler, 'Save as final', 'skill_content', ['skillHeader' => "---\nname: hacked\n---", 'content' => 'content 2']);
+
+        self::assertResponseRedirects($path);
+        $this->entityManager->clear();
+        $active = $this->findSkill('Review')->getActiveVersion();
+        self::assertSame("---\nname: review\ndescription: Reviews code\n---\n\ncontent 2", $active->getSkillFile());
+    }
+
     public function testRestoreIsRefusedWhileADraftExists(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
