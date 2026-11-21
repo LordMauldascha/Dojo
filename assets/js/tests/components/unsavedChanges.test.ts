@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { warnOnUnsavedChanges } from '../unsavedChanges';
+import { warnOnUnsavedChanges } from '../../components/unsavedChanges';
 
 const PAGE = `
     <a id="away" href="/projects">Projects</a>
@@ -49,7 +49,7 @@ describe('warnOnUnsavedChanges', () => {
         dialog = field<HTMLDialogElement>('dialog');
         dialog.showModal = vi.fn();
         dialog.close = vi.fn();
-        stop = warnOnUnsavedChanges(document, window);
+        stop = warnOnUnsavedChanges(dialog, document, window);
     });
 
     afterEach(() => {

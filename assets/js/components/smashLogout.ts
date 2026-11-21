@@ -3,17 +3,12 @@ const SMASH_FALLBACK_MS = 1200;
 // Plays the brick-smash animation (CSS class "is-smashing") before the logout link is followed.
 // Without script, with reduced motion or with a modified click the link simply works.
 export function smashLogout(
-    root: Document = document,
+    link: HTMLAnchorElement,
     win: Window = window,
     navigate: (url: string) => void = (url) => {
         win.location.href = url;
     },
 ): () => void {
-    const link = root.querySelector<HTMLAnchorElement>('a.logout');
-    if (null === link) {
-        return () => undefined;
-    }
-
     let timer: number | undefined;
 
     let followed = false;
@@ -79,4 +74,10 @@ export function smashLogout(
         link.removeEventListener('animationend', onAnimationEnd);
         win.removeEventListener('pageshow', onPageShow);
     };
+}
+
+export default class SmashLogout {
+    initialize(el: HTMLAnchorElement): void {
+        smashLogout(el);
+    }
 }

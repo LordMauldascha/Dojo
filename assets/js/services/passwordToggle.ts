@@ -83,3 +83,9 @@ export function enablePasswordToggles(root: Document = document, view: Window = 
         view.removeEventListener('pageshow', onPageShow);
     };
 }
+
+export default {
+    enable(): void {
+        enablePasswordToggles();
+    },
+};

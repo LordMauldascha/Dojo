@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { smashLogout } from '../smashLogout';
+import { smashLogout } from '../../components/smashLogout';
 
 function click(link: HTMLAnchorElement, init: MouseEventInit = {}): MouseEvent {
     const event = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init });
@@ -17,7 +17,7 @@ describe('smashLogout', () => {
         document.body.innerHTML = '<a class="logout" href="/logout?token=abc"><span>Logout</span></a>';
         link = document.querySelector('a.logout') as HTMLAnchorElement;
         navigate = vi.fn<(url: string) => void>();
-        stop = smashLogout(document, window, navigate);
+        stop = smashLogout(link, window, navigate);
     });
 
     afterEach(() => {

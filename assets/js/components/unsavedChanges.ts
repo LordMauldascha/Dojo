@@ -7,7 +7,7 @@ function isChanged(field: Element): boolean {
             return false;
         }
 
-        // A revealed password field has type "text" (see passwordToggle.ts).
+        // A revealed password field has type "text" (see services/passwordToggle.ts).
         if ('passwordField' in field.dataset) {
             return false;
         }
@@ -35,12 +35,15 @@ function isChanged(field: Element): boolean {
 }
 
 /**
- * Warns before unsaved form changes are lost. A click on an in-app link opens the #unsaved-dialog (Stay or Discard);
+ * Warns before unsaved form changes are lost. A click on an in-app link opens the dialog (Stay or Discard);
  * reload, closing the tab, back and other forms get the browser's own prompt. Submitting a form never warns about its
  * own fields. Returns a function that removes the listeners.
  */
-export function warnOnUnsavedChanges(root: Document = document, win: Window = window): () => void {
-    const dialog = root.getElementById('unsaved-dialog');
+export function warnOnUnsavedChanges(
+    dialog: HTMLDialogElement,
+    root: Document = document,
+    win: Window = window,
+): () => void {
     let submitting: HTMLFormElement | null = null;
     let leaving = false;
     let pending: HTMLAnchorElement | null = null;
@@ -64,7 +67,6 @@ export function warnOnUnsavedChanges(root: Document = document, win: Window = wi
     const onClick = (event: MouseEvent): void => {
         if (
             leaving ||
-            !(dialog instanceof HTMLDialogElement) ||
             event.defaultPrevented ||
             0 !== event.button ||
             event.metaKey ||
@@ -96,7 +98,7 @@ export function warnOnUnsavedChanges(root: Document = document, win: Window = wi
         const link = pending;
         pending = null;
         leaving = true;
-        (dialog as HTMLDialogElement).close();
+        dialog.close();
         link?.click();
     };
 
@@ -120,22 +122,26 @@ export function warnOnUnsavedChanges(root: Document = document, win: Window = wi
         submitting = null;
         leaving = false;
         pending = null;
-        if (dialog instanceof HTMLDialogElement) {
-            dialog.close();
-        }
+        dialog.close();
     };
 
     root.addEventListener('click', onClick, true);
     root.addEventListener('submit', onSubmit);
-    dialog?.addEventListener('click', onDialogClick);
+    dialog.addEventListener('click', onDialogClick);
     win.addEventListener('beforeunload', onBeforeUnload);
     win.addEventListener('pageshow', onPageShow);
 
     return () => {
         root.removeEventListener('click', onClick, true);
         root.removeEventListener('submit', onSubmit);
-        dialog?.removeEventListener('click', onDialogClick);
+        dialog.removeEventListener('click', onDialogClick);
         win.removeEventListener('beforeunload', onBeforeUnload);
         win.removeEventListener('pageshow', onPageShow);
     };
+}
+
+export default class UnsavedChanges {
+    initialize(el: HTMLDialogElement): void {
+        warnOnUnsavedChanges(el);
+    }
 }

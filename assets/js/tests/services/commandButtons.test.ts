@@ -1,19 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { showDialogsOnLoad, supportCommandButtons } from '../commandButtons';
-
-describe('showDialogsOnLoad', () => {
-    it('opens only the dialogs marked data-show-on-load', () => {
-        document.body.innerHTML = '<dialog id="marked" data-show-on-load></dialog><dialog id="plain"></dialog>';
-        const [marked, plain] = Array.from(document.querySelectorAll('dialog'));
-        marked.showModal = vi.fn();
-        plain.showModal = vi.fn();
-
-        showDialogsOnLoad(document);
-
-        expect(marked.showModal).toHaveBeenCalledOnce();
-        expect(plain.showModal).not.toHaveBeenCalled();
-    });
-});
+import { supportCommandButtons } from '../../services/commandButtons';
 
 describe('supportCommandButtons', () => {
     let dialog: HTMLDialogElement;

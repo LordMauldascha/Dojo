@@ -76,15 +76,16 @@ user confirms. Styles: `assets/css/components/_dialog.scss`, backdrop token `--c
 - `closedby="any"` adds click-outside dismissal where supported; Esc always closes.
 - Never set `display` on `dialog` without `[open]`, and keep `overscroll-behavior: contain` on `dialog:modal` and
   `dialog::backdrop`, otherwise the page scrolls behind the modal.
-- Browsers without Invoker Commands are served by `assets/js/commandButtons.ts` (no dependency).
+- Browsers without Invoker Commands are served by `assets/js/services/commandButtons.ts` (no dependency).
 - `Remove` buttons (assignments) and `Restore` do not ask.
 - Form dialogs (the password change on the account page) use the same `<dialog>`. A Symfony form (it has a `name`) inside
   keeps its normal field layout, its Cancel and submit buttons sit in `.dialog-actions`. Mark the dialog with
-  `data-show-on-load` (`showDialogsOnLoad()` in `assets/js/commandButtons.ts`) to reopen it after an invalid submit.
+  `prepare_component('dialog', { id: '...', showOnLoad: form.vars.submitted })`
+  (`assets/js/components/dialog.ts`) to reopen it after an invalid submit.
 
 ## Password fields
 
-Every `input[type=password]` gets an eye button (`assets/js/passwordToggle.ts`, styles `.password-field` and
+Every `input[type=password]` gets an eye button (`assets/js/services/passwordToggle.ts`, styles `.password-field` and
 `.password-toggle` in `_forms.scss`). The script wraps the field in `span.password-field` and adds a
 `button.password-toggle` inside the field's right edge (control-height square, muted icon, accent on hover, focus ring
 inside the button). The icon is an inline SVG built in the script (`currentColor`): an eye while the text is hidden, a
@@ -97,7 +98,7 @@ struck-through eye while it is shown; `aria-pressed` and `aria-label` ("Show pas
 
 ## Unsaved changes
 
-Leaving a page with edited form fields asks first (`assets/js/unsavedChanges.ts`, the `#unsaved-dialog` in
+Leaving a page with edited form fields asks first (`assets/js/components/unsavedChanges.ts`, the `#unsaved-dialog` in
 `templates/layout.html.twig`, styles shared with the confirmation dialog). It guards every named POST form
 (`form[name][method="post"]`, so all Symfony forms, not the GET search of the lists or the login). A field counts as changed
 when it differs from its HTML default (`defaultValue`, `defaultChecked`, `defaultSelected`); hidden, password and file fields are
@@ -114,7 +115,7 @@ ignored (password managers fill them without an edit).
 ## Logout brick
 
 The Logout link in the sidebar turns into a brick on hover and breaks when clicked (`a.logout`,
-`assets/css/components/_brick.scss`, `assets/js/smashLogout.ts`, tokens `--color-brick*` and `--duration-smash`). The
+`assets/css/components/_brick.scss`, `assets/js/components/smashLogout.ts`, tokens `--color-brick*` and `--duration-smash`). The
 two halves are the link's `::before` and `::after`, cut along one crack. A click adds `.is-smashing`, the halves fall,
 and the logout URL is followed when the animation ends (with a 1.2 s fallback). Without script, with reduced motion or
 with a modified click (Ctrl, Cmd, middle button) the link just works. Brick red is a one-off for this link, not a brand
@@ -128,7 +129,7 @@ On login the credentials are sent in the background first. Only when the server 
 down over the page (woven straw, dark cloth borders, a cylinder at the moving edge) and the first page opens; once it has
 loaded, the mats roll away downward. Wrong credentials start no animation: the server's error message appears in the
 form and the password field is cleared. Files: `assets/css/components/_tatami.scss`,
-`assets/js/tatamiLogin.ts`, the `.tatami` markup and the inline script in `templates/base.html.twig`, tokens
+`assets/js/components/tatamiLogin.ts`, `assets/js/components/tatamiCover.ts`, the `.tatami` markup and the inline script in `templates/base.html.twig`, tokens
 `--color-tatami*`, `--duration-tatami`, `--tatami-stagger`.
 
 - States on `<html>`: `tatami-in` (rolling down, set on submit), `tatami-cover` (the next page starts covered; an

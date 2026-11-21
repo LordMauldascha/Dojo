@@ -85,7 +85,7 @@
 
     <h2>Security</h2>
     <p><button type="button" command="show-modal" commandfor="password-dialog">Change password</button></p>
-    <dialog id="password-dialog" aria-labelledby="password-dialog-title" closedby="any"{% if form.vars.submitted %} data-show-on-load{% endif %}>
+    <dialog id="{{ prepare_component('dialog', {id: 'password-dialog', showOnLoad: form.vars.submitted}) }}" aria-labelledby="password-dialog-title" closedby="any">
         <h2 id="password-dialog-title">Change password</h2>
         {{ form_start(form, {action: path('app_account_password')}) }}
             {{ form_errors(form) }}

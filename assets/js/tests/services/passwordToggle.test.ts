@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { enablePasswordToggles } from '../passwordToggle';
+import { enablePasswordToggles } from '../../services/passwordToggle';
 
 describe('enablePasswordToggles', () => {
     let stop: () => void;

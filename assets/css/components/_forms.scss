@@ -111,7 +111,7 @@ textarea {
     }
 }
 
-// Eye button inside a password field (assets/js/passwordToggle.ts). Nested to beat page rules such as `.login-panel button`.
+// Eye button inside a password field (assets/js/services/passwordToggle.ts). Nested to beat page rules such as `.login-panel button`.
 .password-field {
     position: relative;
     display: block;

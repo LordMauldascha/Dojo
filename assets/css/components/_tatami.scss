@@ -1,6 +1,6 @@
 // Login animation: three tatami mats roll down over the page when the login form is sent (html.tatami-in), stay as a
 // cover during the redirect (html.tatami-cover, set early by an inline script in base.html.twig) and roll away
-// downward once the first page after the login has loaded (html.tatami-away). Logic: assets/js/tatamiLogin.ts.
+// downward once the first page after the login has loaded (html.tatami-away). Logic: assets/js/components/tatamiLogin.ts and tatamiCover.ts.
 .tatami {
     --roll-h: 2.6rem;
 

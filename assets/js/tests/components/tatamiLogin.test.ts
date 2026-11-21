@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { rollAwayAfterLoad, rollInOnLogin } from '../tatamiLogin';
+import { rollInOnLogin } from '../../components/tatamiLogin';
 
 const MATS = `
     <div class="tatami">
@@ -53,7 +53,7 @@ describe('rollInOnLogin', () => {
         post = vi.fn();
         send = vi.fn<(form: HTMLFormElement) => void>();
         go = vi.fn<(url: string) => void>();
-        stop = rollInOnLogin(document, window, { post, send, go });
+        stop = rollInOnLogin(form, document, window, { post, send, go });
     });
 
     afterEach(() => {
@@ -165,56 +165,5 @@ describe('rollInOnLogin', () => {
 
         expect(document.documentElement.classList.contains('tatami-in')).toBe(false);
         expect((form.querySelector('button') as HTMLButtonElement).disabled).toBe(false);
-    });
-});
-
-describe('rollAwayAfterLoad', () => {
-    beforeEach(() => {
-        document.documentElement.className = '';
-        sessionStorage.setItem('dojo-tatami', '1');
-        document.body.innerHTML = MATS;
-        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-            callback(0);
-
-            return 0;
-        });
-    });
-
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
-    it('does nothing without the cover class', () => {
-        rollAwayAfterLoad(document, window);
-
-        expect(document.documentElement.classList.contains('tatami-away')).toBe(false);
-        expect(sessionStorage.getItem('dojo-tatami')).toBe('1');
-    });
-
-    it('rolls the mats away once the page has loaded and removes the cover afterwards', () => {
-        document.documentElement.classList.add('tatami-cover');
-        Object.defineProperty(document, 'readyState', { value: 'loading', configurable: true });
-
-        rollAwayAfterLoad(document, window);
-        expect(document.documentElement.classList.contains('tatami-away')).toBe(false);
-        expect(sessionStorage.getItem('dojo-tatami')).toBeNull();
-
-        window.dispatchEvent(new Event('load'));
-        expect(document.documentElement.classList.contains('tatami-away')).toBe(true);
-
-        endAnimation(lastSheet(), 'tatami-sheet-away');
-        expect(document.documentElement.classList.contains('tatami-cover')).toBe(false);
-        expect(document.documentElement.classList.contains('tatami-away')).toBe(false);
-
-        Object.defineProperty(document, 'readyState', { value: 'complete', configurable: true });
-    });
-
-    it('starts at once when the page is already loaded', () => {
-        document.documentElement.classList.add('tatami-cover');
-        Object.defineProperty(document, 'readyState', { value: 'complete', configurable: true });
-
-        rollAwayAfterLoad(document, window);
-
-        expect(document.documentElement.classList.contains('tatami-away')).toBe(true);
     });
 });

@@ -36,3 +36,9 @@ export function preventDoubleSubmit(root: Document = document, view: Window = wi
         view.removeEventListener('pageshow', onPageShow);
     };
 }
+
+export default {
+    enable(): void {
+        preventDoubleSubmit();
+    },
+};

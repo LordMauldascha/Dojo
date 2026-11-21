@@ -14,7 +14,7 @@
                 <p class="flash flash-error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
             {% endif %}
 
-            <form method="post" class="login-form">
+            <form method="post" class="login-form" id="{{ prepare_component('tatami-login') }}">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="_username" value="{{ last_username }}" autocomplete="username" required autofocus>
 

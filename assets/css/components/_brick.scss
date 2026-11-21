@@ -1,6 +1,6 @@
 @use '../variables' as *;
 
-// The logout link turns into a brick on hover and breaks when it is clicked (assets/js/smashLogout.ts adds
+// The logout link turns into a brick on hover and breaks when it is clicked (assets/js/components/smashLogout.ts adds
 // .is-smashing). The two halves are the link's ::before and ::after, cut along one jagged crack.
 .app-nav a.logout {
     position: relative;

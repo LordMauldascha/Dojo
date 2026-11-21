@@ -1,16 +1,19 @@
-import '@sulu/web';
-import { showDialogsOnLoad, supportCommandButtons } from './commandButtons';
-import { enablePasswordToggles } from './passwordToggle';
-import { preventDoubleSubmit } from './preventDoubleSubmit';
-import { warnOnUnsavedChanges } from './unsavedChanges';
-import { smashLogout } from './smashLogout';
-import { rollAwayAfterLoad, rollInOnLogin } from './tatamiLogin';
+import web from '@sulu/web';
+import Dialog from './components/dialog';
+import SmashLogout from './components/smashLogout';
+import TatamiCover from './components/tatamiCover';
+import TatamiLogin from './components/tatamiLogin';
+import UnsavedChanges from './components/unsavedChanges';
+import commandButtons from './services/commandButtons';
+import passwordToggle from './services/passwordToggle';
+import preventDoubleSubmit from './services/preventDoubleSubmit';
 
-preventDoubleSubmit();
-supportCommandButtons();
-showDialogsOnLoad();
-enablePasswordToggles();
-warnOnUnsavedChanges();
-smashLogout();
-rollInOnLogin();
-rollAwayAfterLoad();
+web.registerComponent('dialog', Dialog);
+web.registerComponent('smash-logout', SmashLogout);
+web.registerComponent('tatami-cover', TatamiCover);
+web.registerComponent('tatami-login', TatamiLogin);
+web.registerComponent('unsaved-changes', UnsavedChanges);
+
+web.registerService('command-buttons', commandButtons);
+web.registerService('password-toggle', passwordToggle);
+web.registerService('prevent-double-submit', preventDoubleSubmit);

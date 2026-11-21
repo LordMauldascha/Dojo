@@ -22,7 +22,7 @@
                 document.documentElement.style.setProperty('--glow-delay-core', -(t % 14) + 's');
             })();
         </script>
-        {# Login animation (docs/Design.md): after a login attempt the next page starts covered by the tatami mats (class set before the first paint, the view transition is skipped) and assets/js/tatamiLogin.ts rolls them away. #}
+        {# Login animation (docs/Design.md): after a login attempt the next page starts covered by the tatami mats (class set before the first paint, the view transition is skipped) and assets/js/components/tatamiCover.ts rolls them away. #}
         <script>
             (function () {
                 try {
@@ -43,6 +43,10 @@
         {# Do not paint the new page before its content element is parsed. Every page needs main#content. #}
         <link rel="expect" href="#content" blocking="render">
 
+        {% do prepare_service('prevent-double-submit', 'enable') %}
+        {% do prepare_service('command-buttons', 'support') %}
+        {% do prepare_service('password-toggle', 'enable') %}
+
         {% block javascripts %}
             {{ encore_entry_script_tags('scripts') }}
         {% endblock %}
@@ -55,7 +59,7 @@
         {% endif %}
     </head>
     <body>
-        <div class="tatami" aria-hidden="true">
+        <div class="tatami" id="{{ prepare_component('tatami-cover') }}" aria-hidden="true">
             <span class="tatami-mat"><span class="tatami-sheet"></span><span class="tatami-roll"></span></span>
             <span class="tatami-mat"><span class="tatami-sheet"></span><span class="tatami-roll"></span></span>
             <span class="tatami-mat"><span class="tatami-sheet"></span><span class="tatami-roll"></span></span>

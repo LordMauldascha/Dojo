@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { preventDoubleSubmit } from '../preventDoubleSubmit';
+import { preventDoubleSubmit } from '../../services/preventDoubleSubmit';
 
 function submit(form: HTMLFormElement): Event {
     const event = new Event('submit', { bubbles: true, cancelable: true });

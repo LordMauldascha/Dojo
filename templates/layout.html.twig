@@ -16,7 +16,7 @@
         </main>
     </div>
 
-    <dialog id="unsaved-dialog" aria-labelledby="unsaved-dialog-title" closedby="any">
+    <dialog id="{{ prepare_component('unsaved-changes', {id: 'unsaved-dialog'}) }}" aria-labelledby="unsaved-dialog-title" closedby="any">
         <h2 id="unsaved-dialog-title">Discard changes?</h2>
         <p>You have unsaved changes on this page. If you leave, they are discarded.</p>
         <div class="dialog-actions">

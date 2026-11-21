@@ -14,10 +14,10 @@ The required Node version is in `.nvmrc` (`nvm use`).
 | `tsconfig.json`                       | TypeScript configuration (`include`: `assets/**/*`)                    |
 | `vitest.config.ts`                    | Vitest configuration (jsdom, tests in `assets/js/tests`)               |
 | `.prettierrc`                         | Prettier configuration (applies to `assets/` only, see below)          |
-| `assets/js/app.ts`                    | Script entry `scripts`: loads `@sulu/web`, guards against double submit |
+| `assets/js/app.ts`                    | Script entry `scripts`: loads `@sulu/web`, only registers components and services |
 | `assets/css/app.scss`                 | Style entry `styles`                                                   |
-| `assets/js/preventDoubleSubmit.ts`    | Blocks a second submit of the same form (double click)                 |
-| `assets/js/passwordToggle.ts`         | Eye button on every password field that shows or hides the text        |
+| `assets/js/components/`               | Components bound to one element (`prepare_component`)                  |
+| `assets/js/services/`                 | Services without an element (`prepare_service`) and shared helpers     |
 | `assets/js/tests/`                    | Vitest tests (`*.test.ts`)                                             |
 | `assets/env.d.ts`                     | Type declarations for modules without types (`@sulu/web`)              |
 | `config/packages/webpack_encore.yaml` | Symfony bundle, output path `public/build`, `defer` on all script tags |
@@ -86,7 +86,10 @@ export default class Counter {
 
 ### 2. Register it in `app.ts`
 
+`app.ts` only registers. Twig decides where a component or service runs.
+
 ```ts
+import web from '@sulu/web';
 import Counter from './components/counter';
 
 web.registerComponent('counter', Counter);
@@ -102,12 +105,21 @@ web.registerComponent('counter', Counter);
 printed as text and the component never starts. `@sulu/web` sets `window.web` itself, so the inline script in
 `base.html.twig` can call `web.startComponents(...)`.
 
+### Services
+
+A service runs page-wide code that belongs to no single element (document listeners, scans of the whole page). It is
+an object with methods in `assets/js/services/`, registered with `web.registerService('name', service)`. Twig calls a
+method with `{% do prepare_service('name', 'method', [args]) %}`; the base template does this for all pages
+(`prevent-double-submit`, `command-buttons`, `password-toggle`). `web.callServices` has no `try/catch`, so a service
+that throws stops the ones after it.
+
 See the [sulu/web-twig documentation](https://github.com/sulu/web-twig/blob/master/docs/component.md) for the other
 Twig functions.
 
 ## Tests
 
-Vitest tests live in `assets/js/tests/` and import from `../components/...`. The environment is `jsdom`.
+Vitest tests live in `assets/js/tests/components/` and `assets/js/tests/services/` and import from `../../components/...` or
+`../../services/...`. The environment is `jsdom`.
 `vitest.config.ts` only picks up `assets/js/tests/**/*.{test,spec}.ts`, tests placed elsewhere are not run.
 
 ## Formatting
@@ -117,7 +129,8 @@ under `assets/`. See [AGENTS.md](../AGENTS.md) for how to enable the hook.
 
 ## Adding things
 
-- More TypeScript files: create them under `assets/js/` and `import` them, Encore bundles them automatically.
+- More TypeScript files: components go to `assets/js/components/`, services and helpers to `assets/js/services/`.
+  Register them in `app.ts`; Encore bundles the imports automatically.
 - SCSS: create files under `assets/css/` and include them in `app.scss` with `@use`. Design tokens and rules:
   [Design.md](Design.md).
 - New entry: add `.addEntry('name', './assets/js/name.ts')` in `webpack.config.js` and use
@@ -142,5 +155,6 @@ under `assets/`. See [AGENTS.md](../AGENTS.md) for how to enable the hook.
 | `Could not find the entrypoints file`       | No build has run yet: `npm run dev`                                                   |
 | `Unknown "encore_entry_*" function`         | `WebpackEncoreBundle` missing in `config/bundles.php` or cache not cleared            |
 | Component does not start, element has no id | `prepare_component` was called without `{{ }}`                                        |
+| `... is not registered` in the console      | Missing `web.registerComponent` / `registerService` in `app.ts`                        |
 | Changes not visible in the browser          | `npm run watch` is not running or browser cache (hard reload)                         |
 | Vitest finds no tests                       | Test file is not under `assets/js/tests/` or does not match `*.test.ts` / `*.spec.ts` |

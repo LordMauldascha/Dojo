@@ -1,36 +1,4 @@
-const STORAGE_KEY = 'dojo-tatami';
-const FALLBACK_MS = 2500;
-
-function prefersReducedMotion(win: Window): boolean {
-    return true === win.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
-// Calls done once the last mat has finished the named animation, or after a fallback delay.
-function afterLastMat(root: Document, win: Window, animationName: string, done: () => void): void {
-    const lastSheet = root.querySelector('.tatami-mat:last-child .tatami-sheet');
-    let finished = false;
-    let timer: number | undefined;
-
-    const finish = (): void => {
-        if (finished) {
-            return;
-        }
-
-        finished = true;
-        win.clearTimeout(timer);
-        root.removeEventListener('animationend', onEnd);
-        done();
-    };
-
-    const onEnd = (event: Event): void => {
-        if (event.target === lastSheet && animationName === (event as AnimationEvent).animationName) {
-            finish();
-        }
-    };
-
-    root.addEventListener('animationend', onEnd);
-    timer = win.setTimeout(finish, FALLBACK_MS);
-}
+import { STORAGE_KEY, afterLastMat, prefersReducedMotion } from '../services/tatami';
 
 export interface LoginResponse {
     url: string;
@@ -52,9 +20,13 @@ interface LoginDeps {
  * cover up (inline script in base.html.twig) and calls rollAwayAfterLoad. Wrong credentials show the server's error
  * message in place and start no animation. Invalid forms and reduced motion keep the normal submit.
  */
-export function rollInOnLogin(root: Document = document, win: Window = window, deps?: Partial<LoginDeps>): () => void {
-    const form = root.querySelector<HTMLFormElement>('form.login-form');
-    if (null === form || null === root.querySelector('.tatami')) {
+export function rollInOnLogin(
+    form: HTMLFormElement,
+    root: Document = document,
+    win: Window = window,
+    deps?: Partial<LoginDeps>,
+): () => void {
+    if (null === root.querySelector('.tatami')) {
         return () => undefined;
     }
 
@@ -171,37 +143,8 @@ export function rollInOnLogin(root: Document = document, win: Window = window, d
     };
 }
 
-/**
- * On the page after the login: when it has loaded, the covering mats roll away downward. The cover class is set early
- * by an inline script in base.html.twig; without it nothing happens.
- */
-export function rollAwayAfterLoad(root: Document = document, win: Window = window): void {
-    const html = root.documentElement;
-    if (!html.classList.contains('tatami-cover')) {
-        return;
-    }
-
-    try {
-        win.sessionStorage.removeItem(STORAGE_KEY);
-    } catch {
-        // nothing to clean up
-    }
-
-    const start = (): void => {
-        // two frames, so the covered page has been painted before the mats move
-        win.requestAnimationFrame(() =>
-            win.requestAnimationFrame(() => {
-                html.classList.add('tatami-away');
-                afterLastMat(root, win, 'tatami-sheet-away', () => {
-                    html.classList.remove('tatami-cover', 'tatami-away');
-                });
-            }),
-        );
-    };
-
-    if ('complete' === root.readyState) {
-        start();
-    } else {
-        win.addEventListener('load', start, { once: true });
+export default class TatamiLogin {
+    initialize(el: HTMLFormElement): void {
+        rollInOnLogin(el);
     }
 }
