@@ -36,10 +36,14 @@ Server-rendered Symfony app (Twig, Webpack Encore). Runs locally in Docker (app 
 
 Binding color palette, set by the user:
 
-- `#03203d` for backgrounds and similar large surfaces.
-- `#639cc5` for emphasized elements.
-- `#eb2f33` for highlights.
-- Text in an off-white, not pure white (exact value open).
+- Brown `#603e1e`: brand base color (used for selected surfaces).
+- Main background `#2c2015`: a darker brown, set by the user because `#603e1e` was too light as a background.
+- Pale Gold `#f1d9a8`: secondary color.
+- Glowing Gold `#ffc34d`: highlights.
+- Text in a warm off-white, not pure white.
+- Style: reminiscent of a traditional dojo (dark wood, paper-gold, straight joinery), user-confirmed. It may be somewhat playful (user-confirmed): the current navigation item sits on a wooden breaking board like the ones broken in karate. The interface keeps standard controls and layout; the theme enters through palette, heading type, square edges, the seal and the board.
+
+This palette replaced the earlier navy, blue and red palette. Red is no brand color and appears only for errors and destructive actions.
 
 The earlier project rule "no icons and no colors anywhere" applies to tables only. Elsewhere in the interface, color and icons are allowed.
 

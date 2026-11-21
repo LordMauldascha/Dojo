@@ -1,5 +1,8 @@
 :root {
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    // Headings only (a Japanese mincho, in keeping with the dojo theme); labels, buttons and data stay in --font-sans.
+    --font-display: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', Georgia, serif;
+    --font-seal: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', 'Noto Serif JP', serif; // the 道 on the seal
     --font-mono:
         ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; // SKILL.md content, prompts, diffs
 

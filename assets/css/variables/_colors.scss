@@ -3,36 +3,48 @@
     color-scheme: dark;
 
     // Brand palette (PRODUCT.md, binding)
-    --color-brand-navy: #03203d;
-    --color-brand-blue: #639cc5;
-    --color-brand-red: #eb2f33;
+    --color-brand-brown: #603e1e;
+    --color-brand-pale-gold: #f1d9a8;
+    --color-brand-glowing-gold: #ffc34d;
 
-    // Surfaces, tinted from the navy
-    --color-bg: var(--color-brand-navy);
-    --color-bg-sunken: #02182e;
-    --color-surface: #0e2a46;
-    --color-surface-raised: #1a354f;
-    --color-selection: #2e587a;
+    // Surfaces: dark wood, the pale gold tints the lighter steps
+    --color-bg: #2c2015;
+    --color-bg-sunken: #1f160f; // sidebar and input fields
+    --color-surface: #382b1e;
+    --color-surface-raised: #423425;
+    --color-selected: var(--color-brand-brown); // current navigation item, 8.5:1 under --color-text
+    --color-selection: #6b5126; // text selection, 6.3:1 under --color-text
+
+    // The breaking board behind the current navigation item (see docs/Design.md); text stays above 7:1 on all of it
+    --color-wood-light: #6d4824;
+    --color-wood-dark: #55361a;
+    --color-wood-grain-light: rgb(241 217 168 / 0.08);
+    --color-wood-grain-dark: rgb(0 0 0 / 0.14);
+    --color-wood-knot: rgb(30 17 6 / 0.55);
+    --color-wood-ring: rgb(30 17 6 / 0.22);
+    --color-wood-edge-light: rgb(255 225 170 / 0.28);
+    --color-wood-edge-dark: rgb(0 0 0 / 0.35);
 
     // Borders
-    --color-border: #314962;
-    --color-border-strong: #5f7286; // 3.3:1, for input outlines on --color-bg
+    --color-border: #534532;
+    --color-border-strong: #8f7d5f; // 4.0:1 on --color-bg, 4.5:1 on --color-bg-sunken (input outlines)
 
     // Text
-    --color-text: #e8eef4; // 14.1:1
-    --color-text-muted: #9facb9; // 7.1:1
-    --color-text-disabled: #768799; // 4.4:1, WCAG exempts disabled controls
-    --color-text-on-accent: var(--color-brand-navy); // 5.5:1 on --color-accent
+    --color-text: #f7ecd6; // 13.5:1
+    --color-text-muted: #cabfac; // 8.7:1, 6.6:1 on --color-surface-raised
+    --color-text-disabled: #877c6c; // 3.9:1, WCAG exempts disabled controls
+    --color-text-on-highlight: var(--color-bg); // 9.9:1 on --color-highlight
 
-    // Emphasis
-    --color-accent: var(--color-brand-blue); // 5.5:1, below 4.5:1 on --color-surface-raised
-    --color-accent-strong: #8bb5d3; // 7.6:1, accent text on raised surfaces and hover
-    --color-highlight: var(--color-brand-red); // 3.9:1, fills, markers and large text only
+    // Emphasis: pale gold for links and focus, glowing gold for the seal, markers and the primary action
+    --color-accent: var(--color-brand-pale-gold); // 11.5:1
+    --color-accent-strong: #f6e6c6; // 12.9:1, hover and focus ring
+    --color-highlight: var(--color-brand-glowing-gold); // 9.9:1
+    --color-highlight-strong: #ffd47a; // hover of filled highlight
 
     // States
-    --color-success: #5fbf8a; // 7.3:1
-    --color-warning: #e0b04f; // 8.2:1
-    --color-danger: #ea7277; // 5.6:1, error text; use --color-highlight for error fills
+    --color-success: #a9d98f; // 9.8:1
+    --color-warning: #ffb26b; // 8.9:1
+    --color-danger: #ff9d8c; // 7.9:1, red is not a brand color; it only marks errors and destructive actions
     --color-info: var(--color-accent);
 
     // Tables stay neutral (PRODUCT.md): text, text-muted, border and surface tokens only.

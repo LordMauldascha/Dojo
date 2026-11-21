@@ -24,6 +24,7 @@ button {
 
     &:active {
         background: var(--color-surface);
+        transform: translateY(1px);
     }
 
     &:disabled {
@@ -37,26 +38,27 @@ button {
 // Submit buttons of Symfony forms carry the page's main action; the CSRF one-button forms stay secondary.
 form[name] button[type='submit'],
 .button-primary {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-    color: var(--color-text-on-accent);
+    background: var(--color-highlight);
+    border-color: var(--color-highlight);
+    color: var(--color-text-on-highlight);
 
     &:hover {
-        background: var(--color-accent-strong);
-        border-color: var(--color-accent-strong);
+        background: var(--color-highlight-strong);
+        border-color: var(--color-highlight-strong);
     }
 
     &:active {
-        background: var(--color-accent);
+        background: var(--color-highlight);
+        border-color: var(--color-highlight);
     }
 }
 
 .button-danger {
-    border-color: var(--color-highlight);
+    border-color: var(--color-danger);
     color: var(--color-danger);
 
     &:hover {
-        background: color-mix(in srgb, var(--color-highlight) 15%, transparent);
+        background: color-mix(in srgb, var(--color-danger) 15%, transparent);
     }
 }
 

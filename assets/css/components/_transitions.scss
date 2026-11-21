@@ -6,12 +6,10 @@
     view-transition-name: app-sidebar;
 }
 
-::view-transition-group(root) {
-    animation-duration: var(--duration-base);
-}
-
-::view-transition-old(root),
-::view-transition-new(root) {
-    animation-duration: var(--duration-base);
+// Same pace for the content and the sidebar (its board changes pages with the content).
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+    animation-duration: var(--duration-page);
     animation-timing-function: var(--ease-out);
 }

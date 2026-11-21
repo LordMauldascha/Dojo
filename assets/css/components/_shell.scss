@@ -29,17 +29,18 @@
     }
 }
 
-// The red square is the brand mark and, in the navigation, the "you are here" marker.
+// Signature: the seal. A square gold stamp with the character 道 (way) in the dojo's dark wood; the navigation marks
+// the current page with the same square, small.
 .brand {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.15em;
+    align-items: center;
+    gap: var(--space-3);
     margin: 0;
     padding: 0 var(--space-3);
     color: var(--color-text);
+    font-family: var(--font-display);
     font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: -0.02em;
+    font-weight: var(--font-weight-semibold);
     text-decoration: none;
 
     &:hover {
@@ -47,10 +48,24 @@
     }
 }
 
-.brand-mark {
-    width: 0.3em;
-    height: 0.3em;
+.seal {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
     background: var(--color-highlight);
+    color: var(--color-bg);
+    font-family: var(--font-seal);
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    // pressed by hand, never quite straight
+    transform: rotate(-4deg);
+    transition: transform var(--duration-base) var(--ease-out);
+}
+
+.brand:hover .seal {
+    transform: rotate(0);
 }
 
 .app-nav {
@@ -96,12 +111,28 @@
             color: var(--color-text);
         }
 
+        // The current page is a breaking board: straight grain, one knot, bevelled edges, a seal-gold nail head.
         &[aria-current='page'] {
-            background: var(--color-surface-raised);
+            background:
+                radial-gradient(ellipse 0.55rem 0.3rem at 88% 52%, var(--color-wood-knot) 0 45%, transparent 75%),
+                radial-gradient(ellipse 1rem 0.55rem at 88% 52%, var(--color-wood-ring) 0 55%, transparent 100%),
+                repeating-linear-gradient(
+                    180deg,
+                    transparent 0 0.2rem,
+                    var(--color-wood-grain-dark) 0.2rem 0.25rem,
+                    transparent 0.25rem 0.55rem
+                ),
+                repeating-linear-gradient(180deg, var(--color-wood-grain-light) 0 1px, transparent 1px 0.35rem),
+                linear-gradient(180deg, var(--color-wood-light), var(--color-selected) 45%, var(--color-wood-dark));
+            box-shadow:
+                inset 0 1px 0 var(--color-wood-edge-light),
+                inset 0 -2px 0 var(--color-wood-edge-dark);
             color: var(--color-text);
 
             &::before {
                 background: var(--color-highlight);
+                border-radius: 50%;
+                box-shadow: 0 1px 0 var(--color-wood-edge-dark);
             }
         }
     }
@@ -148,7 +179,6 @@
     background: var(--color-surface);
     border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-overlay);
 
     .brand {
         margin-bottom: var(--space-5);
