@@ -7,6 +7,7 @@ namespace App\Tests\Support;
 use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
 use App\Entity\Group;
+use App\Entity\HuggingFaceModel;
 use App\Entity\Project;
 use App\Entity\Run;
 use App\Entity\Skill;
@@ -30,7 +31,7 @@ abstract class AppWebTestCase extends WebTestCase
     {
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class] as $class) {
+        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class] as $class) {
             $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
         }
     }

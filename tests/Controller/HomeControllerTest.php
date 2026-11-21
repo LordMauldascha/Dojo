@@ -37,7 +37,7 @@ final class HomeControllerTest extends AppWebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Foreign');
-        self::assertSelectorTextContains('body', 'Provider keys: 1 of 4 set, missing: Google Gemini, DeepSeek, Claude Code');
+        self::assertSelectorTextContains('body', 'Provider keys: 1 of 5 set, missing: Google Gemini, DeepSeek, Claude Code, Hugging Face');
         self::assertSelectorTextNotContains('body', 'missing: OpenAI');
         self::assertSelectorTextContains('body', 'Users: 1');
         self::assertSelectorTextContains('body', 'Groups: 1');

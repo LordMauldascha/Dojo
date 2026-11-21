@@ -8,6 +8,8 @@ Custom console commands of this app (`src/Command/`). Run them with `symfony con
 | `app:user:create` | Create a database user or admin |
 | `app:api-keys:import-env` | Copy provider API keys from the environment into the database |
 | `app:ask-claude` | Send a prompt to the Claude Code platform |
+| `ai:huggingface:model-list` | List Hugging Face Hub models (from `symfony/ai-hugging-face-platform`) |
+| `ai:huggingface:model-info` | Show the inference providers of one Hugging Face model (same package) |
 
 ## `app:user:create`
 
@@ -45,6 +47,7 @@ bin/console app:api-keys:import-env
 | DeepSeek API key | `DEEPSEEK_API_KEY` |
 | Anthropic API key (Claude Code) | `ANTHROPIC_API_KEY` |
 | Claude OAuth token (Claude Code) | `CLAUDE_CODE_OAUTH_TOKEN` |
+| Hugging Face access token | `HUGGINGFACE_API_KEY` |
 
 Per credential: an empty variable is skipped, and a key already stored in the database is kept, not overwritten.
 To replace a stored key, use the API keys section of the LLM configuration page at `/admin/llm-configuration`.
@@ -66,3 +69,17 @@ bin/console app:ask-claude "<prompt>" [-m|--model=haiku] [--effort=medium]
 
 The prompt leaves the application and goes to Anthropic, and every call is billed. Never put personal data (names,
 e-mail addresses, IDs, customer content) into the prompt.
+
+## `ai:huggingface:model-list` and `ai:huggingface:model-info`
+
+Both commands come from `symfony/ai-hugging-face-platform` and are registered in `config/services.yaml`. They query the
+Hugging Face Hub with the access token stored in the LLM configuration (without a token the Hub may limit requests). The web
+discovery at `/admin/llm-configuration/huggingface/models` uses the same client. The commands only print: models are added
+in the web interface.
+
+```bash
+bin/console ai:huggingface:model-list [-p|--provider=groq] [-t|--task=text-generation] [-s|--search=llama] [-w|--warm]
+bin/console ai:huggingface:model-info <model-name>
+```
+
+Search terms leave the application and go to Hugging Face. Do not use personal data.

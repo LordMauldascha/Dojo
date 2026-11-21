@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Ai\Effort;
 use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
+use App\Entity\HuggingFaceModel;
 use App\Entity\Run;
 use App\Entity\Skill;
 use App\Entity\Testcase;
@@ -181,6 +182,34 @@ final class RunManagementTest extends AppWebTestCase
 
         $this->client->request('POST', $path.'/configurations/openai:gpt-5.4:-/remove', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testOnlyAddedHuggingFaceModelsAreSelectableAndTheirKeyCanBeRemoved(): void
+    {
+        $this->entityManager->persist(new HuggingFaceModel('acme/chat-8b'));
+        $this->entityManager->flush();
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user);
+        $path = '/runs/'.$run->getUuid();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', $path);
+        self::assertSame(['huggingface:acme/chat-8b'], $crawler->filter('optgroup[label="Hugging Face"] option')->each(static fn (Crawler $option): string => (string) $option->attr('value')));
+
+        $this->submit($crawler, 'Add configuration', 'run_configuration', ['model' => 'huggingface:acme/chat-8b', 'effort' => '']);
+        self::assertResponseRedirects($path);
+        $crawler = $this->client->request('GET', $path);
+        self::assertSelectorTextContains('body', 'Hugging Face / acme/chat-8b / no effort');
+
+        $this->submit($crawler, 'Add configuration', 'run_configuration', ['model' => 'huggingface:acme/not-added', 'effort' => '']);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'The configuration could not be added.');
+
+        $this->client->submit($crawler->filter('form[action*="/configurations/"][action$="/remove"]')->form());
+        self::assertResponseRedirects($path);
+        $this->entityManager->clear();
+        self::assertSame([], $this->findRun('Nightly')->getConfigurations());
     }
 
     public function testOnlyNonDeletedSkillsAndTestcasesOfTheRunsProjectAreSelectable(): void

@@ -1,0 +1,72 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Hugging Face models{% endblock %}
+
+{% block heading %}Hugging Face models{% endblock %}
+
+{% block content %}
+    {{ include('_back_link.html.twig', {href: path('app_admin_llm_configuration'), label: 'Back to LLM Configuration'}) }}
+
+    <p class="help-text">Models served by Hugging Face inference providers. Only models you add here are offered in runs and as judge. Hugging Face picks the inference provider when a model runs.{% if not hasToken %} No access token is set, so the Hub may limit the requests.{% endif %}</p>
+
+    <div class="toolbar">
+        <form method="get" action="{{ path('app_admin_huggingface_models') }}">
+            <label>Search
+                <input type="search" name="search" value="{{ search.search }}" maxlength="100">
+            </label>
+            <label>Task
+                <input type="text" name="task" value="{{ search.task }}" maxlength="100" placeholder="text-generation">
+            </label>
+            <label>Inference provider
+                <select name="provider">
+                    <option value="">Any</option>
+                    {% for provider in providers %}
+                        <option value="{{ provider }}"{{ provider == search.provider ? ' selected' }}>{{ provider }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Warm only
+                <input type="checkbox" name="warm" value="1"{{ search.warm ? ' checked' }}>
+            </label>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    {% if error %}
+        <p class="flash flash-error" role="alert">{{ error }}</p>
+    {% elseif results %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Task</th>
+                    <th>Inference providers</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for model in results %}
+                    <tr>
+                        <td>{{ model.id }}</td>
+                        <td>{{ model.task ?? '-' }}</td>
+                        <td>{{ model.providers ? model.providers|join(', ') : '-' }}</td>
+                        <td>
+                            {% if model.id in added %}
+                                Added
+                            {% else %}
+                                <form method="post" action="{{ path('app_admin_huggingface_model_add', app.request.query.all) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('add-huggingface-model') }}">
+                                    <input type="hidden" name="modelId" value="{{ model.id }}">
+                                    <button type="submit">Add</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="help-text">Shows the first {{ constant('App\\Ai\\HuggingFaceHub::MAX_RESULTS') }} matches. Narrow the search to find others.</p>
+    {% else %}
+        <p>No models found.</p>
+    {% endif %}
+{% endblock %}

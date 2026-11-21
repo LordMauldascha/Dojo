@@ -10,7 +10,7 @@ The whole interface is in English. Each feature has its own page in [features/](
 | --- | --- |
 | [Overview](features/overview.md) | Start page after login: own projects, recent runs, open drafts, admin summary |
 | [Authentication and users](features/authentication-and-users.md) | Login, roles, user management, own account and password |
-| [LLM configuration](features/llm-configuration.md) | Provider credentials (stored encrypted) and the LLM judge model, managed by admins |
+| [LLM configuration](features/llm-configuration.md) | Provider credentials (stored encrypted), Hugging Face model discovery and the LLM judge model, managed by admins |
 | [Groups](features/groups.md) | Named sets of users that are assigned to projects |
 | [Projects](features/projects.md) | The central unit: members, skills, testcases, runs |
 | [Skills](features/skills.md) | Skill instructions with generated SKILL.md header, version history, assigned to projects |

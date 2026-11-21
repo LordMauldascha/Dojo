@@ -59,6 +59,27 @@
                         </dialog>
                     </div>
                 {% endfor %}
+
+                {% if 'huggingface' == card.provider.value %}
+                    <div class="credential">
+                        <div class="credential-head">
+                            <strong>Models</strong>
+                            <a href="{{ path('app_admin_huggingface_models') }}">Discover models</a>
+                        </div>
+                        {% if huggingFaceModels %}
+                            <ul>
+                                {% for model in huggingFaceModels %}
+                                    <li>
+                                        {{ model.modelId }}
+                                        {{ forms.confirm_post(path('app_admin_huggingface_model_delete', {id: model.id}), 'delete-huggingface-model-' ~ model.id, 'Remove', 'Remove ' ~ model.modelId ~ '?', 'The model is no longer offered in runs and as judge. Existing run configurations keep it.') }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="credential-status">No models added. Only added models are offered in runs and as judge.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </section>
         {% endfor %}
     </div>

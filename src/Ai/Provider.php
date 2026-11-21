@@ -11,6 +11,7 @@ enum Provider: string
     case Gemini = 'gemini';
     case DeepSeek = 'deepseek';
     case ClaudeCode = 'claude_code';
+    case HuggingFace = 'huggingface';
 
     /** Name of the provider for selects ("OpenAI"). */
     public function displayName(): string
@@ -20,12 +21,14 @@ enum Provider: string
             self::Gemini => 'Google Gemini',
             self::DeepSeek => 'DeepSeek',
             self::ClaudeCode => 'Claude Code',
+            self::HuggingFace => 'Hugging Face',
         };
     }
 
     /**
      * Models selectable in a run, defined in code. The names come from the catalogs of the installed
-     * symfony/ai platform packages (claude-code, openai, gemini, deepseek).
+     * symfony/ai platform packages (claude-code, openai, gemini, deepseek). Hugging Face has none here:
+     * its models are added by an admin and read through ModelCatalog.
      *
      * @return list<string>
      */
@@ -36,6 +39,7 @@ enum Provider: string
             self::Gemini => ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-pro-preview'],
             self::DeepSeek => ['deepseek-chat', 'deepseek-reasoner', 'deepseek-v4-pro', 'deepseek-v4-flash'],
             self::ClaudeCode => ['opus', 'sonnet', 'haiku'],
+            self::HuggingFace => [],
         };
     }
 

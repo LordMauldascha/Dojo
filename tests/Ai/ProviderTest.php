@@ -13,7 +13,10 @@ final class ProviderTest extends TestCase
     {
         foreach (Provider::cases() as $provider) {
             $models = $provider->models();
-            self::assertNotSame([], $models, $provider->value);
+            // Hugging Face models are added by an admin, see ModelCatalogTest
+            if (Provider::HuggingFace !== $provider) {
+                self::assertNotSame([], $models, $provider->value);
+            }
             self::assertSame($models, array_values(array_unique($models)), $provider->value);
             self::assertSame($models, array_filter($models, static fn (string $model): bool => '' !== trim($model)), $provider->value);
             self::assertNotSame('', $provider->displayName());

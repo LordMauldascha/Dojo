@@ -183,12 +183,12 @@ final class LlmConfigurationControllerTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['OpenAI', 'Google Gemini', 'DeepSeek', 'Claude Code'], $crawler->filter('.provider-card > h2')->each(static fn (Crawler $h): string => trim($h->text())));
-        self::assertCount(2, $crawler->filter('.provider-card:last-child .credential'));
-        self::assertSelectorTextContains('.provider-card:last-child', 'ANTHROPIC_API_KEY');
-        self::assertSelectorTextContains('.provider-card:last-child', 'CLAUDE_CODE_OAUTH_TOKEN');
-        self::assertSelectorTextContains('.provider-card:last-child', 'If both are set, the API key wins.');
-        self::assertCount(5, $crawler->filter('dialog[id^="key-dialog-"] form'));
+        self::assertSame(['OpenAI', 'Google Gemini', 'DeepSeek', 'Claude Code', 'Hugging Face'], $crawler->filter('.provider-card > h2')->each(static fn (Crawler $h): string => trim($h->text())));
+        self::assertCount(2, $crawler->filter('.provider-card:nth-child(4) .credential'));
+        self::assertSelectorTextContains('.provider-card:nth-child(4)', 'ANTHROPIC_API_KEY');
+        self::assertSelectorTextContains('.provider-card:nth-child(4)', 'CLAUDE_CODE_OAUTH_TOKEN');
+        self::assertSelectorTextContains('.provider-card:nth-child(4)', 'If both are set, the API key wins.');
+        self::assertCount(6, $crawler->filter('dialog[id^="key-dialog-"] form'));
         self::assertSelectorNotExists('.provider-card:first-child .status-dot--final');
     }
 
@@ -201,9 +201,9 @@ final class LlmConfigurationControllerTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
-        self::assertSelectorExists('.provider-card:last-child .status-dot--final');
-        self::assertSelectorTextContains('.provider-card:last-child', '••••0000');
-        $credentials = $crawler->filter('.provider-card:last-child .credential');
+        self::assertSelectorExists('.provider-card:nth-child(4) .status-dot--final');
+        self::assertSelectorTextContains('.provider-card:nth-child(4)', '••••0000');
+        $credentials = $crawler->filter('.provider-card:nth-child(4) .credential');
         self::assertSame('Set key', trim($credentials->eq(0)->filter('.credential-actions button[command="show-modal"]')->text()));
         self::assertSame('Replace key', trim($credentials->eq(1)->filter('.credential-actions button[command="show-modal"]')->text()));
 

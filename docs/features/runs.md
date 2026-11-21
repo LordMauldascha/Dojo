@@ -18,9 +18,10 @@ An entry is a combination, so a model always belongs to its provider. The model 
 provider. The effort is optional and one of `low`, `medium`, `high`, `xhigh`, `max`. The same combination cannot be added
 twice; entries are removed one by one, identified by provider, model and effort (not by their position in the list).
 
-Providers (OpenAI, Google Gemini, DeepSeek, Claude Code), their models (Claude Code: `opus`, `sonnet`, `haiku`) and the effort
+Providers (OpenAI, Google Gemini, DeepSeek, Claude Code, Hugging Face), their models (Claude Code: `opus`, `sonnet`, `haiku`) and the effort
 levels are defined in code (`App\Ai\Provider::models()`, `App\Ai\Effort`) and
-are available in every project. Adding a model is a code change.
+are available in every project. Adding a model is a code change, except for Hugging Face: its models are the ones an admin added in the
+[LLM configuration](llm-configuration.md#hugging-face-models) (`App\Ai\ModelCatalog`).
 
 ### Skills and testcases of a run
 

@@ -36,5 +36,11 @@ services:
             # the platform logs the full command line including the prompt, which must not reach the logs
             $logger: '@app.null_logger'
 
+    # the Hugging Face discovery commands use the token stored in the LLM Configuration
+    Symfony\AI\Platform\Bridge\HuggingFace\ApiClient:
+        factory: ['@App\Ai\HuggingFaceHub', 'apiClient']
+    Symfony\AI\Platform\Bridge\HuggingFace\Command\ModelListCommand: ~
+    Symfony\AI\Platform\Bridge\HuggingFace\Command\ModelInfoCommand: ~
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

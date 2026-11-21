@@ -140,7 +140,9 @@ class Run
     /** Returns false if the same configuration already exists. */
     public function addConfiguration(LlmConfiguration $configuration): bool
     {
-        if (!\in_array($configuration->model, $configuration->provider->models(), true)) {
+        $models = $configuration->provider->models();
+        // an empty list means the models are dynamic (Hugging Face); ModelCatalog validates those
+        if ([] !== $models && !\in_array($configuration->model, $models, true)) {
             throw new \InvalidArgumentException(\sprintf('Unknown model "%s" for provider "%s".', $configuration->model, $configuration->provider->value));
         }
         foreach ($this->getConfigurations() as $existing) {

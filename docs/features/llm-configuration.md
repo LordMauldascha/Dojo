@@ -1,6 +1,6 @@
 # LLM configuration
 
-Credentials for the LLM providers and the model of the LLM judge. Admins manage them at `/admin/llm-configuration`; nobody else has access.
+Credentials for the LLM providers, the Hugging Face models admins add, and the model of the LLM judge. Admins manage them at `/admin/llm-configuration`; nobody else has access.
 
 ## Providers and credentials
 
@@ -13,10 +13,30 @@ A **provider** is what a run uses; a **credential** is what an admin stores. Bot
 | Google Gemini | API key | `gemini-*` |
 | DeepSeek | API key | `deepseek-*` |
 | Claude Code | Anthropic API key or Claude OAuth token | `opus`, `sonnet`, `haiku` |
+| Hugging Face | Access token | the models an admin added, see [Hugging Face models](#hugging-face-models) |
 
 Claude Code (`symfony/ai-claude-code-platform`) runs the Claude Code CLI. It needs one of the two credentials; if both are
 set, the API key wins. There is no separate Anthropic provider: `symfony/ai-anthropic-platform` is not installed, the
 Anthropic API key is a credential of Claude Code.
+
+## Hugging Face models
+
+Hugging Face (`symfony/ai-hugging-face-platform`) has no fixed model list, so its models are added by an admin and stored in
+the table `huggingface_model` (model ID only, for example `meta-llama/Llama-3.1-8B-Instruct`). Hugging Face picks the
+inference provider when a model runs. Only added models are offered in run configurations and as judge; with none added the
+*Hugging Face* group is missing from the selects.
+
+- The Hugging Face card on `/admin/llm-configuration` lists the added models, each with *Remove*, and links to *Discover
+  models*. Removing a model does not change existing runs: they keep their stored configuration.
+- *Discover models* (`/admin/llm-configuration/huggingface/models`) searches the Hub. Filters: search term, task (default
+  `text-generation`, empty means any), inference provider and *Warm only*. It shows the first 50 matches with their task and
+  live inference providers. *Add* checks that the Hub knows the model, then stores it. Models already added show *Added*.
+- The stored access token is sent to the Hub if one is set. Without a token the Hub still answers but may limit requests.
+- Search terms go to Hugging Face. Do not enter personal data.
+
+The same discovery is available on the command line: `ai:huggingface:model-list` (options `--provider`, `--task`,
+`--search`, `--warm`) and `ai:huggingface:model-info <model>`. They come from the bridge and use the token stored here. See
+[Commands.md](../Commands.md).
 
 ## LLM judge
 

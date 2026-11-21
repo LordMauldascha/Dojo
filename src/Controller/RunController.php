@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Ai\Effort;
 use App\Ai\LlmConfiguration;
+use App\Ai\ModelCatalog;
 use App\Entity\Project;
 use App\Entity\Run;
 use App\Entity\Skill;
@@ -123,13 +124,14 @@ final class RunController extends AbstractController
         Run $run,
         Request $request,
         EntityManagerInterface $entityManager,
+        ModelCatalog $catalog,
     ): Response {
         $form = $this->createConfigurationForm($run);
         $form->handleRequest($request);
 
         $selected = $form->isSubmitted() && $form->isValid() ? $form->get('model')->getData() : null;
         $effort = $form->get('effort')->getData();
-        $configuration = \is_string($selected) ? LlmConfiguration::fromChoice($selected, $effort instanceof Effort ? $effort : null) : null;
+        $configuration = \is_string($selected) ? $catalog->fromChoice($selected, $effort instanceof Effort ? $effort : null) : null;
 
         if (null === $configuration) {
             $this->addFlash('error', 'The configuration could not be added.');

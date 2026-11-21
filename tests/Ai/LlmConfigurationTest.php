@@ -43,22 +43,15 @@ final class LlmConfigurationTest extends TestCase
         self::assertSame('Claude Code / opus / effort max', (new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::Max))->label());
     }
 
-    public function testChoiceValueIsParsedBackAndUnknownValuesAreRefused(): void
+    public function testChoiceValueJoinsProviderAndModel(): void
     {
-        $choice = LlmConfiguration::choiceValue(Provider::Gemini, 'gemini-2.5-pro');
-
-        self::assertSame('gemini:gemini-2.5-pro', $choice);
-        self::assertSame('gemini:gemini-2.5-pro:medium', LlmConfiguration::fromChoice($choice, Effort::Medium)?->key());
-        self::assertSame('gemini:gemini-2.5-pro:-', LlmConfiguration::fromChoice($choice, null)?->key());
-        self::assertNull(LlmConfiguration::fromChoice('gemini:opus', null));
-        self::assertNull(LlmConfiguration::fromChoice('nobody:model', null));
-        self::assertNull(LlmConfiguration::fromChoice('no-colon', null));
+        self::assertSame('gemini:gemini-2.5-pro', LlmConfiguration::choiceValue(Provider::Gemini, 'gemini-2.5-pro'));
     }
 
     public function testEveryKeyMatchesTheRoutePatternOfTheRemoveRoute(): void
     {
         foreach (Provider::cases() as $provider) {
-            foreach ($provider->models() as $model) {
+            foreach ([...$provider->models(), 'meta-llama/Llama-3.1-8B-Instruct', 'gpt2'] as $model) {
                 foreach ([null, ...Effort::cases()] as $effort) {
                     $key = (new LlmConfiguration($provider, $model, $effort))->key();
                     self::assertMatchesRegularExpression('/^'.LlmConfiguration::KEY_PATTERN.'$/', $key);

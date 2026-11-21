@@ -7,9 +7,11 @@ namespace App\Controller;
 use App\Ai\Credential;
 use App\Ai\JudgeSettingStore;
 use App\Ai\LlmConfiguration;
+use App\Ai\ModelCatalog;
 use App\Ai\Provider;
 use App\Form\ApiKeyType;
 use App\Form\JudgeConfigurationType;
+use App\Repository\HuggingFaceModelRepository;
 use App\Security\ApiKeyStore;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -25,7 +27,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class LlmConfigurationController extends AbstractController
 {
     #[Route('/admin/llm-configuration', name: 'app_admin_llm_configuration', methods: ['GET', 'POST'])]
-    public function index(Request $request, ApiKeyStore $store, JudgeSettingStore $judgeStore, FormFactoryInterface $formFactory): Response
+    public function index(Request $request, ApiKeyStore $store, JudgeSettingStore $judgeStore, ModelCatalog $catalog, HuggingFaceModelRepository $huggingFaceModels, FormFactoryInterface $formFactory): Response
     {
         $stored = $store->findAll();
         $judge = $judgeStore->get();
@@ -37,7 +39,7 @@ final class LlmConfigurationController extends AbstractController
         if ($judgeForm->isSubmitted() && $judgeForm->isValid()) {
             /** @var array{model: string} $data */
             $data = $judgeForm->getData();
-            $configuration = LlmConfiguration::fromChoice($data['model'], null);
+            $configuration = $catalog->fromChoice($data['model'], null);
 
             if (null !== $configuration) {
                 $judgeStore->save($configuration);
@@ -80,7 +82,7 @@ final class LlmConfigurationController extends AbstractController
             ];
         }
 
-        return $this->render('admin/llm_configuration.html.twig', ['cards' => $cards, 'judge' => $judge, 'judgeForm' => $judgeForm->createView()], new Response(status: $status));
+        return $this->render('admin/llm_configuration.html.twig', ['cards' => $cards, 'judge' => $judge, 'judgeForm' => $judgeForm->createView(), 'huggingFaceModels' => $huggingFaceModels->findAllOrdered()], new Response(status: $status));
     }
 
     #[Route('/admin/llm-configuration/keys/{credential}/delete', name: 'app_admin_llm_configuration_key_delete', methods: ['POST'])]

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "322b8d771097b36a74e8c9f7936e3633",
+    "content-hash": "d6ac0554454884514f57743b5b3ef5cb",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -2431,6 +2431,93 @@
             ],
             "support": {
                 "source": "https://github.com/symfony/ai-generic-platform/tree/v0.15.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-10-22T23:44:24+00:00"
+        },
+        {
+            "name": "symfony/ai-hugging-face-platform",
+            "version": "v0.15.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/ai-hugging-face-platform.git",
+                "reference": "509d344aafd42ad06c913625f20e0bc9ac81e7fd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/ai-hugging-face-platform/zipball/509d344aafd42ad06c913625f20e0bc9ac81e7fd",
+                "reference": "509d344aafd42ad06c913625f20e0bc9ac81e7fd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/ai-generic-platform": "^0.15",
+                "symfony/ai-platform": "^0.15",
+                "symfony/console": "^7.3|^8.0",
+                "symfony/http-client": "^7.3|^8.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^11.5.53"
+            },
+            "type": "symfony-ai-platform",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/ai",
+                    "name": "symfony/ai"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\AI\\Platform\\Bridge\\HuggingFace\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christopher Hertel",
+                    "email": "mail@christopher-hertel.de"
+                },
+                {
+                    "name": "Oskar Stark",
+                    "email": "oskarstark@googlemail.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "HuggingFace platform bridge for Symfony AI",
+            "keywords": [
+                "Bridge",
+                "ai",
+                "huggingface",
+                "platform"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/ai-hugging-face-platform/tree/v0.15.0"
             },
             "funding": [
                 {

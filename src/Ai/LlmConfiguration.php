@@ -6,12 +6,12 @@ namespace App\Ai;
 
 /**
  * One LLM configuration of a run: provider, model and an optional effort level.
- * Not validated against Provider::models(), so stored snapshots stay readable if the model list changes.
+ * Not validated against ModelCatalog, so stored snapshots stay readable if the model list changes.
  */
 final readonly class LlmConfiguration
 {
     /** Route requirement for key(): provider:model:effort. */
-    public const KEY_PATTERN = '[a-z_]+:[A-Za-z0-9._-]+:[a-z-]+';
+    public const KEY_PATTERN = '[a-z_]+:[A-Za-z0-9._\/-]+:[a-z-]+';
 
     public function __construct(
         public Provider $provider,
@@ -24,32 +24,6 @@ final readonly class LlmConfiguration
     public static function choiceValue(Provider $provider, string $model): string
     {
         return $provider->value.':'.$model;
-    }
-
-    /**
-     * Options of a model select, grouped by provider name.
-     *
-     * @return array<string, array<string, string>>
-     */
-    public static function modelChoices(): array
-    {
-        $choices = [];
-        foreach (Provider::cases() as $provider) {
-            foreach ($provider->models() as $model) {
-                $choices[$provider->displayName()][$model] = self::choiceValue($provider, $model);
-            }
-        }
-
-        return $choices;
-    }
-
-    /** Parses the model select value; null if the provider or model is unknown. */
-    public static function fromChoice(string $choice, ?Effort $effort): ?self
-    {
-        [$providerValue, $model] = explode(':', $choice, 2) + [1 => ''];
-        $provider = Provider::tryFrom($providerValue);
-
-        return null !== $provider && \in_array($model, $provider->models(), true) ? new self($provider, $model, $effort) : null;
     }
 
     /** Identity of a configuration within a run. */

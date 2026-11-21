@@ -12,6 +12,7 @@ enum Credential: string
     case DeepSeek = 'deepseek';
     case Anthropic = 'anthropic';
     case ClaudeOAuth = 'claude_oauth';
+    case HuggingFace = 'huggingface';
 
     public function label(): string
     {
@@ -21,6 +22,7 @@ enum Credential: string
             self::DeepSeek => 'DeepSeek API key',
             self::Anthropic => 'Anthropic API key',
             self::ClaudeOAuth => 'Claude OAuth token',
+            self::HuggingFace => 'Hugging Face access token',
         };
     }
 
@@ -31,6 +33,7 @@ enum Credential: string
             self::Gemini => Provider::Gemini,
             self::DeepSeek => Provider::DeepSeek,
             self::Anthropic, self::ClaudeOAuth => Provider::ClaudeCode,
+            self::HuggingFace => Provider::HuggingFace,
         };
     }
 
@@ -43,6 +46,7 @@ enum Credential: string
             self::DeepSeek => 'DEEPSEEK_API_KEY',
             self::Anthropic => 'ANTHROPIC_API_KEY',
             self::ClaudeOAuth => 'CLAUDE_CODE_OAUTH_TOKEN',
+            self::HuggingFace => 'HUGGINGFACE_API_KEY',
         };
     }
 }

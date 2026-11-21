@@ -47,6 +47,14 @@ final readonly class ApiKeyStore
         return false;
     }
 
+    /** The decrypted secret, or null if none is stored. */
+    public function plainKey(Credential $credential): ?string
+    {
+        $key = $this->keys->findByCredential($credential);
+
+        return null === $key ? null : $this->encryptor->decrypt($key->getEncryptedKey());
+    }
+
     public function save(Credential $credential, string $plainKey): void
     {
         $encrypted = $this->encryptor->encrypt($plainKey);

@@ -17,6 +17,7 @@
         "symfony/ai-claude-code-platform": "^0.15.0",
         "symfony/ai-deep-seek-platform": "^0.15.0",
         "symfony/ai-gemini-platform": "^0.15.0",
+        "symfony/ai-hugging-face-platform": "^0.15",
         "symfony/ai-open-ai-platform": "^0.15.0",
         "symfony/asset": "8.1.*",
         "symfony/console": "8.1.*",
