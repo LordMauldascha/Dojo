@@ -81,6 +81,15 @@ describe('warnOnUnsavedChanges', () => {
         expect(click('#away').defaultPrevented).toBe(false);
     });
 
+    it('ignores a revealed password field', () => {
+        const secret = field<HTMLInputElement>('[name=secret]');
+        secret.type = 'text';
+        secret.dataset.passwordField = '';
+        secret.value = 'typed';
+
+        expect(click('#away').defaultPrevented).toBe(false);
+    });
+
     it('ignores forms that are not named POST forms', () => {
         field<HTMLInputElement>('[name=q]').value = 'typed';
 

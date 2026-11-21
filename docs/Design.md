@@ -82,6 +82,19 @@ user confirms. Styles: `assets/css/components/_dialog.scss`, backdrop token `--c
   keeps its normal field layout, its Cancel and submit buttons sit in `.dialog-actions`. Mark the dialog with
   `data-show-on-load` (`showDialogsOnLoad()` in `assets/js/commandButtons.ts`) to reopen it after an invalid submit.
 
+## Password fields
+
+Every `input[type=password]` gets an eye button (`assets/js/passwordToggle.ts`, styles `.password-field` and
+`.password-toggle` in `_forms.scss`). The script wraps the field in `span.password-field` and adds a
+`button.password-toggle` inside the field's right edge (control-height square, muted icon, accent on hover, focus ring
+inside the button). The icon is an inline SVG built in the script (`currentColor`): an eye while the text is hidden, a
+struck-through eye while it is shown; `aria-pressed` and `aria-label` ("Show password" / "Hide password") follow the state.
+
+- A shown field is hidden again when its dialog closes and when the page returns from the back/forward cache.
+- The field gets `data-password-field`: while shown it has `type="text"`, and the unsaved-changes guard skips it by that
+  attribute. Keep it when you change the script.
+- Without script the field stays a plain password field. New password inputs need no markup, the script finds them.
+
 ## Unsaved changes
 
 Leaving a page with edited form fields asks first (`assets/js/unsavedChanges.ts`, the `#unsaved-dialog` in

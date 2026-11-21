@@ -7,6 +7,11 @@ function isChanged(field: Element): boolean {
             return false;
         }
 
+        // A revealed password field has type "text" (see passwordToggle.ts).
+        if ('passwordField' in field.dataset) {
+            return false;
+        }
+
         return 'checkbox' === field.type || 'radio' === field.type
             ? field.checked !== field.defaultChecked
             : field.value !== field.defaultValue;

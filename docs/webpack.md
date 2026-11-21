@@ -17,6 +17,7 @@ The required Node version is in `.nvmrc` (`nvm use`).
 | `assets/js/app.ts`                    | Script entry `scripts`: loads `@sulu/web`, guards against double submit |
 | `assets/css/app.scss`                 | Style entry `styles`                                                   |
 | `assets/js/preventDoubleSubmit.ts`    | Blocks a second submit of the same form (double click)                 |
+| `assets/js/passwordToggle.ts`         | Eye button on every password field that shows or hides the text        |
 | `assets/js/tests/`                    | Vitest tests (`*.test.ts`)                                             |
 | `assets/env.d.ts`                     | Type declarations for modules without types (`@sulu/web`)              |
 | `config/packages/webpack_encore.yaml` | Symfony bundle, output path `public/build`, `defer` on all script tags |

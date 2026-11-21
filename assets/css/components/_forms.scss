@@ -111,6 +111,56 @@ textarea {
     }
 }
 
+// Eye button inside a password field (assets/js/passwordToggle.ts). Nested to beat page rules such as `.login-panel button`.
+.password-field {
+    position: relative;
+    display: block;
+    max-width: 48rem;
+
+    input {
+        padding-right: var(--control-height);
+    }
+
+    .password-toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: var(--control-height);
+        height: var(--control-height);
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        color: var(--color-text-muted);
+
+        &:hover {
+            background: transparent;
+            color: var(--color-accent);
+        }
+
+        &:active {
+            background: transparent;
+            transform: none;
+        }
+
+        &:focus-visible {
+            outline: var(--focus-ring);
+            outline-offset: calc(-1 * var(--space-1));
+        }
+
+        svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    }
+}
+
 textarea {
     height: auto;
     line-height: var(--line-height-normal);
