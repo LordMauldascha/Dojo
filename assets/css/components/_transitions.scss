@@ -1,0 +1,17 @@
+// Cross-document view transitions between all pages (see docs/Design.md). The opt-in (@view-transition) is inline in
+// templates/base.html.twig; the animation lives here. Unsupported browsers navigate normally.
+
+// The sidebar keeps its own layer, so only the page content cross-fades. Names must be unique per page.
+.app-sidebar {
+    view-transition-name: app-sidebar;
+}
+
+::view-transition-group(root) {
+    animation-duration: var(--duration-base);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: var(--duration-base);
+    animation-timing-function: var(--ease-out);
+}

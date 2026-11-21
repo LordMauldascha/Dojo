@@ -1,5 +1,7 @@
-@use './variables/colors' as *;
-
-body {
-    background-color: $color-background;
-}
+@use './variables' as *;
+@use './components/base';
+@use './components/shell';
+@use './components/forms';
+@use './components/tables';
+@use './components/flashes';
+@use './components/transitions';

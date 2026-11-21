@@ -121,6 +121,9 @@ git config core.hooksPath .githooks
 
 - [docs/webpack.md](docs/webpack.md): Encore setup, components, commands, troubleshooting. Keep it up to date when
   `webpack.config.js` or the frontend setup changes.
+- [docs/Design.md](docs/Design.md): design tokens, app shell and page transitions. **All page navigation uses
+  cross-document view transitions**; read it before adding a page or touching `base.html.twig` or the CSS. Keep it up to
+  date when tokens or the transition setup change.
 - [docs/Features.md](docs/Features.md): feature overview, with one page per feature in `docs/features/`. Keep it up to
   date when a feature's behavior, rules or pages change.
 - [docs/Commands.md](docs/Commands.md): the app's console commands (`src/Command/`). Keep it up to date when a

@@ -1,0 +1,176 @@
+@use '../variables' as *;
+
+.app {
+    min-height: 100dvh;
+
+    @media (min-width: $breakpoint-md) {
+        display: grid;
+        grid-template-columns: 15rem minmax(0, 1fr);
+    }
+}
+
+.app-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-bg-sunken);
+    border-bottom: var(--border-width) solid var(--color-border);
+
+    @media (min-width: $breakpoint-md) {
+        position: sticky;
+        top: 0;
+        height: 100dvh;
+        overflow-y: auto;
+        gap: var(--space-5);
+        padding: var(--space-5) var(--space-4);
+        border-bottom: 0;
+        border-right: var(--border-width) solid var(--color-border);
+    }
+}
+
+// The red square is the brand mark and, in the navigation, the "you are here" marker.
+.brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.15em;
+    margin: 0;
+    padding: 0 var(--space-3);
+    color: var(--color-text);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+
+    &:hover {
+        color: var(--color-text);
+    }
+}
+
+.brand-mark {
+    width: 0.3em;
+    height: 0.3em;
+    background: var(--color-highlight);
+}
+
+.app-nav {
+    display: flex;
+    gap: var(--space-4);
+    overflow-x: auto;
+    margin: 0 calc(-1 * var(--space-4));
+    padding: 0 var(--space-4);
+    scrollbar-width: none;
+
+    @media (min-width: $breakpoint-md) {
+        flex: 1;
+        flex-direction: column;
+        gap: var(--space-5);
+        overflow: visible;
+        margin: 0;
+        padding: 0;
+    }
+
+    a {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        text-decoration: none;
+        transition:
+            background-color var(--duration-fast) var(--ease-out),
+            color var(--duration-fast) var(--ease-out);
+
+        &::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            flex: none;
+        }
+
+        &:hover {
+            background: var(--color-surface);
+            color: var(--color-text);
+        }
+
+        &[aria-current='page'] {
+            background: var(--color-surface-raised);
+            color: var(--color-text);
+
+            &::before {
+                background: var(--color-highlight);
+            }
+        }
+    }
+}
+
+.app-nav-group {
+    display: flex;
+    flex: none;
+    gap: var(--space-1);
+    white-space: nowrap;
+
+    @media (min-width: $breakpoint-md) {
+        flex-direction: column;
+
+        &:last-child {
+            margin-top: auto;
+            padding-top: var(--space-4);
+            border-top: var(--border-width) solid var(--color-border);
+        }
+    }
+}
+
+.app-main {
+    width: 100%;
+    max-width: var(--content-max-width);
+    padding: var(--space-5) var(--space-4) var(--space-8);
+
+    @media (min-width: $breakpoint-md) {
+        padding: var(--space-6) var(--space-7) var(--space-8);
+    }
+}
+
+.login {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    padding: var(--space-4);
+}
+
+.login-panel {
+    width: 100%;
+    max-width: 24rem;
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-overlay);
+
+    .brand {
+        margin-bottom: var(--space-5);
+        padding: 0;
+    }
+
+    h1 {
+        margin-bottom: var(--space-4);
+    }
+
+    form {
+        display: grid;
+        gap: var(--space-2);
+    }
+
+    input {
+        max-width: none;
+        margin-bottom: var(--space-2);
+    }
+
+    button {
+        width: 100%;
+        margin-top: var(--space-2);
+    }
+}

@@ -1,1 +1,39 @@
-$color-background: skyblue;
+// Contrast ratios against --color-bg are noted where a token carries text (WCAG AA: 4.5 body, 3 large text and UI).
+:root {
+    color-scheme: dark;
+
+    // Brand palette (PRODUCT.md, binding)
+    --color-brand-navy: #03203d;
+    --color-brand-blue: #639cc5;
+    --color-brand-red: #eb2f33;
+
+    // Surfaces, tinted from the navy
+    --color-bg: var(--color-brand-navy);
+    --color-bg-sunken: #02182e;
+    --color-surface: #0e2a46;
+    --color-surface-raised: #1a354f;
+    --color-selection: #2e587a;
+
+    // Borders
+    --color-border: #314962;
+    --color-border-strong: #5f7286; // 3.3:1, for input outlines on --color-bg
+
+    // Text
+    --color-text: #e8eef4; // 14.1:1
+    --color-text-muted: #9facb9; // 7.1:1
+    --color-text-disabled: #768799; // 4.4:1, WCAG exempts disabled controls
+    --color-text-on-accent: var(--color-brand-navy); // 5.5:1 on --color-accent
+
+    // Emphasis
+    --color-accent: var(--color-brand-blue); // 5.5:1, below 4.5:1 on --color-surface-raised
+    --color-accent-strong: #8bb5d3; // 7.6:1, accent text on raised surfaces and hover
+    --color-highlight: var(--color-brand-red); // 3.9:1, fills, markers and large text only
+
+    // States
+    --color-success: #5fbf8a; // 7.3:1
+    --color-warning: #e0b04f; // 8.2:1
+    --color-danger: #ea7277; // 5.6:1, error text; use --color-highlight for error fills
+    --color-info: var(--color-accent);
+
+    // Tables stay neutral (PRODUCT.md): text, text-muted, border and surface tokens only.
+}

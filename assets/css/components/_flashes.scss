@@ -1,0 +1,18 @@
+.flash {
+    --flash-color: var(--color-info);
+
+    max-width: var(--measure);
+    padding: var(--space-3) var(--space-4);
+    background: color-mix(in srgb, var(--flash-color) 12%, var(--color-bg));
+    border: var(--border-width) solid var(--flash-color);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+}
+
+.flash-success {
+    --flash-color: var(--color-success);
+}
+
+.flash-error {
+    --flash-color: var(--color-danger);
+}

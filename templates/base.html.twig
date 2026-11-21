@@ -2,11 +2,20 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#03203d">
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         {% block stylesheets %}
             {{ encore_entry_link_tags('styles') }}
         {% endblock %}
+        {# View transitions (docs/Design.md). The opt-in is inline: in Chromium 158 it was ignored inside the external stylesheet. #}
+        <style>
+            @view-transition { navigation: auto; }
+            @media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
+        </style>
+        {# Do not paint the new page before its content element is parsed. Every page needs main#content. #}
+        <link rel="expect" href="#content" blocking="render">
 
         {% block javascripts %}
             {{ encore_entry_script_tags('scripts') }}

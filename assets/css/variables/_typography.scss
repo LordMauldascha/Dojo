@@ -1,0 +1,25 @@
+:root {
+    --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono:
+        ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; // SKILL.md content, prompts, diffs
+
+    // Fixed scale, steps of 1.1 to 1.2 (Operate); nothing below 13px
+    --font-size-xs: 0.8125rem; // 13px, labels, hints
+    --font-size-sm: 0.875rem; // 14px, tables, meta
+    --font-size-md: 1rem; // 16px, body
+    --font-size-lg: 1.125rem; // 18px
+    --font-size-xl: 1.25rem; // 20px, h2
+    --font-size-2xl: 1.5rem; // 24px, h1
+    --font-size-3xl: 1.75rem; // 28px
+
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.2;
+    --line-height-snug: 1.35;
+    --line-height-normal: 1.5;
+
+    --measure: 70ch;
+}

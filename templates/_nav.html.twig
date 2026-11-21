@@ -1,13 +1,26 @@
-<nav>
-    <a href="{{ path('app_home') }}">Overview</a>
-    <a href="{{ path('app_projects') }}">Projects</a>
-    <a href="{{ path('app_skills') }}">Skills</a>
-    <a href="{{ path('app_testcases') }}">Testcases</a>
-    <a href="{{ path('app_account') }}">My account</a>
+{# Main navigation. A link is marked current when the route starts with one of its prefixes (runs belong to projects). #}
+{% macro link(route, label, prefixes) %}
+    {% set current = app.request.attributes.get('_route') %}
+    {% set active = prefixes|filter(prefix => current starts with prefix)|length > 0 %}
+    <a href="{{ path(route) }}"{% if active %} aria-current="page"{% endif %}>{{ label }}</a>
+{% endmacro %}
+
+<nav class="app-nav" aria-label="Main">
+    <div class="app-nav-group">
+        {{ _self.link('app_home', 'Overview', ['app_home']) }}
+        {{ _self.link('app_projects', 'Projects', ['app_project', 'app_run']) }}
+        {{ _self.link('app_skills', 'Skills', ['app_skill']) }}
+        {{ _self.link('app_testcases', 'Testcases', ['app_testcase']) }}
+    </div>
     {% if is_granted('ROLE_ADMIN') %}
-        <a href="{{ path('app_admin_api_keys') }}">API Keys</a>
-        <a href="{{ path('app_admin_users') }}">Users</a>
-        <a href="{{ path('app_admin_groups') }}">Groups</a>
+        <div class="app-nav-group">
+            {{ _self.link('app_admin_api_keys', 'API Keys', ['app_admin_api_key']) }}
+            {{ _self.link('app_admin_users', 'Users', ['app_admin_user']) }}
+            {{ _self.link('app_admin_groups', 'Groups', ['app_admin_group']) }}
+        </div>
     {% endif %}
-    <a href="{{ logout_path() }}">Logout</a>
+    <div class="app-nav-group">
+        {{ _self.link('app_account', 'My account', ['app_account']) }}
+        <a href="{{ logout_path() }}">Logout</a>
+    </div>
 </nav>

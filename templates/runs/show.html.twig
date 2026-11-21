@@ -55,7 +55,7 @@
 
     <h2>Start</h2>
     <p>Starting creates a new version of this run. No LLM is called yet. A run needs at least one testcase and one configuration.</p>
-    {{ forms.post(path('app_run_start', {uuid: run.uuid}), 'start-run-' ~ run.uuid, 'Start') }}
+    {{ forms.post(path('app_run_start', {uuid: run.uuid}), 'start-run-' ~ run.uuid, 'Start', 'button-primary') }}
 
     <h2>Versions</h2>
     {% if run.versions|length %}

@@ -117,7 +117,8 @@ under `assets/`. See [AGENTS.md](../AGENTS.md) for how to enable the hook.
 ## Adding things
 
 - More TypeScript files: create them under `assets/js/` and `import` them, Encore bundles them automatically.
-- SCSS: create files under `assets/css/` and include them in `app.scss` with `@use`.
+- SCSS: create files under `assets/css/` and include them in `app.scss` with `@use`. Design tokens and rules:
+  [Design.md](Design.md).
 - New entry: add `.addEntry('name', './assets/js/name.ts')` in `webpack.config.js` and use
   `encore_entry_script_tags('name')` in the template.
 - New npm packages: `npm install <package>` (`--save-dev` for build tools), then commit `package.json` and

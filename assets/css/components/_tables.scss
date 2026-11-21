@@ -1,0 +1,86 @@
+@use '../variables' as *;
+
+// Tables stay neutral (PRODUCT.md): no colors, no icons.
+table {
+    width: 100%;
+    margin-bottom: var(--space-4);
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+
+    @media (max-width: $breakpoint-sm) {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+th,
+td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-border);
+    text-align: left;
+    vertical-align: middle;
+
+    &:first-child {
+        padding-left: 0;
+    }
+}
+
+th {
+    border-bottom-color: var(--color-border-strong);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+
+    a {
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            color: var(--color-text);
+        }
+    }
+
+    &[aria-sort] a {
+        color: var(--color-text);
+        text-decoration: underline;
+    }
+}
+
+tbody tr {
+    transition: background-color var(--duration-fast) var(--ease-out);
+
+    &:hover {
+        background: var(--color-surface);
+    }
+}
+
+td {
+    a {
+        color: var(--color-text);
+
+        &:hover {
+            color: var(--color-text);
+            text-decoration-thickness: 2px;
+        }
+    }
+
+    form {
+        display: inline-block;
+        margin: 0 var(--space-2) 0 0;
+    }
+
+    button {
+        min-height: 2rem;
+        padding: 0 var(--space-3);
+    }
+}
+
+// Pagination below the tables (_list/macros)
+nav[aria-label='Pagination'] {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
