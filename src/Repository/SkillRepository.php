@@ -79,6 +79,11 @@ final class SkillRepository extends ServiceEntityRepository
             ->setParameter('accessUser', $user);
     }
 
+    public function countCreatedBy(User $user): int
+    {
+        return $this->count(['createdBy' => $user, 'deletedAt' => null]);
+    }
+
     /** @return list<SkillVersion> open drafts of visible skills, newest first, with the skill loaded */
     public function findRecentDrafts(User $viewer, int $limit): array
     {

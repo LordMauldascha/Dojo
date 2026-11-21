@@ -72,6 +72,11 @@ final class TestcaseRepository extends ServiceEntityRepository
             ->setParameter('accessUser', $user);
     }
 
+    public function countCreatedBy(User $user): int
+    {
+        return $this->count(['createdBy' => $user, 'deletedAt' => null]);
+    }
+
     /** @return list<TestcaseVersion> open drafts of visible testcases, newest first, with the testcase loaded */
     public function findRecentDrafts(User $viewer, int $limit): array
     {

@@ -56,6 +56,11 @@ final class RunRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countCreatedBy(User $user): int
+    {
+        return $this->count(['createdBy' => $user]);
+    }
+
     /** @return list<RunVersion> newest first, with run and project loaded */
     public function findRecentVersions(User $viewer, int $limit): array
     {

@@ -33,8 +33,17 @@ Page: `/admin/users`.
 
 ## Own account
 
-- `/account` shows who is signed in and links to the password form.
-- `/account/password`: the current password is required, the new one has at least 12 characters and is typed twice.
+- `/account` shows the profile (username, role, account created, last sign-in), stat tiles (visible projects, group
+  memberships, and the skills, testcases and runs the user created; deleted skills and testcases do not count), the
+  user's groups, the same project table as the home page and a button that opens the password dialog. Group titles link to the
+  group page for admins only.
+- Account created and last sign-in are stored on the user (`createdAt`, `lastLoginAt`). Accounts that existed before the
+  fields were added show "–" for the creation date. The last sign-in is the time of the last successful login (a session
+  that is only refreshed does not count) and is visible to the user only, not in the admin user list. It is personal data:
+  mention it in the record of processing activities.
+- The password dialog (same native `<dialog>` as the delete confirmations) posts to `POST /account/password`: the current
+  password is required, the new one has at least 12 characters and is typed twice. After an invalid submit the account
+  page is shown again (status 422) and the dialog opens by itself with the errors. There is no separate password page.
 
 ## Home page
 

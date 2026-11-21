@@ -103,6 +103,14 @@ final class ProjectRepository extends ServiceEntityRepository
         );
     }
 
+    public function countAccessibleBy(User $user): int
+    {
+        $queryBuilder = $this->createQueryBuilder('p')->select('COUNT(p.id)');
+        $this->applyAccessFilter($queryBuilder, 'p', $user);
+
+        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+    }
+
     /** @return list<Project> */
     public function findAccessibleBy(User $user): array
     {

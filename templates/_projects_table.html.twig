@@ -1,0 +1,28 @@
+{% if projects %}
+    <table>
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Skills</th>
+                <th>Testcases</th>
+                <th>Runs</th>
+                <th>Last run</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in projects %}
+                {% set project = row[0] %}
+                <tr>
+                    <td><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">{{ project.title }}</a></td>
+                    <td><a href="{{ path('app_skills', {project: project.uuid}) }}">{{ row.skillCount }}</a></td>
+                    <td><a href="{{ path('app_testcases', {project: project.uuid}) }}">{{ row.testcaseCount }}</a></td>
+                    <td><a href="{{ path('app_runs', {uuid: project.uuid}) }}">{{ row.runCount }}</a></td>
+                    <td>{{ row.lastRun ? row.lastRun|date : '–' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="{{ path('app_projects') }}">All projects</a></p>
+{% else %}
+    <p>No projects yet.</p>
+{% endif %}

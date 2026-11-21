@@ -62,8 +62,8 @@ final class UserManagementTest extends AppWebTestCase
         $user = $this->persistUser('dave');
         $this->client->loginUser($user);
 
-        $crawler = $this->client->request('GET', '/account/password');
-        $this->client->submit($crawler->selectButton('Change password')->form([
+        $crawler = $this->client->request('GET', '/account');
+        $this->client->submit($crawler->filter('dialog')->selectButton('Change password')->form([
             'change_password[currentPassword]' => self::PASSWORD,
             'change_password[newPassword][first]' => 'another-long-password',
             'change_password[newPassword][second]' => 'another-long-password',
@@ -80,14 +80,16 @@ final class UserManagementTest extends AppWebTestCase
     {
         $this->client->loginUser($this->persistUser('erin'));
 
-        $crawler = $this->client->request('GET', '/account/password');
-        $this->client->submit($crawler->selectButton('Change password')->form([
+        $crawler = $this->client->request('GET', '/account');
+        $this->client->submit($crawler->filter('dialog')->selectButton('Change password')->form([
             'change_password[currentPassword]' => 'not-my-password',
             'change_password[newPassword][first]' => 'another-long-password',
             'change_password[newPassword][second]' => 'another-long-password',
         ]));
 
         self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('dialog#password-dialog[data-show-on-load]');
+        self::assertSelectorTextContains('dialog#password-dialog', 'The current password is wrong.');
         $this->entityManager->clear();
         $stored = $this->entityManager->getRepository(User::class)->findOneBy(['username' => 'erin']);
         self::assertInstanceOf(User::class, $stored);
@@ -98,9 +100,11 @@ final class UserManagementTest extends AppWebTestCase
     {
         $this->client->loginUser($this->admin());
 
-        $this->client->request('GET', '/account/password');
+        $this->client->request('GET', '/account');
 
         self::assertResponseIsSuccessful();
+        self::assertSelectorExists('dialog#password-dialog form[name="change_password"]');
+        self::assertSelectorNotExists('dialog#password-dialog[data-show-on-load]');
     }
 
     public function testAdminCanCreateAdminWhoGetsAdminAccess(): void

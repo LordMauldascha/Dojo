@@ -56,6 +56,15 @@ All five overviews (groups, projects, skills, testcases, runs) share `templates/
 - Width: the page content uses the full width next to the sidebar with the padding as margin (`.app-main` has no
   max-width). Tables span it; forms and paragraphs keep their own limits (`--measure`, input `max-width`).
 
+## Stat tiles
+
+`dl.stats` with one `div.stat` per figure (`dt` label, `dd` number), styled in `assets/css/components/_stats.scss`. Used
+on the account page. The tile is a flat surface (`--color-surface`, hairline border, `--radius-md`, no shadow) with the
+number large in the system sans (`--font-size-3xl`): numbers are data, so never the display face. The label sits below
+the number in `--color-text-muted`. The grid wraps with `auto-fit` and is one column under `$breakpoint-sm`. A number may
+be a link. No icons, no colors per tile and no animation. `dl.facts` in the same file is the matching label-over-value row
+for profile data.
+
 ## Confirmation dialog
 
 Every button that deletes something (users, API keys, groups, projects, skills, testcases, runs, drafts) opens a modal first.
@@ -69,6 +78,9 @@ user confirms. Styles: `assets/css/components/_dialog.scss`, backdrop token `--c
   `dialog::backdrop`, otherwise the page scrolls behind the modal.
 - Browsers without Invoker Commands are served by `assets/js/commandButtons.ts` (no dependency).
 - `Remove` buttons (assignments) and `Restore` do not ask.
+- Form dialogs (the password change on the account page) use the same `<dialog>`. A Symfony form (it has a `name`) inside
+  keeps its normal field layout, its Cancel and submit buttons sit in `.dialog-actions`. Mark the dialog with
+  `data-show-on-load` (`showDialogsOnLoad()` in `assets/js/commandButtons.ts`) to reopen it after an invalid submit.
 
 ## Unsaved changes
 

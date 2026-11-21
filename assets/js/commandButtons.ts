@@ -1,3 +1,12 @@
+/** Opens every dialog marked data-show-on-load as a modal, e.g. a form dialog that must show its errors again. */
+export function showDialogsOnLoad(root: Document = document): void {
+    root.querySelectorAll<HTMLDialogElement>('dialog[data-show-on-load]').forEach((dialog) => {
+        if (!dialog.open) {
+            dialog.showModal();
+        }
+    });
+}
+
 /**
  * Fallback for browsers without Invoker Commands: makes button[command][commandfor] open (show-modal) and close
  * (close) a <dialog>. Does nothing where the browser handles these buttons itself. Returns a function that removes

@@ -11,7 +11,8 @@ dialog {
         margin-top: 0;
     }
 
-    form,
+    // Named forms (Symfony) keep their normal layout, their buttons sit in .dialog-actions.
+    form:not([name]),
     .dialog-actions {
         display: flex;
         flex-direction: row-reverse;

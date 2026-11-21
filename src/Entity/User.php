@@ -36,6 +36,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     #[ORM\Column]
     private bool $enabled = true;
 
+    // null for accounts that existed before the field was added
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $createdAt;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function markLoggedIn(): void
+    {
+        $this->lastLoginAt = new \DateTimeImmutable();
+    }
+
     public function getId(): ?int
     {
         return $this->id;

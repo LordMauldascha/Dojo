@@ -5,6 +5,98 @@
 {% block heading %}My account{% endblock %}
 
 {% block content %}
-    <p>Signed in as {{ app.user.userIdentifier }}.</p>
-    <p><a href="{{ path('app_account_password') }}">Change password</a></p>
+    {% set user = app.user %}
+
+    <h2>Profile</h2>
+    <dl class="facts">
+        <div>
+            <dt>Username</dt>
+            <dd>{{ user.userIdentifier }}</dd>
+        </div>
+        <div>
+            <dt>Role</dt>
+            <dd>{{ user.role.label }}</dd>
+        </div>
+        <div>
+            <dt>Account created</dt>
+            <dd>{{ user.createdAt ? user.createdAt|date : '–' }}</dd>
+        </div>
+        <div>
+            <dt>Last sign-in</dt>
+            <dd>{{ user.lastLoginAt ? user.lastLoginAt|date : '–' }}</dd>
+        </div>
+    </dl>
+
+    <h2>Overview</h2>
+    <dl class="stats">
+        <div class="stat">
+            <dt>Projects</dt>
+            <dd><a href="{{ path('app_projects') }}">{{ counts.projects }}</a></dd>
+        </div>
+        <div class="stat">
+            <dt>Groups</dt>
+            <dd>{{ counts.groups }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Skills created</dt>
+            <dd>{{ counts.skills }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Testcases created</dt>
+            <dd>{{ counts.testcases }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Runs created</dt>
+            <dd>{{ counts.runs }}</dd>
+        </div>
+    </dl>
+
+    <h2>My groups</h2>
+    {% if groups %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th>Members</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in groups %}
+                    {% set group = row[0] %}
+                    <tr>
+                        <td>
+                            {%- if is_granted('ROLE_ADMIN') -%}
+                                <a href="{{ path('app_admin_group_show', {uuid: group.uuid}) }}">{{ group.title }}</a>
+                            {%- else -%}
+                                {{ group.title }}
+                            {%- endif -%}
+                        </td>
+                        <td>{{ row.userCount }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No groups yet.</p>
+    {% endif %}
+
+    <h2>My projects</h2>
+    {{ include('_projects_table.html.twig') }}
+
+    <h2>Security</h2>
+    <p><button type="button" command="show-modal" commandfor="password-dialog">Change password</button></p>
+    <dialog id="password-dialog" aria-labelledby="password-dialog-title" closedby="any"{% if form.vars.submitted %} data-show-on-load{% endif %}>
+        <h2 id="password-dialog-title">Change password</h2>
+        {{ form_start(form, {action: path('app_account_password')}) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.currentPassword) }}
+            {{ form_errors(form.newPassword) }}
+            {{ form_row(form.newPassword.first) }}
+            {{ form_row(form.newPassword.second) }}
+            <div class="dialog-actions">
+                <button type="button" command="close" commandfor="password-dialog">Cancel</button>
+                {{ form_widget(form.save) }}
+            </div>
+        {{ form_end(form) }}
+    </dialog>
 {% endblock %}

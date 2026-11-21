@@ -39,6 +39,26 @@ final class GroupRepository extends ServiceEntityRepository
         return Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
     }
 
+    /**
+     * Rows of the form [0 => Group, 'userCount' => int|string] of the groups the user belongs to.
+     *
+     * @return list<array<int|string, mixed>>
+     */
+    public function findByMember(User $user): array
+    {
+        /** @var list<array<int|string, mixed>> $rows */
+        $rows = $this->createQueryBuilder('g')
+            ->addSelect('SIZE(g.users) AS userCount')
+            ->where(':user MEMBER OF g.users')
+            ->setParameter('user', $user)
+            ->orderBy('g.title', 'ASC')
+            ->addOrderBy('g.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $rows;
+    }
+
     /** @return list<User> */
     public function findAssignableUsers(Group $group): array
     {
