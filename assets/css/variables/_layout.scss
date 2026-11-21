@@ -21,6 +21,11 @@ $breakpoint-lg: 80rem; // 1280px
     --duration-fast: 150ms;
     --duration-base: 200ms;
     --duration-page: 450ms; // view transitions between pages
+    --duration-smash: 700ms; // the logout brick breaking
+    --duration-tatami: 600ms; // one tatami mat rolling over the page after login
+    --tatami-stagger: 120ms; // delay between the three mats
+    --duration-glow-wide: 11s; // the background glow breathes slowly, the two layers out of step
+    --duration-glow-core: 7s;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
     --z-dropdown: 10;

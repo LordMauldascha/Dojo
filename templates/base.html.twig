@@ -14,6 +14,32 @@
             @view-transition { navigation: auto; }
             @media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
         </style>
+        {# Glow phase from the clock: a page change continues the light instead of restarting it dark (docs/Design.md). One full cycle is twice the duration in _layout.scss (11 s and 7 s). #}
+        <script>
+            (function () {
+                var t = Date.now() / 1000;
+                document.documentElement.style.setProperty('--glow-delay-wide', -(t % 22) + 's');
+                document.documentElement.style.setProperty('--glow-delay-core', -(t % 14) + 's');
+            })();
+        </script>
+        {# Login animation (docs/Design.md): after a login attempt the next page starts covered by the tatami mats (class set before the first paint, the view transition is skipped) and assets/js/tatamiLogin.ts rolls them away. #}
+        <script>
+            (function () {
+                try {
+                    var started = Number(sessionStorage.getItem('dojo-tatami'));
+                    if (started && Date.now() - started < 15000 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                        document.documentElement.classList.add('tatami-cover');
+                        addEventListener('pagereveal', function (event) {
+                            if (event.viewTransition) {
+                                event.viewTransition.skipTransition();
+                            }
+                        });
+                    } else {
+                        sessionStorage.removeItem('dojo-tatami');
+                    }
+                } catch (error) {}
+            })();
+        </script>
         {# Do not paint the new page before its content element is parsed. Every page needs main#content. #}
         <link rel="expect" href="#content" blocking="render">
 
@@ -29,6 +55,11 @@
         {% endif %}
     </head>
     <body>
+        <div class="tatami" aria-hidden="true">
+            <span class="tatami-mat"><span class="tatami-sheet"></span><span class="tatami-roll"></span></span>
+            <span class="tatami-mat"><span class="tatami-sheet"></span><span class="tatami-roll"></span></span>
+            <span class="tatami-mat"><span class="tatami-sheet"></span><span class="tatami-roll"></span></span>
+        </div>
         {% block body %}{% endblock %}
 
         <script>

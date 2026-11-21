@@ -15,6 +15,24 @@
     --color-selected: var(--color-brand-brown); // current navigation item, 8.5:1 under --color-text
     --color-selection: #6b5126; // text selection, 6.3:1 under --color-text
 
+    // A warm glow in glowing gold from the upper right corner (see docs/Design.md), kept very faint
+    --color-glow-core: rgb(255 195 77 / 0.14);
+    --color-glow-wide: rgb(255 195 77 / 0.07);
+
+    // The brick the logout button turns into on hover (see docs/Design.md); text on it is 5.3:1
+    --color-brick: #9a4a2b;
+    --color-brick-light: #b5603a;
+    --color-brick-dark: #6e3019;
+    --color-brick-speck-light: rgb(255 220 190 / 0.16);
+    --color-brick-speck-dark: rgb(0 0 0 / 0.2);
+
+    // Tatami mats of the login animation (see docs/Design.md): woven straw with dark cloth borders
+    --color-tatami: #b5ad78;
+    --color-tatami-light: #d6cd96;
+    --color-tatami-dark: #6b6035;
+    --color-tatami-heri: #1f160f;
+    --color-tatami-heri-line: #5b4a22;
+
     // The breaking board behind the current navigation item (see docs/Design.md); text stays above 7:1 on all of it
     --color-wood-light: #6d4824;
     --color-wood-dark: #55361a;

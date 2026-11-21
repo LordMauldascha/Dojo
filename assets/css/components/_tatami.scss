@@ -1,0 +1,183 @@
+// Login animation: three tatami mats roll down over the page when the login form is sent (html.tatami-in), stay as a
+// cover during the redirect (html.tatami-cover, set early by an inline script in base.html.twig) and roll away
+// downward once the first page after the login has loaded (html.tatami-away). Logic: assets/js/tatamiLogin.ts.
+.tatami {
+    --roll-h: 2.6rem;
+
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+html:is(.tatami-in, .tatami-cover, .tatami-away) .tatami {
+    display: grid;
+}
+
+// the page stays untouchable while it is covered
+html.tatami-away .tatami {
+    pointer-events: none;
+}
+
+.tatami-mat {
+    position: relative;
+    --delay: calc(var(--i) * var(--tatami-stagger));
+
+    &:nth-child(1) {
+        --i: 0;
+    }
+
+    &:nth-child(2) {
+        --i: 1;
+    }
+
+    &:nth-child(3) {
+        --i: 2;
+    }
+}
+
+// The woven straw runs along the mat; the dark cloth border (heri) runs along both long edges.
+.tatami-sheet,
+.tatami-roll {
+    background:
+        linear-gradient(
+            90deg,
+            var(--color-tatami-heri) 0 0.8rem,
+            var(--color-tatami-heri-line) 0.8rem calc(0.8rem + 2px),
+            transparent calc(0.8rem + 2px) calc(100% - 0.8rem - 2px),
+            var(--color-tatami-heri-line) calc(100% - 0.8rem - 2px) calc(100% - 0.8rem),
+            var(--color-tatami-heri) calc(100% - 0.8rem) 100%
+        ),
+        repeating-linear-gradient(90deg, rgb(0 0 0 / 0.09) 0 1px, transparent 1px 4px),
+        linear-gradient(90deg, rgb(255 255 255 / 0.08), transparent 40%, rgb(0 0 0 / 0.1)), var(--color-tatami);
+}
+
+.tatami-sheet {
+    position: absolute;
+    inset: 0;
+}
+
+// The roll is the part of the mat that is not flat yet: a cylinder at the moving edge.
+.tatami-roll {
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--roll-h);
+    border-radius: 0.4rem;
+    background:
+        linear-gradient(
+            90deg,
+            var(--color-tatami-heri) 0 0.8rem,
+            transparent 0.8rem calc(100% - 0.8rem),
+            var(--color-tatami-heri) calc(100% - 0.8rem) 100%
+        ),
+        linear-gradient(
+            180deg,
+            var(--color-tatami-dark) 0%,
+            var(--color-tatami-light) 32%,
+            var(--color-tatami) 58%,
+            var(--color-tatami-dark) 100%
+        );
+    box-shadow: 0 0.5rem 0.9rem rgb(0 0 0 / 0.4);
+    opacity: 0;
+    transform-origin: 50% 100%;
+}
+
+html.tatami-in {
+    .tatami-sheet {
+        animation: tatami-sheet-in var(--duration-tatami) cubic-bezier(0.45, 0, 0.25, 1) var(--delay) both;
+    }
+
+    .tatami-roll {
+        animation:
+            tatami-roll-in var(--duration-tatami) cubic-bezier(0.45, 0, 0.25, 1) var(--delay) both,
+            tatami-fade-in 120ms ease-out var(--delay) both,
+            tatami-roll-hide 100ms linear calc(var(--delay) + var(--duration-tatami)) forwards;
+    }
+}
+
+html.tatami-away {
+    .tatami-sheet {
+        animation: tatami-sheet-away var(--duration-tatami) cubic-bezier(0.45, 0, 0.25, 1) var(--delay) both;
+    }
+
+    .tatami-roll {
+        animation:
+            tatami-roll-away var(--duration-tatami) cubic-bezier(0.45, 0, 0.25, 1) var(--delay) both,
+            tatami-fade-in 120ms ease-out var(--delay) both;
+    }
+}
+
+// Unrolling: the bottom edge of the mat and the roll travel down together.
+@keyframes tatami-sheet-in {
+    from {
+        clip-path: inset(0 0 100% 0);
+    }
+
+    to {
+        clip-path: inset(0);
+    }
+}
+
+@keyframes tatami-roll-in {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(calc(100dvh - var(--roll-h)));
+    }
+}
+
+// Rolling away: the top edge of the mat and the roll travel down together, until the roll has left the screen.
+@keyframes tatami-sheet-away {
+    from {
+        clip-path: inset(0);
+    }
+
+    to {
+        clip-path: inset(100% 0 0 0);
+    }
+}
+
+@keyframes tatami-roll-away {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(100dvh);
+    }
+}
+
+@keyframes tatami-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+// The roll flattens into the mat at the bottom edge when the mat has fully arrived. It repeats the translation of
+// tatami-roll-in inside its own transform (the individual `scale` property is applied outside of that translation and
+// sent the roll back to the top), and it ends at scaleY(0.02): scaleY(0) is a singular matrix and made the browser
+// interpolate the whole matrix, which also flew the roll to the top.
+@keyframes tatami-roll-hide {
+    from {
+        opacity: 1;
+        transform: translateY(calc(100dvh - var(--roll-h))) scaleY(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(calc(100dvh - var(--roll-h))) scaleY(0.02);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tatami {
+        display: none !important;
+    }
+}

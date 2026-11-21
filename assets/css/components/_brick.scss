@@ -1,0 +1,133 @@
+// The logout link turns into a brick on hover and breaks when it is clicked (assets/js/smashLogout.ts adds
+// .is-smashing). The two halves are the link's ::before and ::after, cut along one jagged crack.
+.app-nav a.logout {
+    position: relative;
+    isolation: isolate;
+    // the ::before is the brick, not the 6px marker of the other items: keep the label on their text line
+    padding-left: calc(var(--space-3) + 6px + var(--space-2));
+
+    > span {
+        position: relative;
+        z-index: 1;
+    }
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        width: auto;
+        height: auto;
+        flex: none;
+        border-radius: var(--radius-md);
+        background:
+            radial-gradient(circle at 20% 35%, var(--color-brick-speck-dark) 0 1px, transparent 2px) 0 0 / 23px 13px,
+            radial-gradient(circle at 70% 65%, var(--color-brick-speck-light) 0 1px, transparent 2px) 0 0 / 17px 11px,
+            radial-gradient(circle at 45% 20%, var(--color-brick-speck-dark) 0 1px, transparent 2px) 0 0 / 31px 9px,
+            linear-gradient(
+                180deg,
+                var(--color-brick-light),
+                var(--color-brick) 14%,
+                var(--color-brick) 82%,
+                var(--color-brick-dark)
+            );
+        box-shadow:
+            inset 0 1px 0 var(--color-brick-speck-light),
+            inset 0 -2px 0 var(--color-brick-speck-dark);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--duration-fast) var(--ease-out);
+    }
+
+    &::before {
+        clip-path: polygon(0 0, 52% 0, 46% 30%, 55% 55%, 48% 80%, 53% 100%, 0 100%);
+    }
+
+    &::after {
+        clip-path: polygon(52% 0, 100% 0, 100% 100%, 53% 100%, 48% 80%, 55% 55%, 46% 30%);
+    }
+
+    &:hover,
+    &:focus-visible {
+        background: transparent;
+        color: var(--color-text);
+
+        &::before,
+        &::after {
+            opacity: 1;
+        }
+    }
+
+    &.is-smashing {
+        pointer-events: none;
+        background: transparent;
+        color: var(--color-text);
+
+        > span {
+            animation: brick-label 200ms var(--ease-out) forwards;
+        }
+
+        &::before,
+        &::after {
+            opacity: 1;
+            transition: none;
+            animation-duration: var(--duration-smash);
+            animation-timing-function: cubic-bezier(0.5, 0, 1, 0.6);
+            animation-delay: 80ms;
+            animation-fill-mode: both;
+        }
+
+        &::before {
+            animation-name: brick-half-left;
+        }
+
+        &::after {
+            animation-name: brick-half-right;
+        }
+    }
+}
+
+@keyframes brick-label {
+    30% {
+        translate: 0.15rem 0;
+    }
+
+    60% {
+        translate: -0.15rem 0;
+    }
+
+    to {
+        translate: 0 0;
+        opacity: 0;
+    }
+}
+
+@keyframes brick-half-left {
+    8% {
+        transform: translateX(-2%) rotate(-2deg);
+    }
+
+    to {
+        transform: translate(-40%, 280%) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+@keyframes brick-half-right {
+    8% {
+        transform: translateX(2%) rotate(2deg);
+    }
+
+    to {
+        transform: translate(45%, 320%) rotate(34deg);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-nav a.logout::before,
+    .app-nav a.logout::after {
+        transition: none;
+    }
+}

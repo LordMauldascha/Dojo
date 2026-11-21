@@ -22,6 +22,15 @@ no hex values, pixel sizes or durations outside `variables/`. Breakpoints are th
 - Shape: radii 0 to 2px, no shadows, hairline borders.
 - Seal: the square gold stamp with 道 (`.seal`, `--font-seal`) is the brand mark in the sidebar and on the login page,
   pressed slightly crooked (-4°) and straight on hover. Use the seal for the brand only.
+- Glow: a very faint, soft glowing-gold glow falls from the upper right corner onto the page background (two radial
+  gradients on `body::before` and `body::after` in `_base.scss`, tokens `--color-glow-core` and `--color-glow-wide`,
+  fixed to the viewport, behind `.app` and `.login`). The layers breathe slowly and out of step (opacity and a slight
+  scale, 11 s and 7 s, `--duration-glow-*`) so the light seems alive. No rays or hard edges, nothing faster, only
+  opacity and transform (no gradient animation), off with reduced motion, low alpha (worst case, both layers at full strength in the very corner: body text 8.3:1, muted text 5.4:1).
+  The phase comes from the clock: an inline script in `base.html.twig` sets `--glow-delay-wide` and `--glow-delay-core`
+  (negative delays, one cycle is twice the duration), so each page continues the light where the last one left it and
+  never restarts dark. If you change `--duration-glow-*`, change the 22 and 14 in that script to twice the new values.
+  New full-page layouts need `position: relative; z-index: 1` to sit above it.
 - Breaking board (signature): the current navigation item sits on a wooden board like the ones broken in karate, drawn in
   pure CSS from the `--color-wood-*` tokens: straight grain, one knot, bevelled edges, a gold nail head. Playfulness is
   welcome here and in small touches (buttons press down 1px), but it stays out of tables, forms and data. No images.
@@ -42,6 +51,33 @@ All five overviews (groups, projects, skills, testcases, runs) share `templates/
   (`aria-disabled`) when there is no such page, so the line does not jump.
 - Width: the page content uses the full width next to the sidebar with the padding as margin (`.app-main` has no
   max-width). Tables span it; forms and paragraphs keep their own limits (`--measure`, input `max-width`).
+
+## Logout brick
+
+The Logout link in the sidebar turns into a brick on hover and breaks when clicked (`a.logout`,
+`assets/css/components/_brick.scss`, `assets/js/smashLogout.ts`, tokens `--color-brick*` and `--duration-smash`). The
+two halves are the link's `::before` and `::after`, cut along one crack. A click adds `.is-smashing`, the halves fall,
+and the logout URL is followed when the animation ends (with a 1.2 s fallback). Without script, with reduced motion or
+with a modified click (Ctrl, Cmd, middle button) the link just works. Brick red is a one-off for this link, not a brand
+color. Keep the `<span>` label inside the link; its own animation is ignored by the script.
+
+## Login animation (tatami)
+
+On login the credentials are sent in the background first. Only when the server accepts them, three tatami mats roll
+down over the page (woven straw, dark cloth borders, a cylinder at the moving edge) and the first page opens; once it has
+loaded, the mats roll away downward. Wrong credentials start no animation: the server's error message appears in the
+form and the password field is cleared. Files: `assets/css/components/_tatami.scss`,
+`assets/js/tatamiLogin.ts`, the `.tatami` markup and the inline script in `templates/base.html.twig`, tokens
+`--color-tatami*`, `--duration-tatami`, `--tatami-stagger`.
+
+- States on `<html>`: `tatami-in` (rolling down, set on submit), `tatami-cover` (the next page starts covered; an
+  inline script sets it before the first paint from `sessionStorage['dojo-tatami']`, valid for 15 s), `tatami-away`
+  (rolling away). The page-transition cross-fade is skipped while covered, so the cover does not flicker.
+- The login form needs the class `login-form`; the overlay needs `.tatami > .tatami-mat > (.tatami-sheet, .tatami-roll)`
+  three times.
+- Success or failure is read from the final URL of the background request (the login page again means failure). If the
+  request fails, or with an invalid form or reduced motion, the normal form submit runs; nothing changes without script.
+- Keep it to the login. Do not reuse the mats for other page changes.
 
 ## Dropdowns
 

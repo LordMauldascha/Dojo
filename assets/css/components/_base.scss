@@ -20,6 +20,68 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+// Glow: a soft glowing-gold light from the upper right corner, no hard edges or rays. Two layers (wide and core) breathe
+// slowly and out of step, so the light seems alive but never pulses. Only opacity and transform animate. Fixed to the
+// viewport, behind .app and .login. The phase comes from the clock (inline script in base.html.twig sets the negative
+// delays), so every page picks the light up where the last one left it instead of restarting dark.
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    transform-origin: 100% 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+body::before {
+    background: radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-glow-wide), transparent 100%);
+    animation-name: glow-wide;
+    animation-duration: var(--duration-glow-wide);
+    animation-delay: var(--glow-delay-wide, 0s);
+}
+
+body::after {
+    background: radial-gradient(ellipse 45% 40% at 100% 0%, var(--color-glow-core), transparent 100%);
+    animation-name: glow-core;
+    animation-duration: var(--duration-glow-core);
+    animation-delay: var(--glow-delay-core, 0s);
+}
+
+@keyframes glow-wide {
+    from {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.07);
+    }
+}
+
+@keyframes glow-core {
+    from {
+        opacity: 0.45;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before,
+    body::after {
+        animation: none;
+    }
+}
+
 ::selection {
     background: var(--color-selection);
     color: var(--color-text);

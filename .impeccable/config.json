@@ -5,5 +5,20 @@
       "maxFindings": 5,
       "maxChars": 8000
     }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "assets/css/components/_brick.scss"
+        ],
+        "createdAt": "2026-11-21T01:39:33.885Z",
+        "reason": "Agent: tiled radial dots are the speckle texture of the logout brick (requested by the user), not hairline grid lines"
+      }
+    ]
   }
 }

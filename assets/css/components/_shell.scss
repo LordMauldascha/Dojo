@@ -1,6 +1,8 @@
 @use '../variables' as *;
 
 .app {
+    position: relative;
+    z-index: 1;
     min-height: 100dvh;
 
     @media (min-width: $breakpoint-md) {
@@ -153,6 +155,8 @@
 }
 
 .login {
+    position: relative;
+    z-index: 1;
     display: grid;
     place-items: center;
     min-height: 100dvh;

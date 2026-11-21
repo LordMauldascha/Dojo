@@ -21,6 +21,6 @@
     {% endif %}
     <div class="app-nav-group">
         {{ _self.link('app_account', 'My account', ['app_account']) }}
-        <a href="{{ logout_path() }}">Logout</a>
+        <a class="logout" href="{{ logout_path() }}"><span>Logout</span></a>
     </div>
 </nav>
