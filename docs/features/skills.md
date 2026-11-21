@@ -29,10 +29,12 @@ description: Writes conventional commit messages.
 ```
 
 - `name` is the title in lower case, ä/ö/ü/ß replaced by ae/oe/ue/ss, blanks replaced by `-`. Only letters, digits,
-  single hyphens inside the name and blanks are allowed; anything else is refused when saving. Skills created before this
+  single hyphens inside the name and blanks are allowed; anything else is refused when saving. The name may have at most 64
+  characters (limit of the [Agent Skills specification](https://agentskills.io/specification)). Skills created before this
   rule can only be saved after the title was corrected; a stored title that is invalid gives an empty `name`.
 - `description`: lines are trimmed, empty lines dropped, further lines indented by two blanks. A description with `: `,
-  ` #` or a leading YAML indicator is written as a folded block (`description: >-`). An empty description is `""`.
+  ` #`, a leading YAML indicator or a text YAML reads as a boolean, null or number (`true`, `no`, `off`, `null`, `~`, `1.5`,
+  `0x1F`, `1e3`, `.5`) is written as a folded block (`description: >-`). An empty description is `""`.
 
 ## Who sees and edits a skill
 

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Ai\LlmConfiguration;
+use App\Entity\Trait\HasTimestamps;
+use App\Entity\Trait\HasUuid;
 use App\Repository\RunRepository;
 use App\Validator\NoNulByte;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -19,22 +20,25 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'run')]
 class Run
 {
+    use HasTimestamps;
+    use HasUuid;
+
+    public const TITLE_MAX = 255;
+    public const DESCRIPTION_MAX = 2000;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $uuid;
-
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: self::TITLE_MAX)]
     #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
+    #[Assert\Length(max: self::TITLE_MAX)]
     #[NoNulByte]
     private string $title = '';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Assert\Length(max: 2000)]
+    #[Assert\Length(max: self::DESCRIPTION_MAX)]
     #[NoNulByte]
     private ?string $description = null;
 
@@ -61,12 +65,6 @@ class Run
     #[ORM\OrderBy(['number' => 'ASC'])]
     private Collection $versions;
 
-    #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
-
-    #[ORM\Column]
-    private \DateTimeImmutable $updatedAt;
-
     public function __construct(
         #[ORM\ManyToOne(targetEntity: Project::class)]
         #[ORM\JoinColumn(name: 'project_id', nullable: false, onDelete: 'CASCADE')]
@@ -85,11 +83,6 @@ class Run
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getUuid(): Uuid
-    {
-        return $this->uuid;
     }
 
     public function getProject(): Project
@@ -252,16 +245,6 @@ class Run
         return $version;
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): \DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
     /**
      * @template T of object
      *
@@ -287,10 +270,5 @@ class Run
         }
 
         return $changed;
-    }
-
-    private function touch(): void
-    {
-        $this->updatedAt = new \DateTimeImmutable();
     }
 }

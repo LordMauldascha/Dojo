@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Form;
 
-use App\Entity\Project;
+use App\Entity\TestcaseVersion;
 use App\Form\Model\TestcaseData;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\Count;
 
 /**
  * Title, description, prompt and output criteria. With the "projects" option (list of selectable projects) the form
@@ -23,13 +19,12 @@ use Symfony\Component\Validator\Constraints\Count;
  */
 final class TestcaseContentType extends AbstractType
 {
-    use AddsVersionButtons;
+    use AddsContentFields;
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $this->addTitleAndDescription($builder, TestcaseVersion::TITLE_MAX, TestcaseVersion::DESCRIPTION_MAX);
         $builder
-            ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 255]])
-            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 2000, 'rows' => 3]])
             ->add('prompt', TextareaType::class, [
                 'label' => 'Prompt',
                 'trim' => false,
@@ -38,32 +33,11 @@ final class TestcaseContentType extends AbstractType
             ])
             ->add('outputCriteria', TextareaType::class, ['label' => 'Output criteria', 'trim' => false, 'help' => 'One criterion per line. The LLM judge checks the output against them. '.Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 100000, 'rows' => 10]]);
 
-        if (null === $options['projects']) {
-            $this->addVersionButtons($builder);
-
-            return;
-        }
-
-        $builder
-            ->add('projects', EntityType::class, [
-                'class' => Project::class,
-                'choices' => $options['projects'],
-                'choice_label' => 'title',
-                'label' => 'Projects',
-                'multiple' => true,
-                'expanded' => true,
-                'required' => false,
-                'mapped' => false,
-                'constraints' => $options['require_project'] ? [new Count(min: 1, minMessage: 'Select at least one project.')] : [],
-            ])
-            ->add('create', SubmitType::class, ['label' => 'Create testcase']);
+        $this->addProjectsOrVersionButtons($builder, $options, 'Create testcase');
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver
-            ->setDefaults(['data_class' => TestcaseData::class, 'projects' => null, 'require_project' => true])
-            ->setAllowedTypes('projects', ['null', 'array'])
-            ->setAllowedTypes('require_project', 'bool');
+        $this->configureContentOptions($resolver, TestcaseData::class);
     }
 }

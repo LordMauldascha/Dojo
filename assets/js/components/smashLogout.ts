@@ -1,3 +1,6 @@
+import { isPlainLeftClick } from '../services/isPlainLeftClick';
+import { prefersReducedMotion } from '../services/tatami';
+
 const SMASH_FALLBACK_MS = 1200;
 
 // Plays the brick-smash animation (CSS class "is-smashing") before the logout link is followed.
@@ -31,14 +34,7 @@ export function smashLogout(
     };
 
     const onClick = (event: MouseEvent): void => {
-        if (
-            event.defaultPrevented ||
-            0 !== event.button ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.shiftKey ||
-            event.altKey
-        ) {
+        if (event.defaultPrevented || !isPlainLeftClick(event)) {
             return;
         }
 
@@ -48,7 +44,7 @@ export function smashLogout(
             return;
         }
 
-        if (true === win.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        if (prefersReducedMotion(win)) {
             return;
         }
 

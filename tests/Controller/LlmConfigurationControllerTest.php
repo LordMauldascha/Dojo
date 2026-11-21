@@ -11,7 +11,10 @@ use App\Entity\ProviderApiKey;
 use App\Entity\User;
 use App\Security\ApiKeyEncryptor;
 use App\Security\UserRole;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PrePersistEventArgs;
+use Doctrine\ORM\Events;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -107,6 +110,34 @@ final class LlmConfigurationControllerTest extends WebTestCase
         self::assertCount(1, $stored);
         self::assertSame(Provider::ClaudeCode, $stored[0]->getProvider());
         self::assertSame('sonnet', $stored[0]->getModel());
+    }
+
+    public function testAConcurrentFirstSaveOfTheJudgeShowsTheConflictMessage(): void
+    {
+        $this->client->loginUser($this->admin());
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
+        $form = $crawler->filter('form[name="judge"]')->form(['judge[model]' => 'gemini:gemini-2.5-pro']);
+
+        $connection = $this->entityManager->getConnection();
+        $this->client->disableReboot();
+        $this->entityManager->getEventManager()->addEventListener(Events::prePersist, new class($connection) {
+            public function __construct(private readonly Connection $connection)
+            {
+            }
+
+            public function prePersist(PrePersistEventArgs $args): void
+            {
+                if ($args->getObject() instanceof JudgeSetting) {
+                    $this->connection->executeStatement("INSERT INTO judge_setting (id, provider, model, updated_at) VALUES (1, 'openai', 'gpt-5.5', NOW())");
+                }
+            }
+        });
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/admin/llm-configuration');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Reload the page and try again');
+        self::assertSame(['gpt-5.5'], $connection->fetchFirstColumn('SELECT model FROM judge_setting'));
     }
 
     public function testAnUnknownJudgeModelIsRefusedAndNothingIsStored(): void

@@ -45,7 +45,8 @@ Page: `/admin/users`. The list has the shared overview toolbar (search, entries 
   mention it in the record of processing activities.
 - The password dialog (same native `<dialog>` as the delete confirmations) posts to `POST /account/password`: the current
   password is required, the new one has at least 12 characters and is typed twice. After an invalid submit the account
-  page is shown again (status 422) and the dialog opens by itself with the errors. There is no separate password page.
+  page is shown again (status 422) and the dialog opens by itself with the errors. There is no separate password page. After five wrong current passwords within
+  15 minutes the form refuses every further attempt for a while, even with the right password.
 
 ## Home page
 

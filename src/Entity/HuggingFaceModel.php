@@ -12,8 +12,11 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'huggingface_model')]
 class HuggingFaceModel
 {
-    /** "organization/name" as on the Hub; the few legacy models (gpt2) have no organization. */
-    public const ID_PATTERN = '[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?';
+    /** A path segment that is not "." or "..". */
+    private const SEGMENT = '(?!\.{1,2}(?:/|\z))[A-Za-z0-9._-]+';
+
+    /** "organization/name" as on the Hub; the few legacy models (gpt2) have no organization. Anchored for use inside delimiters. */
+    public const ID_PATTERN = '\A'.self::SEGMENT.'(?:/'.self::SEGMENT.')?\z';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -38,10 +41,5 @@ class HuggingFaceModel
     public function getModelId(): string
     {
         return $this->modelId;
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
     }
 }

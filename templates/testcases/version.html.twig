@@ -1,17 +1,9 @@
-{% extends 'layout.html.twig' %}
+{% extends '_versioned/version.html.twig' %}
 
-{% block title %}Testcase {{ version.title }} – version {{ version.label }}{% endblock %}
+{% set label = 'testcase' %}
+{% set entity = testcase %}
 
-{% block heading %}{{ version.title }} – version {{ version.label }}{% endblock %}
-
-{% block content %}
-    {{ include('_back_link.html.twig', {href: path('app_testcase_show', {uuid: testcase.uuid}), label: 'Back to testcase'}) }}
-
-    <p>Saved: {{ version.savedAt|date }}</p>
-
-    <h2>Description</h2>
-    <p>{{ version.description ?? 'No description.' }}</p>
-
+{% block version_content %}
     <h2>Prompt</h2>
     <pre>{{ version.prompt }}</pre>
 

@@ -38,6 +38,10 @@ final class ProjectController extends AbstractController
 {
     use SafeFlushTrait;
 
+    public const CSRF_REMOVE_GROUP = 'remove-project-group-';
+    public const CSRF_REMOVE_USER = 'remove-project-user-';
+    public const CSRF_DELETE = 'delete-project-';
+
     private const LIST_KEY = 'projects';
 
     #[Route('', name: 'app_projects', methods: ['GET'])]
@@ -91,6 +95,7 @@ final class ProjectController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        $storedTitle = $project->getTitle();
         $form = null;
         if ($canManage) {
             $form = $this->createForm(ProjectType::class, $project);
@@ -107,6 +112,7 @@ final class ProjectController extends AbstractController
 
         return $this->render('projects/show.html.twig', [
             'project' => $project,
+            'storedTitle' => $storedTitle,
             'canManage' => $canManage,
             'skillCount' => $skills->countByProject($project),
             'testcaseCount' => $testcases->countByProject($project),
@@ -143,7 +149,7 @@ final class ProjectController extends AbstractController
 
     #[Route('/{uuid:project}/groups/{groupUuid}/remove', name: 'app_project_group_remove', requirements: ['uuid' => Requirement::UUID, 'groupUuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
-    #[IsCsrfTokenValid(new Expression('"remove-project-group-" ~ args["project"].getUuid() ~ "-" ~ args["group"].getUuid()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_REMOVE_GROUP.'" ~ args["project"].getUuid() ~ "-" ~ args["group"].getUuid()'), methods: 'POST')]
     public function removeGroup(
         Project $project,
         #[MapEntity(mapping: ['groupUuid' => 'uuid'])] Group $group,
@@ -182,7 +188,7 @@ final class ProjectController extends AbstractController
 
     #[Route('/{uuid:project}/users/{userId}/remove', name: 'app_project_user_remove', requirements: ['uuid' => Requirement::UUID, 'userId' => Requirements::ID], methods: ['POST'])]
     #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
-    #[IsCsrfTokenValid(new Expression('"remove-project-user-" ~ args["project"].getUuid() ~ "-" ~ args["user"].getId()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_REMOVE_USER.'" ~ args["project"].getUuid() ~ "-" ~ args["user"].getId()'), methods: 'POST')]
     public function removeUser(
         Project $project,
         #[MapEntity(id: 'userId')] User $user,
@@ -197,7 +203,7 @@ final class ProjectController extends AbstractController
 
     #[Route('/{uuid:project}/delete', name: 'app_project_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
-    #[IsCsrfTokenValid(new Expression('"delete-project-" ~ args["project"].getUuid()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_DELETE.'" ~ args["project"].getUuid()'), methods: 'POST')]
     public function delete(Project $project, EntityManagerInterface $entityManager): Response
     {
         $title = $project->getTitle();

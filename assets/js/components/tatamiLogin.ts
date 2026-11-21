@@ -1,6 +1,6 @@
 import { STORAGE_KEY, afterLastMat, prefersReducedMotion } from '../services/tatami';
 
-export interface LoginResponse {
+interface LoginResponse {
     url: string;
     text(): Promise<string>;
 }

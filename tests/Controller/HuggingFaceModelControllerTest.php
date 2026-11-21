@@ -147,6 +147,19 @@ final class HuggingFaceModelControllerTest extends AppWebTestCase
         self::assertSame(['acme/chat-8b'], $this->storedModels());
     }
 
+    public function testAConcurrentAddShowsTheConflictMessage(): void
+    {
+        $this->hub();
+        $this->loginAdmin();
+        $crawler = $this->client->request('GET', '/admin/llm-configuration/huggingface/models');
+        $this->racingStatementBeforeInsertOf(HuggingFaceModel::class, "INSERT INTO huggingface_model (model_id, created_at) VALUES ('acme/chat-8b', NOW())");
+
+        $this->client->submit($crawler->selectButton('Add')->first()->form());
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('.flash-error', 'Reload the page and try again');
+    }
+
     public function testAModelUnknownToTheHubIsNotAdded(): void
     {
         $this->hub(single: null);

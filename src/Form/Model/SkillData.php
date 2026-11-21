@@ -15,11 +15,11 @@ final class SkillData
     use NormalizesText;
 
     #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
+    #[Assert\Length(max: SkillVersion::TITLE_MAX)]
     #[NoNulByte]
     public ?string $title = null;
 
-    #[Assert\Length(max: 2000)]
+    #[Assert\Length(max: SkillVersion::DESCRIPTION_MAX)]
     #[NoNulByte]
     public ?string $description = null;
 
@@ -31,8 +31,19 @@ final class SkillData
     #[Assert\Callback]
     public function validateTitleName(ExecutionContextInterface $context): void
     {
-        if ('' !== $this->normalizedTitle() && null === SkillHeader::name($this->normalizedTitle())) {
+        $title = $this->normalizedTitle();
+        if ('' === $title) {
+            return;
+        }
+
+        $name = SkillHeader::name($title);
+        if (null === $name) {
             $context->buildViolation('The title may only contain letters, digits, spaces and hyphens (ä, ö, ü, ß become ae, oe, ue, ss).')
+                ->atPath('title')
+                ->addViolation();
+        } elseif (SkillHeader::MAX_NAME_LENGTH < \strlen($name)) {
+            $context->buildViolation('The skill name made from the title may be at most {{ limit }} characters.')
+                ->setParameter('{{ limit }}', (string) SkillHeader::MAX_NAME_LENGTH)
                 ->atPath('title')
                 ->addViolation();
         }

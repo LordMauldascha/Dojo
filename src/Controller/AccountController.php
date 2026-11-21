@@ -13,10 +13,13 @@ use App\Repository\SkillRepository;
 use App\Repository\TestcaseRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -24,8 +27,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class AccountController extends AbstractController
 {
-    private const PROJECT_LIMIT = 10;
-
     public function __construct(
         private readonly ProjectRepository $projects,
         private readonly GroupRepository $groups,
@@ -43,10 +44,20 @@ final class AccountController extends AbstractController
 
     /** The form lives in a dialog on the account page; an invalid submit shows that page again with the dialog open. */
     #[Route('/account/password', name: 'app_account_password', methods: ['POST'])]
-    public function password(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher, #[CurrentUser] User $user): Response
+    public function password(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $hasher, #[Target('passwordCheckLimiter')] RateLimiterFactoryInterface $passwordCheckLimiter, #[CurrentUser] User $user): Response
     {
-        $form = $this->createForm(ChangePasswordType::class);
+        // Each attempt costs a token, a correct password refunds it. A blocked attempt skips validation,
+        // so the response does not reveal whether the password was right.
+        $limiter = $passwordCheckLimiter->create($user->getUserIdentifier());
+        $allowed = $limiter->consume()->isAccepted();
+        $form = $this->createForm(ChangePasswordType::class, null, ['validation_groups' => $allowed ? null : false]);
         $form->handleRequest($request);
+
+        if (!$allowed) {
+            $form->get('currentPassword')->addError(new FormError('Too many wrong attempts, try again later.'));
+        } elseif ($form->isSubmitted() && 0 === \count($form->get('currentPassword')->getErrors())) {
+            $limiter->reset();
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $newPassword = $form->get('newPassword')->getData();
@@ -68,7 +79,7 @@ final class AccountController extends AbstractController
 
         return $this->render('account/index.html.twig', [
             'form' => $form,
-            'projects' => $this->projects->findOverview($user, self::PROJECT_LIMIT),
+            'projects' => $this->projects->findOverview($user, ProjectRepository::OVERVIEW_LIMIT),
             'groups' => $memberships,
             'counts' => [
                 'projects' => $this->projects->countAccessibleBy($user),

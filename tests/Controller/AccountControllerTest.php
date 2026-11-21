@@ -67,6 +67,60 @@ final class AccountControllerTest extends AppWebTestCase
         self::assertNotNull($this->lastLoginOf($id));
     }
 
+    public function testSixthWrongCurrentPasswordIsBlockedEvenWithTheCorrectOne(): void
+    {
+        // the limiter state outlives the test run, so every run needs a user of its own
+        $username = 'limit-'.bin2hex(random_bytes(4));
+        $this->client->loginUser($this->persistUser($username));
+
+        for ($attempt = 1; 5 >= $attempt; ++$attempt) {
+            $this->changePassword('not-my-password');
+            self::assertResponseStatusCodeSame(422);
+            self::assertSelectorTextContains('dialog#password-dialog', 'The current password is wrong.');
+        }
+
+        $this->changePassword(self::PASSWORD);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('dialog#password-dialog', 'Too many wrong attempts, try again later.');
+        self::assertSelectorTextNotContains('dialog#password-dialog', 'The current password is wrong.');
+        $this->entityManager->clear();
+        $stored = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
+        self::assertInstanceOf(User::class, $stored);
+        self::assertTrue(password_verify(self::PASSWORD, $stored->getPassword()));
+    }
+
+    public function testCorrectCurrentPasswordWithinTheLimitStillWorksAndRefundsTheAttempts(): void
+    {
+        $username = 'limit-'.bin2hex(random_bytes(4));
+        $this->client->loginUser($this->persistUser($username));
+
+        for ($attempt = 1; 4 >= $attempt; ++$attempt) {
+            $this->changePassword('not-my-password');
+        }
+        $this->changePassword(self::PASSWORD);
+
+        self::assertResponseRedirects('/account');
+        $this->entityManager->clear();
+        $stored = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
+        self::assertInstanceOf(User::class, $stored);
+        self::assertTrue(password_verify('another-long-password', $stored->getPassword()));
+
+        for ($attempt = 1; 5 >= $attempt; ++$attempt) {
+            $this->changePassword('not-my-password');
+            self::assertSelectorTextContains('dialog#password-dialog', 'The current password is wrong.');
+        }
+    }
+
+    private function changePassword(string $currentPassword): void
+    {
+        $crawler = $this->client->request('GET', '/account');
+        $this->client->submit($crawler->filter('dialog')->selectButton('Change password')->form([
+            'change_password[currentPassword]' => $currentPassword,
+            'change_password[newPassword][first]' => 'another-long-password',
+            'change_password[newPassword][second]' => 'another-long-password',
+        ]));
+    }
+
     private function lastLoginOf(?int $id): ?\DateTimeImmutable
     {
         // the client reboots the kernel between requests, so read through a fresh entity manager

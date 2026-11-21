@@ -1,0 +1,54 @@
+{# Edit page of a skill or testcase. Child sets: label ("skill"), entity, controller (class with the CSRF constants), projectsHelp, deleteMessage. #}
+{% extends 'layout.html.twig' %}
+
+{% import '_forms.html.twig' as forms %}
+
+{% block title %}{{ label|capitalize }} {{ entity.activeVersion.title }}{% endblock %}
+
+{% block heading %}{{ label|capitalize }} {{ entity.activeVersion.title }}{% endblock %}
+
+{% block content %}
+    {% set active = entity.activeVersion %}
+    {% set draft = entity.draft %}
+
+    {{ include('_back_link.html.twig', {href: path('app_' ~ label ~ 's'), label: 'Back to overview'}) }}
+
+    <dl class="stats">
+        <div class="stat">
+            <dt>Active version</dt>
+            <dd>{{ active.label }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Projects</dt>
+            <dd>{{ entity.projects|length }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Runs</dt>
+            <dd>{{ runCount }}</dd>
+        </div>
+    </dl>
+
+    {% if 0 < hiddenProjectCount %}
+        <p>This {{ label }} is also assigned to {{ hiddenProjectCount }} project(s) you cannot see. Changes apply there too.</p>
+    {% endif %}
+    {% if draft %}
+        <p>Draft {{ draft.label }} exists and is shown in the form below. It is ignored until it is saved as final.</p>
+    {% endif %}
+
+    <h2>Edit</h2>
+    {{ form(form) }}
+    {% if draft %}
+        {{ forms.confirm_post(path('app_' ~ label ~ '_draft_discard', {uuid: entity.uuid}), constant(controller ~ '::CSRF_DISCARD_DRAFT') ~ entity.uuid, 'Discard draft', 'Discard draft?', 'The unfinished draft is deleted. The final versions are kept.') }}
+    {% endif %}
+
+    <h2>Projects</h2>
+    <p class="help-text">{{ projectsHelp }}</p>
+    {{ form(projectsForm) }}
+
+    {{ include('_versions.html.twig', {entity: entity, versionRoute: 'app_' ~ label ~ '_version', restoreRoute: 'app_' ~ label ~ '_restore', restoreTokenPrefix: constant(controller ~ '::CSRF_RESTORE')}) }}
+
+    {% if canDelete %}
+        <h2>Delete {{ label }}</h2>
+        {{ forms.confirm_post(path('app_' ~ label ~ '_delete', {uuid: entity.uuid}), constant(controller ~ '::CSRF_DELETE') ~ entity.uuid, 'Delete', 'Delete ' ~ label ~ '?', deleteMessage) }}
+    {% endif %}
+{% endblock %}

@@ -2,9 +2,9 @@
 
 {% import '_forms.html.twig' as forms %}
 
-{% block title %}Run {{ run.title }}{% endblock %}
+{% block title %}Run {{ storedTitle }}{% endblock %}
 
-{% block heading %}Run {{ run.title }}{% endblock %}
+{% block heading %}Run {{ storedTitle }}{% endblock %}
 
 {% block content %}
     {% set latest = run.latestVersion %}
@@ -16,7 +16,7 @@
             <dt>Versions</dt>
             <dd>
                 <a href="#versions">{{ run.versions|length }}</a>
-                {{ forms.post(path('app_run_start', {uuid: run.uuid}), 'start-run-' ~ run.uuid, 'Start', 'button-primary') }}
+                {{ forms.post(path('app_run_start', {uuid: run.uuid}), constant('App\\Controller\\RunController::CSRF_START') ~ run.uuid, 'Start', 'button-primary') }}
             </dd>
         </div>
         <div class="stat">
@@ -82,7 +82,7 @@
                     <tr>
                         <td>{{ configuration.label }}</td>
                         <td>
-                            {{ forms.post(path('app_run_configuration_remove', {uuid: run.uuid, key: configuration.key}), 'remove-run-configuration-' ~ run.uuid ~ '-' ~ configuration.key, 'Remove') }}
+                            {{ forms.post(path('app_run_configuration_remove', {uuid: run.uuid, key: configuration.key}), constant('App\\Controller\\RunController::CSRF_REMOVE_CONFIGURATION') ~ run.uuid ~ '-' ~ configuration.key, 'Remove') }}
                         </td>
                     </tr>
                 {% endfor %}
@@ -117,6 +117,6 @@
 
     {% if canDelete %}
         <h2>Delete run</h2>
-        {{ forms.confirm_post(path('app_run_delete', {uuid: run.uuid}), 'delete-run-' ~ run.uuid, 'Delete', 'Delete run?', 'The run and its ' ~ run.versions|length ~ ' version(s) are deleted for good. Skills and testcases are kept.') }}
+        {{ forms.confirm_post(path('app_run_delete', {uuid: run.uuid}), constant('App\\Controller\\RunController::CSRF_DELETE') ~ run.uuid, 'Delete', 'Delete run?', 'The run and its ' ~ run.versions|length ~ ' version(s) are deleted for good. Skills and testcases are kept.') }}
     {% endif %}
 {% endblock %}

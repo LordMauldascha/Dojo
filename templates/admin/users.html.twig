@@ -28,8 +28,8 @@
                         <td>{{ user.enabled ? 'active' : 'disabled' }}</td>
                         <td>
                             {% if user.userIdentifier != app.user.userIdentifier %}
-                                {{ forms.post(path('app_admin_user_toggle', {id: user.id}), 'toggle-user-' ~ user.id, user.enabled ? 'Disable' : 'Enable') }}
-                                {{ forms.confirm_post(path('app_admin_user_delete', {id: user.id}), 'delete-user-' ~ user.id, 'Delete', 'Delete user?', 'The user is deleted and loses access to all projects.') }}
+                                {{ forms.post(path('app_admin_user_toggle', {id: user.id}), constant('App\\Controller\\UserController::CSRF_TOGGLE') ~ user.id, user.enabled ? 'Disable' : 'Enable') }}
+                                {{ forms.confirm_post(path('app_admin_user_delete', {id: user.id}), constant('App\\Controller\\UserController::CSRF_DELETE') ~ user.id, 'Delete', 'Delete user?', 'The user is deleted and loses access to all projects.') }}
                             {% endif %}
                         </td>
                     </tr>

@@ -6,6 +6,8 @@ namespace App\Controller;
 
 use App\Ai\Credential;
 use App\Ai\HuggingFaceHub;
+use App\Ai\HuggingFaceModelAddResult;
+use App\Ai\HuggingFaceModelRegistrar;
 use App\Entity\HuggingFaceModel;
 use App\Form\Model\HuggingFaceModelData;
 use App\Form\Model\HuggingFaceSearch;
@@ -26,9 +28,13 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpClientExcep
 
 /** Discovery of Hugging Face models on the Hub and the list of models an admin added for runs and the judge. */
 #[IsGranted('ROLE_ADMIN')]
+#[Route('/admin/llm-configuration/huggingface/models')]
 final class HuggingFaceModelController extends AbstractController
 {
-    #[Route('/admin/llm-configuration/huggingface/models', name: 'app_admin_huggingface_models', methods: ['GET'])]
+    public const CSRF_ADD = 'add-huggingface-model';
+    public const CSRF_DELETE = 'delete-huggingface-model-';
+
+    #[Route('', name: 'app_admin_huggingface_models', methods: ['GET'])]
     public function discover(
         HuggingFaceHub $hub,
         HuggingFaceModelRepository $models,
@@ -54,41 +60,27 @@ final class HuggingFaceModelController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/llm-configuration/huggingface/models', name: 'app_admin_huggingface_model_add', methods: ['POST'])]
-    #[IsCsrfTokenValid('add-huggingface-model')]
+    #[Route('', name: 'app_admin_huggingface_model_add', methods: ['POST'])]
+    #[IsCsrfTokenValid(self::CSRF_ADD)]
     public function add(
         Request $request,
-        HuggingFaceHub $hub,
-        HuggingFaceModelRepository $models,
-        EntityManagerInterface $entityManager,
+        HuggingFaceModelRegistrar $registrar,
         #[MapRequestPayload(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
         HuggingFaceModelData $data,
     ): Response {
+        match ($registrar->add($data->modelId)) {
+            HuggingFaceModelAddResult::AlreadyAdded => $this->addFlash('error', 'This model was already added.'),
+            HuggingFaceModelAddResult::NotFoundOnHub, HuggingFaceModelAddResult::HubUnavailable => $this->addFlash('error', 'The Hub does not know this model, or could not be reached.'),
+            HuggingFaceModelAddResult::Conflict => $this->addFlash('error', ConflictMessage::TEXT),
+            HuggingFaceModelAddResult::Added => $this->addFlash('success', \sprintf('Model "%s" added.', $data->modelId)),
+        };
+
         // the query string of the search is kept, so the admin lands on the same results
-        $back = $this->redirectToRoute('app_admin_huggingface_models', $request->query->all());
-
-        if (null !== $models->findByModelId($data->modelId)) {
-            $this->addFlash('error', 'This model was already added.');
-        } else {
-            try {
-                $exists = $hub->exists($data->modelId);
-            } catch (HttpClientException) {
-                $exists = false;
-            }
-            if (!$exists) {
-                $this->addFlash('error', 'The Hub does not know this model, or could not be reached.');
-            } else {
-                $entityManager->persist(new HuggingFaceModel($data->modelId));
-                $entityManager->flush();
-                $this->addFlash('success', \sprintf('Model "%s" added.', $data->modelId));
-            }
-        }
-
-        return $back;
+        return $this->redirectToRoute('app_admin_huggingface_models', $request->query->all());
     }
 
-    #[Route('/admin/llm-configuration/huggingface/models/{id:model}/delete', name: 'app_admin_huggingface_model_delete', requirements: ['id' => Requirements::ID], methods: ['POST'])]
-    #[IsCsrfTokenValid(new Expression('"delete-huggingface-model-" ~ args["model"].getId()'), methods: 'POST')]
+    #[Route('/{id:model}/delete', name: 'app_admin_huggingface_model_delete', requirements: ['id' => Requirements::ID], methods: ['POST'])]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_DELETE.'" ~ args["model"].getId()'), methods: 'POST')]
     public function delete(HuggingFaceModel $model, EntityManagerInterface $entityManager): Response
     {
         $entityManager->remove($model);

@@ -47,6 +47,6 @@ final class RunVoter extends Voter
             return false;
         }
 
-        return self::DELETE !== $attribute || $subject->getCreatedBy()?->getId() === $user->getId();
+        return self::DELETE !== $attribute || CreatorCheck::isCreator($subject->getCreatedBy(), $user);
     }
 }

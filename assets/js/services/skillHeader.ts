@@ -3,7 +3,15 @@ const UMLAUTS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'ae'
 // A description that needs the block form, else YAML would read it as a mapping, a comment or an indicator.
 const NEEDS_BLOCK = /: | #|:$|^[[\]{}&*!|>'"%@`#?,:-]/;
 
+// A plain scalar that YAML 1.1 reads as a boolean, null or number; only the block form keeps it a string.
+const READ_AS_NON_STRING =
+    /^(?:true|false|yes|no|on|off|null|~|[-+]?(?:0x[0-9a-f_]+|0b[01_]+|0o[0-7_]+|(?:[0-9][0-9_]*(?:\.[0-9_]*)?|\.[0-9][0-9_]*)(?:e[-+]?[0-9]+)?|[0-9][0-9_]*(?::[0-5]?[0-9])+(?:\.[0-9_]*)?|\.(?:inf|nan)))$/i;
+
+// Longest name the Agent Skills specification allows (https://agentskills.io/specification).
+export const MAX_NAME_LENGTH = 64;
+
 const INVALID_TITLE = 'Use only letters, digits, spaces and hyphens (ä, ö, ü, ß become ae, oe, ue, ss).';
+const NAME_TOO_LONG = `The skill name made from the title may be at most ${MAX_NAME_LENGTH} characters.`;
 
 /** Mirrors App\Skill\SkillHeader::name(). Null when the title contains anything else than letters, digits, spaces and hyphens. */
 export function skillName(title: string): string | null {
@@ -17,6 +25,20 @@ export function skillName(title: string): string | null {
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) ? name : null;
 }
 
+/** Mirrors the title validation of App\Form\Model\SkillData. Empty string when the title is fine. */
+export function titleProblem(title: string): string {
+    if ('' === title.trim()) {
+        return '';
+    }
+
+    const name = skillName(title);
+    if (null === name) {
+        return INVALID_TITLE;
+    }
+
+    return MAX_NAME_LENGTH < name.length ? NAME_TOO_LONG : '';
+}
+
 /** Mirrors App\Skill\SkillHeader::render(). */
 export function renderSkillHeader(title: string, description: string): string {
     const lines = description
@@ -26,9 +48,11 @@ export function renderSkillHeader(title: string, description: string): string {
 
     let entry = 'description: ""';
     if (0 < lines.length) {
-        entry = NEEDS_BLOCK.test(lines.join(' '))
-            ? `description: >-\n  ${lines.join('\n  ')}`
-            : `description: ${lines.join('\n  ')}`;
+        const text = lines.join(' ');
+        entry =
+            NEEDS_BLOCK.test(text) || READ_AS_NON_STRING.test(text)
+                ? `description: >-\n  ${lines.join('\n  ')}`
+                : `description: ${lines.join('\n  ')}`;
     }
 
     return `---\nname: ${skillName(title) ?? ''}\n${entry}\n---`;
@@ -50,7 +74,7 @@ export function enableSkillHeaders(root: Document = document): () => void {
         }
 
         const update = (): void => {
-            title.setCustomValidity('' !== title.value.trim() && null === skillName(title.value) ? INVALID_TITLE : '');
+            title.setCustomValidity(titleProblem(title.value));
             header.defaultValue = renderSkillHeader(title.value, description.value);
             header.value = header.defaultValue;
         };

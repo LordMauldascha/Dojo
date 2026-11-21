@@ -10,6 +10,8 @@ when@prod:
         # set TRUSTED_PROXIES (comma separated) when a reverse proxy terminates TLS in front of the app
         trusted_proxies: '%env(default::TRUSTED_PROXIES)%'
         trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+        session:
+            cookie_secure: true
 
 when@test:
     framework:

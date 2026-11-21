@@ -12,6 +12,8 @@ use App\Repository\SkillRepository;
 use App\Security\UserRole;
 use App\Tests\Support\AppWebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 final class SkillManagementTest extends AppWebTestCase
 {
@@ -97,6 +99,70 @@ final class SkillManagementTest extends AppWebTestCase
         self::assertCount(3, $skill->getVersions());
     }
 
+    public function testStaleSaveIsRefusedWithAConflictFlashAndKeepsTheVersions(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin, 'content 1');
+        $path = '/skills/'.$skill->getUuid();
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', $path);
+
+        $connection = $this->entityManager->getConnection();
+        $this->client->disableReboot();
+        static::getContainer()->get('event_dispatcher')->addListener(
+            KernelEvents::CONTROLLER_ARGUMENTS,
+            static function (ControllerArgumentsEvent $event) use ($connection): void {
+                $connection->executeStatement('UPDATE skill SET lock_version = lock_version + 1');
+            },
+        );
+        $this->submit($crawler, 'Save as final', 'skill_content', ['content' => 'content 2']);
+
+        self::assertResponseRedirects($path);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Reload the page and try again');
+        self::assertSame(['content 1'], $connection->fetchFirstColumn('SELECT content FROM skill_version'));
+    }
+
+    public function testSubmitWithoutAButtonSavesNothing(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $entity = $this->persistSkill('Review', [], $admin, 'content 1');
+        $path = '/skills/'.$entity->getUuid();
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', $path);
+
+        $form = $crawler->selectButton('Save as final')->form();
+        /** @var array<string, array<string, mixed>> $values */
+        $values = $form->getPhpValues();
+        $values['skill_content']['content'] = 'changed';
+        unset($values['skill_content']['saveDraft'], $values['skill_content']['saveFinal']);
+        $this->client->request('POST', $path, $values);
+
+        self::assertResponseRedirects($path);
+        $this->entityManager->clear();
+        $versions = $this->findSkill('Review')->getVersions();
+        self::assertCount(1, $versions);
+        self::assertSame('content 1', $versions[0]?->getContent());
+    }
+
+    public function testLeadingNewlinesOfTheInstructionsSurviveAnUnchangedSave(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $skill = $this->persistSkill('Review', [], $admin, "\n\n# Steps");
+        $path = '/skills/'.$skill->getUuid();
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', $path);
+        self::assertStringContainsString(">\n\n\n# Steps</textarea>", (string) $this->client->getResponse()->getContent());
+        $this->submit($crawler, 'Save as final', 'skill_content', []);
+
+        self::assertResponseRedirects($path);
+        $this->entityManager->clear();
+        $versions = $this->findSkill('Review')->getVersions();
+        self::assertCount(2, $versions);
+        self::assertSame("\n\n# Steps", $versions[1]?->getContent());
+    }
+
     public function testEnterInTheTitleFieldCannotSubmitTheFormImplicitly(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
@@ -144,6 +210,19 @@ final class SkillManagementTest extends AppWebTestCase
         $this->submit($crawler, 'Create skill', 'skill_content', ['title' => 'Über Größe', 'content' => 'x']);
         self::assertResponseRedirects();
         self::assertSame('Über Größe', $this->findSkill('Über Größe')->getActiveVersion()->getTitle());
+    }
+
+    public function testTitleWhoseNameExceedsTheSpecificationLimitIsRefused(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $crawler = $this->client->request('GET', '/skills/new');
+
+        $this->submit($crawler, 'Create skill', 'skill_content', ['title' => str_repeat('a', 65), 'content' => 'x']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', 'at most 64 characters');
+
+        $this->submit($crawler, 'Create skill', 'skill_content', ['title' => str_repeat('a', 64), 'content' => 'x']);
+        self::assertResponseRedirects();
     }
 
     public function testSubmittedHeaderValueIsIgnored(): void

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Trait\HasTimestamps;
+use App\Entity\Trait\HasTitleKey;
+use App\Entity\Trait\HasUuid;
 use App\Repository\GroupRepository;
 use App\Validator\NoNulByte;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -19,13 +21,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['titleKey'], errorPath: 'title', message: 'This group title is already taken.')]
 class Group
 {
+    use HasTimestamps;
+    use HasTitleKey;
+    use HasUuid;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $uuid;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
@@ -33,22 +36,12 @@ class Group
     #[NoNulByte]
     private string $title = '';
 
-    /** Lower-cased title, unique, so titles differ by more than their letter case. */
-    #[ORM\Column(length: 512, unique: true)]
-    private string $titleKey = '';
-
     /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: 'app_group_user')]
     #[ORM\JoinColumn(name: 'group_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     #[ORM\InverseJoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     private Collection $users;
-
-    #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
-
-    #[ORM\Column]
-    private \DateTimeImmutable $updatedAt;
 
     public function __construct()
     {
@@ -62,29 +55,9 @@ class Group
         return $this->id;
     }
 
-    public function getUuid(): Uuid
-    {
-        return $this->uuid;
-    }
-
     public function getTitle(): string
     {
         return $this->title;
-    }
-
-    public function setTitle(?string $title): void
-    {
-        $title = trim($title ?? '');
-        if ($title !== $this->title) {
-            $this->title = $title;
-            $this->titleKey = mb_strtolower($title);
-            $this->touch();
-        }
-    }
-
-    public function getTitleKey(): string
-    {
-        return $this->titleKey;
     }
 
     /** @return Collection<int, User> */
@@ -106,20 +79,5 @@ class Group
         if ($this->users->removeElement($user)) {
             $this->touch();
         }
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): \DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    private function touch(): void
-    {
-        $this->updatedAt = new \DateTimeImmutable();
     }
 }

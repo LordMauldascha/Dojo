@@ -1,11 +1,9 @@
 // Media queries cannot read custom properties, so breakpoints stay Sass variables.
 $breakpoint-sm: 40rem; // 640px
 $breakpoint-md: 64rem; // 1024px
-$breakpoint-lg: 80rem; // 1280px
 
 :root {
     // Square joinery: edges are cut straight, only a hint of rounding remains
-    --radius-sm: 0;
     --radius-md: 2px;
     --radius-lg: 2px;
 
@@ -15,7 +13,6 @@ $breakpoint-lg: 80rem; // 1280px
     --focus-ring: 2px solid var(--color-accent-strong);
     --focus-ring-offset: 2px;
 
-    --shadow-raised: 0 2px 8px rgb(0 0 0 / 0.35);
     --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.45);
 
     --duration-fast: 150ms;
@@ -28,8 +25,5 @@ $breakpoint-lg: 80rem; // 1280px
     --duration-glow-core: 7s;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-    --z-dropdown: 10;
-    --z-sticky: 20;
     --z-overlay: 30;
-    --z-toast: 40;
 }

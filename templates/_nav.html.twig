@@ -1,7 +1,7 @@
 {# Main navigation. A link is marked current when the route starts with one of its prefixes (runs belong to projects). #}
 {% macro link(route, label, prefixes) %}
     {% set current = app.request.attributes.get('_route') %}
-    {% set active = prefixes|filter(prefix => current starts with prefix)|length > 0 %}
+    {% set active = prefixes|filter(prefix => current starts with prefix) is not empty %}
     <a href="{{ path(route) }}"{% if active %} aria-current="page"{% endif %}>{{ label }}</a>
 {% endmacro %}
 

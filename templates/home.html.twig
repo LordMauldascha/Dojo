@@ -1,6 +1,16 @@
 {% extends 'layout.html.twig' %}
 
-{% import '_list/macros.html.twig' as list %}
+{% import _self as home %}
+
+{% macro draft_row(type, href, draft) %}
+    {% import '_list/macros.html.twig' as list %}
+    <tr>
+        <td>{{ type }}</td>
+        <td><a href="{{ href }}">{{ draft.title }}</a></td>
+        <td>{{ list.version_status(null, draft.number) }}</td>
+        <td>{{ draft.savedAt|date }}</td>
+    </tr>
+{% endmacro %}
 
 {% block title %}Overview{% endblock %}
 
@@ -49,20 +59,10 @@
             </thead>
             <tbody>
                 {% for draft in skillDrafts %}
-                    <tr>
-                        <td>Skill</td>
-                        <td><a href="{{ path('app_skill_show', {uuid: draft.skill.uuid}) }}">{{ draft.title }}</a></td>
-                        <td>{{ list.version_status(draft.number, draft.number) }}</td>
-                        <td>{{ draft.savedAt|date }}</td>
-                    </tr>
+                    {{ home.draft_row('Skill', path('app_skill_show', {uuid: draft.skill.uuid}), draft) }}
                 {% endfor %}
                 {% for draft in testcaseDrafts %}
-                    <tr>
-                        <td>Testcase</td>
-                        <td><a href="{{ path('app_testcase_show', {uuid: draft.testcase.uuid}) }}">{{ draft.title }}</a></td>
-                        <td>{{ list.version_status(draft.number, draft.number) }}</td>
-                        <td>{{ draft.savedAt|date }}</td>
-                    </tr>
+                    {{ home.draft_row('Testcase', path('app_testcase_show', {uuid: draft.testcase.uuid}), draft) }}
                 {% endfor %}
             </tbody>
         </table>

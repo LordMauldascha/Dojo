@@ -1,17 +1,9 @@
-{% extends 'layout.html.twig' %}
+{% extends '_versioned/version.html.twig' %}
 
-{% block title %}Skill {{ version.title }} – version {{ version.label }}{% endblock %}
+{% set label = 'skill' %}
+{% set entity = skill %}
 
-{% block heading %}{{ version.title }} – version {{ version.label }}{% endblock %}
-
-{% block content %}
-    {{ include('_back_link.html.twig', {href: path('app_skill_show', {uuid: skill.uuid}), label: 'Back to skill'}) }}
-
-    <p>Saved: {{ version.savedAt|date }}</p>
-
-    <h2>Description</h2>
-    <p>{{ version.description ?? 'No description.' }}</p>
-
+{% block version_content %}
     <h2>Instructions</h2>
     <pre>{{ version.content }}</pre>
 {% endblock %}

@@ -43,6 +43,10 @@ final class RunController extends AbstractController
 {
     use SafeFlushTrait;
 
+    public const CSRF_REMOVE_CONFIGURATION = 'remove-run-configuration-';
+    public const CSRF_START = 'start-run-';
+    public const CSRF_DELETE = 'delete-run-';
+
     private const LIST_KEY = 'runs';
 
     #[Route('/projects/{uuid:project}/runs', name: 'app_runs', requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
@@ -75,7 +79,9 @@ final class RunController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($run);
-            $entityManager->flush();
+            if (!$this->flushOrConflict($entityManager)) {
+                return $this->redirectToRoute('app_run_new', ['uuid' => $project->getUuid()]);
+            }
             $this->addFlash('success', \sprintf('Run "%s" created.', $run->getTitle()));
 
             return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
@@ -93,6 +99,7 @@ final class RunController extends AbstractController
         TestcaseRepository $testcases,
         EntityManagerInterface $entityManager,
     ): Response {
+        $storedTitle = $run->getTitle();
         $form = $this->createForm(RunType::class, $run);
         $form->handleRequest($request);
 
@@ -108,6 +115,7 @@ final class RunController extends AbstractController
 
         return $this->render('runs/show.html.twig', [
             'run' => $run,
+            'storedTitle' => $storedTitle,
             'form' => $form,
             'configurationForm' => $this->createConfigurationForm($run),
             'skillsForm' => $this->createSkillsForm($run, $availableSkills),
@@ -146,7 +154,7 @@ final class RunController extends AbstractController
 
     #[Route('/runs/{uuid:run}/configurations/{key}/remove', name: 'app_run_configuration_remove', requirements: ['uuid' => Requirement::UUID, 'key' => LlmConfiguration::KEY_PATTERN], methods: ['POST'])]
     #[IsGranted(RunVoter::EDIT, subject: 'run')]
-    #[IsCsrfTokenValid(new Expression('"remove-run-configuration-" ~ args["run"].getUuid() ~ "-" ~ args["key"]'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_REMOVE_CONFIGURATION.'" ~ args["run"].getUuid() ~ "-" ~ args["key"]'), methods: 'POST')]
     public function removeConfiguration(
         Run $run,
         string $key,
@@ -209,7 +217,7 @@ final class RunController extends AbstractController
 
     #[Route('/runs/{uuid:run}/start', name: 'app_run_start', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(RunVoter::START, subject: 'run')]
-    #[IsCsrfTokenValid(new Expression('"start-run-" ~ args["run"].getUuid()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_START.'" ~ args["run"].getUuid()'), methods: 'POST')]
     public function start(
         Run $run,
         EntityManagerInterface $entityManager,
@@ -231,7 +239,7 @@ final class RunController extends AbstractController
 
     #[Route('/runs/{uuid:run}/delete', name: 'app_run_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(RunVoter::DELETE, subject: 'run')]
-    #[IsCsrfTokenValid(new Expression('"delete-run-" ~ args["run"].getUuid()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_DELETE.'" ~ args["run"].getUuid()'), methods: 'POST')]
     public function delete(Run $run, EntityManagerInterface $entityManager): Response
     {
         $project = $run->getProject();

@@ -12,7 +12,7 @@ final readonly class HuggingFaceModelData
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        #[Assert\Regex('~^'.HuggingFaceModel::ID_PATTERN.'$~')]
+        #[Assert\Regex('~'.HuggingFaceModel::ID_PATTERN.'~')]
         public string $modelId = '',
     ) {
     }

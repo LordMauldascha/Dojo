@@ -1,0 +1,56 @@
+{# List of skills or testcases. Child sets: label ("skill"). The Runs column shows when the controller passes runCounts. #}
+{% extends 'layout.html.twig' %}
+
+{% import '_list/macros.html.twig' as list %}
+
+{% set listRoute = 'app_' ~ label ~ 's' %}
+
+{% block title %}{{ label|capitalize }}s{% endblock %}
+
+{% block heading %}{{ label|capitalize }}s{% endblock %}
+
+{% block content %}
+    {{ include('_list/controls.html.twig', {route: listRoute, query: query, page: page, projectChoices: projectChoices, newPath: path('app_' ~ label ~ '_new'), newLabel: 'New ' ~ label}) }}
+
+    {% if page.items %}
+        <table>
+            <thead>
+                <tr>
+                    {{ list.sort_header(listRoute, {}, query, page, 'title', 'Title') }}
+                    <th>Description</th>
+                    <th>Projects</th>
+                    <th>Version</th>
+                    {% if runCounts is defined %}
+                        <th>Runs</th>
+                    {% endif %}
+                    {{ list.sort_header(listRoute, {}, query, page, 'updatedAt', 'Updated') }}
+                    {{ list.sort_header(listRoute, {}, query, page, 'createdAt', 'Created') }}
+                </tr>
+            </thead>
+            <tbody>
+                {% for entity in page.items %}
+                    {% set titles = [] %}
+                    {% for project in entity.projects %}
+                        {% if project.id in visibleProjectIds %}
+                            {% set titles = titles|merge([project.title]) %}
+                        {% endif %}
+                    {% endfor %}
+                    <tr>
+                        <td><a href="{{ path('app_' ~ label ~ '_show', {uuid: entity.uuid}) }}">{{ entity.activeVersion.title }}</a></td>
+                        <td>{{ list.excerpt(entity.activeVersion.description) }}</td>
+                        <td>{{ titles|join(', ') }}</td>
+                        <td>{{ list.version_status(entity.activeVersion.number, draftNumbers[entity.id] ?? null) }}</td>
+                        {% if runCounts is defined %}
+                            <td>{{ runCounts[entity.id] ?? 0 }}</td>
+                        {% endif %}
+                        <td>{{ entity.updatedAt|date }}</td>
+                        <td>{{ entity.createdAt|date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {{ list.pagination(listRoute, {}, query, page) }}
+    {% else %}
+        <p>{{ query.q or query.project ? 'No ' ~ label ~ 's found.' : 'No ' ~ label ~ 's yet.' }}</p>
+    {% endif %}
+{% endblock %}

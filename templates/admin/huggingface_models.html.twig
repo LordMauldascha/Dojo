@@ -55,7 +55,7 @@
                                 Added
                             {% else %}
                                 <form method="post" action="{{ path('app_admin_huggingface_model_add', app.request.query.all) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('add-huggingface-model') }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Controller\\HuggingFaceModelController::CSRF_ADD')) }}">
                                     <input type="hidden" name="modelId" value="{{ model.id }}">
                                     <button type="submit">Add</button>
                                 </form>

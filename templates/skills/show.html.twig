@@ -1,53 +1,7 @@
-{% extends 'layout.html.twig' %}
+{% extends '_versioned/show.html.twig' %}
 
-{% import '_forms.html.twig' as forms %}
-
-{% block title %}Skill {{ skill.activeVersion.title }}{% endblock %}
-
-{% block heading %}Skill {{ skill.activeVersion.title }}{% endblock %}
-
-{% block content %}
-    {% set active = skill.activeVersion %}
-    {% set draft = skill.draft %}
-
-    {{ include('_back_link.html.twig', {href: path('app_skills'), label: 'Back to overview'}) }}
-
-    <dl class="stats">
-        <div class="stat">
-            <dt>Active version</dt>
-            <dd>{{ active.label }}</dd>
-        </div>
-        <div class="stat">
-            <dt>Projects</dt>
-            <dd>{{ skill.projects|length }}</dd>
-        </div>
-        <div class="stat">
-            <dt>Runs</dt>
-            <dd>{{ runCount }}</dd>
-        </div>
-    </dl>
-
-    {% if 0 < hiddenProjectCount %}
-        <p>This skill is also assigned to {{ hiddenProjectCount }} project(s) you cannot see. Changes apply there too.</p>
-    {% endif %}
-    {% if draft %}
-        <p>Draft {{ draft.label }} exists and is shown in the form below. It is ignored until it is saved as final.</p>
-    {% endif %}
-
-    <h2>Edit</h2>
-    {{ form(form) }}
-    {% if draft %}
-        {{ forms.confirm_post(path('app_skill_draft_discard', {uuid: skill.uuid}), 'discard-skill-draft-' ~ skill.uuid, 'Discard draft', 'Discard draft?', 'The unfinished draft is deleted. The final versions are kept.') }}
-    {% endif %}
-
-    <h2>Projects</h2>
-    <p class="help-text">Members of these projects can see and edit this skill.</p>
-    {{ form(projectsForm) }}
-
-    {{ include('_versions.html.twig', {entity: skill, versionRoute: 'app_skill_version', restoreRoute: 'app_skill_restore', restoreTokenPrefix: 'restore-skill-'}) }}
-
-    {% if canDelete %}
-        <h2>Delete skill</h2>
-        {{ forms.confirm_post(path('app_skill_delete', {uuid: skill.uuid}), 'delete-skill-' ~ skill.uuid, 'Delete', 'Delete skill?', 'The skill disappears from all lists and projects. Its version history is kept in the database.') }}
-    {% endif %}
-{% endblock %}
+{% set label = 'skill' %}
+{% set entity = skill %}
+{% set controller = 'App\\Controller\\SkillController' %}
+{% set projectsHelp = 'Members of these projects can see and edit this skill.' %}
+{% set deleteMessage = 'The skill disappears from all lists and projects. Its version history is kept in the database.' %}

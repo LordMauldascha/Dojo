@@ -36,8 +36,12 @@ Skills and testcases without a project are admin only. The way to hide an item f
 - Every form and action that changes data is protected by a CSRF token, logout included. A request with a missing or wrong
   token is refused with *403*. Every button that deletes something (users, API keys, groups, projects, skills, testcases, runs, drafts) opens a confirmation dialog first. The `/.../delete` routes accept only `POST`.
 - Changes are limited to 120 requests per minute and user (*429* beyond that); the login has its own throttling.
-- Responses carry `X-Content-Type-Options`, `Referrer-Policy` and a `Content-Security-Policy` that forbids framing by other
-  sites and form targets outside the app.
+- Wrong current passwords on the change-password form are limited to 5 per 15 minutes and user; the check does not reveal
+  whether the password was right once the limit is reached.
+- Responses carry `X-Content-Type-Options`, `Referrer-Policy` and a `Content-Security-Policy` (`default-src 'self'`, scripts and
+  styles only from the app or with a per-request nonce, no objects, no framing by other sites, form targets inside the app).
+  Inline `<script>` and `<style>` need `nonce="{{ csp_nonce() }}"`; inline `style` attributes are blocked. Over HTTPS the
+  response also sends `Strict-Transport-Security`, and in production the session cookie is `Secure`.
 - Free-text values are escaped by Twig when rendered.
 
 ## Data protection

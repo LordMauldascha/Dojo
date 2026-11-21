@@ -52,6 +52,35 @@ final class RunManagementTest extends AppWebTestCase
         self::assertCount(0, $this->entityManager->getRepository(Run::class)->findAll());
     }
 
+    public function testInvalidEditKeepsTheStoredTitleInTheHeading(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, 'Nightly');
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->submit($crawler, 'Save', 'run', ['title' => '   ']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('h1', 'Run Nightly');
+        self::assertSelectorTextContains('title', 'Run Nightly');
+    }
+
+    public function testCreatingARunInAProjectDeletedMeanwhileShowsTheConflictMessage(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/runs/new');
+        $this->racingStatementBeforeInsertOf(Run::class, 'DELETE FROM project');
+
+        $this->submit($crawler, 'Save', 'run', ['title' => 'Nightly']);
+
+        self::assertResponseRedirects('/projects/'.$project->getUuid().'/runs/new');
+        self::assertSame(0, $this->entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM run'));
+    }
+
     public function testUsersWithAccessViaGroupOrDirectlySeeAndEditRunsButOutsidersDoNot(): void
     {
         $direct = $this->persistUser('alice');
@@ -339,6 +368,29 @@ final class RunManagementTest extends AppWebTestCase
         self::assertResponseStatusCodeSame(404);
         $this->client->request('GET', '/runs/'.$run->getUuid().'/compare', ['from' => 0]);
         self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testCompareWithoutFromShowsAnEmptyFromOptionInsteadOfVersionOne(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $skill = $this->persistSkill('Review', [$project]);
+        $run = $this->persistRun($project, skills: [$skill], testcases: [$this->persistTestcase('Greeting', $project)], configured: true, creator: $user);
+        $run->start();
+        $this->entityManager->flush();
+        $run->start();
+        $this->entityManager->flush();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid().'/compare', ['to' => 1]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Select two versions.');
+        self::assertSame('', $crawler->filter('select[name="from"] option[selected]')->attr('value'));
+        self::assertSame('1', $crawler->filter('select[name="to"] option[selected]')->attr('value'));
+
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/compare', ['from' => '', 'to' => 1]);
+        self::assertResponseIsSuccessful();
     }
 
     public function testCompareWithoutTwoVersionsExplainsIt(): void

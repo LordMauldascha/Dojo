@@ -1,0 +1,6 @@
+{% extends 'form_div_layout.html.twig' %}
+
+{# The HTML parser drops one newline right after <textarea>, so emit one to keep a leading newline of the value. #}
+{% block textarea_widget -%}
+    <textarea {{ block('widget_attributes') }}>{{ '\n' }}{{ value }}</textarea>
+{%- endblock textarea_widget %}

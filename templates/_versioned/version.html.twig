@@ -1,0 +1,17 @@
+{# One saved version of a skill or testcase. Child sets: label ("skill"), entity and fills the version_content block. #}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ label|capitalize }} {{ version.title }} – version {{ version.label }}{% endblock %}
+
+{% block heading %}{{ version.title }} – version {{ version.label }}{% endblock %}
+
+{% block content %}
+    {{ include('_back_link.html.twig', {href: path('app_' ~ label ~ '_show', {uuid: entity.uuid}), label: 'Back to ' ~ label}) }}
+
+    <p>Saved: {{ version.savedAt|date }}</p>
+
+    <h2>Description</h2>
+    <p>{{ version.description ?? 'No description.' }}</p>
+
+    {% block version_content %}{% endblock %}
+{% endblock %}

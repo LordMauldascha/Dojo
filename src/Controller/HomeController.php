@@ -11,8 +11,8 @@ use App\Repository\ProjectRepository;
 use App\Repository\RunRepository;
 use App\Repository\SkillRepository;
 use App\Repository\TestcaseRepository;
+use App\Repository\UserRepository;
 use App\Security\ApiKeyStore;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -22,7 +22,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class HomeController extends AbstractController
 {
-    private const PROJECT_LIMIT = 10;
     private const RECENT_LIMIT = 5;
 
     #[Route('/', name: 'app_home', methods: ['GET'])]
@@ -33,7 +32,7 @@ final class HomeController extends AbstractController
         TestcaseRepository $testcases,
         GroupRepository $groups,
         ApiKeyStore $store,
-        EntityManagerInterface $entityManager,
+        UserRepository $users,
         #[CurrentUser] User $user,
     ): Response {
         $admin = null;
@@ -41,13 +40,13 @@ final class HomeController extends AbstractController
             $admin = [
                 'providerCount' => \count(Provider::cases()),
                 'missing' => array_values(array_filter(Provider::cases(), static fn (Provider $provider): bool => !$store->hasProvider($provider))),
-                'userCount' => $entityManager->getRepository(User::class)->count([]),
+                'userCount' => $users->count([]),
                 'groupCount' => $groups->count([]),
             ];
         }
 
         return $this->render('home.html.twig', [
-            'projects' => $projects->findOverview($user, self::PROJECT_LIMIT),
+            'projects' => $projects->findOverview($user, ProjectRepository::OVERVIEW_LIMIT),
             'runVersions' => $runs->findRecentVersions($user, self::RECENT_LIMIT),
             'skillDrafts' => $skills->findRecentDrafts($user, self::RECENT_LIMIT),
             'testcaseDrafts' => $testcases->findRecentDrafts($user, self::RECENT_LIMIT),

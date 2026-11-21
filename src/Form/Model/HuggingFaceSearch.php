@@ -12,10 +12,10 @@ final readonly class HuggingFaceSearch
     public function __construct(
         #[Assert\Length(max: 100)]
         public string $search = '',
-        #[Assert\Regex('~^[a-z0-9-]*$~')]
+        #[Assert\Regex('~\A[a-z0-9-]*\z~')]
         #[Assert\Length(max: 100)]
         public string $task = 'text-generation',
-        #[Assert\Regex('~^[a-z0-9-]*$~')]
+        #[Assert\Regex('~\A[a-z0-9-]*\z~')]
         #[Assert\Length(max: 100)]
         public string $provider = '',
         public bool $warm = false,

@@ -4,6 +4,11 @@ framework:
             policy: sliding_window
             limit: 120
             interval: '1 minute'
+        # wrong current passwords on the change-password form (the login has its own throttling)
+        password_check:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
 
 when@test:
     framework:

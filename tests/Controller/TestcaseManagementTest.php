@@ -144,6 +144,28 @@ final class TestcaseManagementTest extends AppWebTestCase
         self::assertCount(1, $this->findTestcase('Greeting')->getVersions());
     }
 
+    public function testSubmitWithoutAButtonSavesNothing(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $entity = $this->persistTestcase('Review', null, $admin, 'prompt 1');
+        $path = '/testcases/'.$entity->getUuid();
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', $path);
+
+        $form = $crawler->selectButton('Save as final')->form();
+        /** @var array<string, array<string, mixed>> $values */
+        $values = $form->getPhpValues();
+        $values['testcase_content']['prompt'] = 'changed';
+        unset($values['testcase_content']['saveDraft'], $values['testcase_content']['saveFinal']);
+        $this->client->request('POST', $path, $values);
+
+        self::assertResponseRedirects($path);
+        $this->entityManager->clear();
+        $versions = $this->findTestcase('Review')->getVersions();
+        self::assertCount(1, $versions);
+        self::assertSame('prompt 1', $versions[0]?->getPrompt());
+    }
+
     public function testEnterInTheTitleFieldCannotSubmitTheFormImplicitly(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);

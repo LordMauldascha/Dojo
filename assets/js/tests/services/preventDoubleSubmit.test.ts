@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { preventDoubleSubmit } from '../../services/preventDoubleSubmit';
 
 function submit(form: HTMLFormElement): Event {
@@ -20,11 +20,23 @@ describe('preventDoubleSubmit', () => {
 
     afterEach(() => {
         stop();
+        vi.useRealTimers();
     });
 
     it('lets the first submit through and blocks the second one', () => {
         expect(submit(form).defaultPrevented).toBe(false);
         expect(submit(form).defaultPrevented).toBe(true);
+    });
+
+    it('blocks a resubmit inside the window and allows it after the window', () => {
+        vi.useFakeTimers();
+        submit(form);
+
+        vi.advanceTimersByTime(4999);
+        expect(submit(form).defaultPrevented).toBe(true);
+
+        vi.advanceTimersByTime(1);
+        expect(submit(form).defaultPrevented).toBe(false);
     });
 
     it('locks each form on its own', () => {

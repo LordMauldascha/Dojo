@@ -14,6 +14,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\UniqueConstraint(name: 'uniq_testcase_one_draft', columns: ['testcase_id'], options: ['where' => '(draft = true)'])]
 class TestcaseVersion implements VersionInterface
 {
+    public const TITLE_MAX = 255;
+    public const DESCRIPTION_MAX = 2000;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -30,7 +33,7 @@ class TestcaseVersion implements VersionInterface
         private int $number,
         #[ORM\Column]
         private bool $draft,
-        #[ORM\Column(length: 255)]
+        #[ORM\Column(length: self::TITLE_MAX)]
         private string $title,
         #[ORM\Column(type: Types::TEXT, nullable: true)]
         private ?string $description,

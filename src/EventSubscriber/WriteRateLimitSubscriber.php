@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use Symfony\Component\DependencyInjection\Attribute\Target;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -13,7 +13,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /** Limits state-changing requests per signed-in user (the login has its own throttling). */
-final readonly class WriteRateLimitSubscriber implements EventSubscriberInterface
+final readonly class WriteRateLimitSubscriber
 {
     public function __construct(
         #[Target('writeLimiter')]
@@ -22,12 +22,8 @@ final readonly class WriteRateLimitSubscriber implements EventSubscriberInterfac
     ) {
     }
 
-    public static function getSubscribedEvents(): array
-    {
-        // after the firewall (priority 8), so the user is known
-        return [KernelEvents::REQUEST => ['onRequest', 0]];
-    }
-
+    // after the firewall (priority 8), so the user is known
+    #[AsEventListener(event: KernelEvents::REQUEST, priority: 0)]
     public function onRequest(RequestEvent $event): void
     {
         if (!$event->isMainRequest() || $event->getRequest()->isMethodSafe()) {

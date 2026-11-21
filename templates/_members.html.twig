@@ -1,0 +1,27 @@
+{# Member table with a Remove button per user. Expects: users, owner (project or group), removeRoute, removeTokenPrefix, emptyText. #}
+{% import '_forms.html.twig' as forms %}
+
+{% if users|length %}
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.role.label }}</td>
+                    <td>
+                        {{ forms.post(path(removeRoute, {uuid: owner.uuid, userId: user.id}), removeTokenPrefix ~ owner.uuid ~ '-' ~ user.id, 'Remove') }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>{{ emptyText }}</p>
+{% endif %}

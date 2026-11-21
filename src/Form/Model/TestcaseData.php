@@ -13,11 +13,11 @@ final class TestcaseData
     use NormalizesText;
 
     #[Assert\NotBlank]
-    #[Assert\Length(max: 255)]
+    #[Assert\Length(max: TestcaseVersion::TITLE_MAX)]
     #[NoNulByte]
     public ?string $title = null;
 
-    #[Assert\Length(max: 2000)]
+    #[Assert\Length(max: TestcaseVersion::DESCRIPTION_MAX)]
     #[NoNulByte]
     public ?string $description = null;
 

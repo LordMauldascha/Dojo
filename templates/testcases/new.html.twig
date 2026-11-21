@@ -1,14 +1,3 @@
-{% extends 'layout.html.twig' %}
+{% extends '_versioned/new.html.twig' %}
 
-{% block title %}New testcase{% endblock %}
-
-{% block heading %}New testcase{% endblock %}
-
-{% block content %}
-    {% if not hasProjects %}
-        <p>No project is available to assign.</p>
-    {% endif %}
-
-    {{ form(form) }}
-    {{ include('_back_link.html.twig', {href: path('app_testcases'), label: 'Back to overview'}) }}
-{% endblock %}
+{% set label = 'testcase' %}

@@ -11,11 +11,10 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(name: 'app:api-keys:import-env', description: 'Copy API keys set in the environment (e.g. .env.local) into the database')]
-final class ImportEnvApiKeysCommand extends Command
+final readonly class ImportEnvApiKeysCommand
 {
-    public function __construct(private readonly ApiKeyStore $store)
+    public function __construct(private ApiKeyStore $store)
     {
-        parent::__construct();
     }
 
     public function __invoke(SymfonyStyle $io): int

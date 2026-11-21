@@ -14,7 +14,10 @@ use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Entity\User;
 use App\Security\UserRole;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PrePersistEventArgs;
+use Doctrine\ORM\Events;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -30,6 +33,9 @@ abstract class AppWebTestCase extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
+        // Limiter and login throttling state lives in this file-backed pool and would survive test runs.
+        $rateLimiterPool = static::getContainer()->get('cache.rate_limiter');
+        $rateLimiterPool->clear();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class] as $class) {
             $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
@@ -127,6 +133,25 @@ abstract class AppWebTestCase extends WebTestCase
         $values = $form->getPhpValues();
         $values[$formName] = array_replace($values[$formName], $overrides);
         $this->client->request($form->getMethod(), $form->getUri(), $values);
+    }
+
+    /** Runs raw SQL right before the entity is inserted, to simulate a concurrent request that wins the race. */
+    protected function racingStatementBeforeInsertOf(string $entityClass, string $sql): void
+    {
+        $connection = $this->entityManager->getConnection();
+        $this->client->disableReboot();
+        $this->entityManager->getEventManager()->addEventListener(Events::prePersist, new class($connection, $entityClass, $sql) {
+            public function __construct(private readonly Connection $connection, private readonly string $entityClass, private readonly string $sql)
+            {
+            }
+
+            public function prePersist(PrePersistEventArgs $args): void
+            {
+                if ($args->getObject() instanceof $this->entityClass) {
+                    $this->connection->executeStatement($this->sql);
+                }
+            }
+        });
     }
 
     /** @return list<string> */

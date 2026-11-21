@@ -20,31 +20,32 @@ final readonly class RunAssignmentPruner
 
     public function pruneSkill(Skill $skill): void
     {
-        if ($skill->isDeleted()) {
-            $this->connection->executeStatement('DELETE FROM run_skill WHERE skill_id = :id', ['id' => $skill->getId()]);
-
-            return;
-        }
-
-        $this->connection->executeStatement(
-            'DELETE FROM run_skill WHERE skill_id = :id AND run_id IN ('
-            .'SELECT r.id FROM run r WHERE r.project_id NOT IN (SELECT sp.project_id FROM skill_project sp WHERE sp.skill_id = :id))',
-            ['id' => $skill->getId()],
-        );
+        $this->prune($skill, 'run_skill', 'skill_project', 'skill_id');
     }
 
     public function pruneTestcase(Testcase $testcase): void
     {
-        if ($testcase->isDeleted()) {
-            $this->connection->executeStatement('DELETE FROM run_testcase WHERE testcase_id = :id', ['id' => $testcase->getId()]);
+        $this->prune($testcase, 'run_testcase', 'testcase_project', 'testcase_id');
+    }
+
+    // table and column names come from the two callers above, never from user input
+    private function prune(Skill|Testcase $entity, string $runTable, string $projectTable, string $column): void
+    {
+        if ($entity->isDeleted()) {
+            $this->connection->executeStatement(\sprintf('DELETE FROM %s WHERE %s = :id', $runTable, $column), ['id' => $entity->getId()]);
 
             return;
         }
 
         $this->connection->executeStatement(
-            'DELETE FROM run_testcase WHERE testcase_id = :id AND run_id IN ('
-            .'SELECT r.id FROM run r WHERE r.project_id NOT IN (SELECT tp.project_id FROM testcase_project tp WHERE tp.testcase_id = :id))',
-            ['id' => $testcase->getId()],
+            \sprintf(
+                'DELETE FROM %1$s WHERE %3$s = :id AND run_id IN ('
+                .'SELECT r.id FROM run r WHERE r.project_id NOT IN (SELECT p.project_id FROM %2$s p WHERE p.%3$s = :id))',
+                $runTable,
+                $projectTable,
+                $column,
+            ),
+            ['id' => $entity->getId()],
         );
     }
 }

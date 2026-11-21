@@ -49,7 +49,7 @@ class RunVersion
         private Run $run,
         #[ORM\Column]
         private int $number,
-        #[ORM\Column(length: 255)]
+        #[ORM\Column(length: Run::TITLE_MAX)]
         private string $title,
         #[ORM\Column(type: Types::TEXT, nullable: true)]
         private ?string $description,

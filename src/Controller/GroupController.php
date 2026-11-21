@@ -32,6 +32,9 @@ final class GroupController extends AbstractController
 {
     use SafeFlushTrait;
 
+    public const CSRF_REMOVE_USER = 'remove-group-user-';
+    public const CSRF_DELETE = 'delete-group-';
+
     private const LIST_KEY = 'groups';
 
     #[Route('', name: 'app_admin_groups', methods: ['GET'])]
@@ -77,6 +80,7 @@ final class GroupController extends AbstractController
         ProjectRepository $projects,
         EntityManagerInterface $entityManager,
     ): Response {
+        $storedTitle = $group->getTitle();
         $form = $this->createForm(GroupType::class, $group);
         $form->handleRequest($request);
 
@@ -90,6 +94,7 @@ final class GroupController extends AbstractController
 
         return $this->render('admin/groups/show.html.twig', [
             'group' => $group,
+            'storedTitle' => $storedTitle,
             'projects' => $projects->findByGroup($group),
             'form' => $form,
             'addUserForm' => $this->createAddUserForm($group, $groups),
@@ -120,7 +125,7 @@ final class GroupController extends AbstractController
     }
 
     #[Route('/{uuid:group}/users/{userId}/remove', name: 'app_admin_group_user_remove', requirements: ['uuid' => Requirement::UUID, 'userId' => Requirements::ID], methods: ['POST'])]
-    #[IsCsrfTokenValid(new Expression('"remove-group-user-" ~ args["group"].getUuid() ~ "-" ~ args["user"].getId()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_REMOVE_USER.'" ~ args["group"].getUuid() ~ "-" ~ args["user"].getId()'), methods: 'POST')]
     public function removeUser(
         Group $group,
         #[MapEntity(id: 'userId')] User $user,
@@ -134,7 +139,7 @@ final class GroupController extends AbstractController
     }
 
     #[Route('/{uuid:group}/delete', name: 'app_admin_group_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsCsrfTokenValid(new Expression('"delete-group-" ~ args["group"].getUuid()'), methods: 'POST')]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_DELETE.'" ~ args["group"].getUuid()'), methods: 'POST')]
     public function delete(Group $group, EntityManagerInterface $entityManager): Response
     {
         $title = $group->getTitle();

@@ -4,26 +4,30 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Trait\HasProjects;
+use App\Entity\Trait\HasTimestamps;
+use App\Entity\Trait\HasUuid;
 use App\Repository\TestcaseRepository;
 use App\Versioning\VersionedInterface;
 use App\Versioning\VersionInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TestcaseRepository::class)]
 #[ORM\Table(name: 'testcase')]
 class Testcase implements VersionedInterface
 {
+    use HasProjects;
+    use HasTimestamps;
+    use HasUuid;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $uuid;
 
     /** @var Collection<int, TestcaseVersion> */
     #[ORM\OneToMany(targetEntity: TestcaseVersion::class, mappedBy: 'testcase', cascade: ['persist'], orphanRemoval: true)]
@@ -35,14 +39,13 @@ class Testcase implements VersionedInterface
     #[ORM\JoinColumn(name: 'active_version_id', nullable: true, onDelete: 'SET NULL')]
     private ?TestcaseVersion $activeVersion = null;
 
-    #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
-
-    #[ORM\Column]
-    private \DateTimeImmutable $updatedAt;
-
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $deletedAt = null;
+
+    /** Optimistic lock: a save based on a stale draft fails instead of overwriting a version published meanwhile. */
+    #[ORM\Version]
+    #[ORM\Column(type: Types::INTEGER)]
+    private int $lockVersion = 1;
 
     /**
      * The projects whose members may see and edit the testcase; none means admin-only.
@@ -75,11 +78,6 @@ class Testcase implements VersionedInterface
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getUuid(): Uuid
-    {
-        return $this->uuid;
     }
 
     public function getCreatedBy(): ?User
@@ -181,60 +179,6 @@ class Testcase implements VersionedInterface
         return $restored;
     }
 
-    /**
-     * Applies a project selection made within $editable (the projects the user may change); other assignments stay.
-     * Returns false and changes nothing if that would leave the testcase without any project and that is not allowed.
-     *
-     * @param list<Project> $editable
-     * @param list<Project> $chosen
-     */
-    public function replaceProjects(array $editable, array $chosen, bool $mayBeEmpty): bool
-    {
-        $untouched = array_filter($this->projects->toArray(), static fn (Project $project): bool => !\in_array($project, $editable, true));
-        if (!$mayBeEmpty && [] === $untouched && [] === $chosen) {
-            return false;
-        }
-
-        foreach ($editable as $project) {
-            \in_array($project, $chosen, true) ? $this->addProject($project) : $this->removeProject($project);
-        }
-
-        return true;
-    }
-
-    /** @return Collection<int, Project> */
-    public function getProjects(): Collection
-    {
-        return $this->projects;
-    }
-
-    public function addProject(Project $project): void
-    {
-        if (!$this->projects->contains($project)) {
-            $this->projects->add($project);
-            $project->touch();
-            $this->touch();
-        }
-    }
-
-    public function removeProject(Project $project): void
-    {
-        if ($this->projects->removeElement($project)) {
-            $project->touch();
-            $this->touch();
-        }
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): \DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
     public function isDeleted(): bool
     {
         return null !== $this->deletedAt;
@@ -255,10 +199,5 @@ class Testcase implements VersionedInterface
         }
 
         return $version;
-    }
-
-    private function touch(): void
-    {
-        $this->updatedAt = new \DateTimeImmutable();
     }
 }

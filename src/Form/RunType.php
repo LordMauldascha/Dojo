@@ -18,8 +18,8 @@ final class RunType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 255]])
-            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => 2000, 'rows' => 4]])
+            ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => Run::TITLE_MAX]])
+            ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => Run::DESCRIPTION_MAX, 'rows' => 4]])
             ->add('save', SubmitType::class, ['label' => 'Save']);
     }
 

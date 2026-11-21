@@ -45,6 +45,19 @@ final class UserManagementTest extends AppWebTestCase
         self::assertCount(2, $this->entityManager->getRepository(User::class)->findAll());
     }
 
+    public function testAConcurrentCreateOfTheSameUsernameShowsTheConflictMessage(): void
+    {
+        $this->client->loginUser($this->admin());
+        $this->racingStatementBeforeInsertOf(User::class, "INSERT INTO app_user (username, password, role, enabled) VALUES ('frank', 'x', 'ROLE_USER', TRUE)");
+
+        $this->createUser('frank', self::PASSWORD);
+
+        self::assertResponseRedirects('/admin/users');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Reload the page and try again');
+        self::assertSame(1, $this->entityManager->getConnection()->fetchOne("SELECT COUNT(*) FROM app_user WHERE username = 'frank'"));
+    }
+
     public function testRegularUserHasNoAccessToAdminAreas(): void
     {
         $this->client->loginUser($this->persistUser('carol'));
@@ -276,18 +289,18 @@ final class UserManagementTest extends AppWebTestCase
 
         $crawler = $this->client->request('GET', '/admin/users');
         self::assertStringContainsString('"showOnLoad":false', (string) $this->client->getResponse()->getContent());
-        self::assertSelectorExists('dialog#user-dialog form[name="user_create"]');
+        self::assertSelectorExists('dialog#user-dialog form[name="user"]');
 
         $this->client->submit($crawler->filter('dialog')->selectButton('Create user')->form([
-            'user_create[username]' => 'Bad Name',
-            'user_create[plainPassword][first]' => self::PASSWORD,
-            'user_create[plainPassword][second]' => self::PASSWORD,
+            'user[username]' => 'Bad Name',
+            'user[plainPassword][first]' => self::PASSWORD,
+            'user[plainPassword][second]' => self::PASSWORD,
         ]));
 
         self::assertResponseStatusCodeSame(422);
         self::assertStringContainsString('"showOnLoad":true', (string) $this->client->getResponse()->getContent());
         self::assertSelectorTextContains('dialog#user-dialog', 'Allowed are 3 to 64 characters');
-        self::assertSame('Bad Name', $this->client->getCrawler()->filter('dialog#user-dialog input[name="user_create[username]"]')->attr('value'));
+        self::assertSame('Bad Name', $this->client->getCrawler()->filter('dialog#user-dialog input[name="user[username]"]')->attr('value'));
     }
 
     private function admin(): User
@@ -299,10 +312,10 @@ final class UserManagementTest extends AppWebTestCase
     {
         $crawler = $this->client->request('GET', '/admin/users');
         $this->client->submit($crawler->selectButton('Create user')->form([
-            'user_create[username]' => $username,
-            'user_create[plainPassword][first]' => $password,
-            'user_create[plainPassword][second]' => $password,
-            'user_create[role]' => $role,
+            'user[username]' => $username,
+            'user[plainPassword][first]' => $password,
+            'user[plainPassword][second]' => $password,
+            'user[role]' => $role,
         ]));
     }
 

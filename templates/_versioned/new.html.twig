@@ -1,0 +1,15 @@
+{# Create form of a skill or testcase. Child sets: label ("skill"). #}
+{% extends 'layout.html.twig' %}
+
+{% block title %}New {{ label }}{% endblock %}
+
+{% block heading %}New {{ label }}{% endblock %}
+
+{% block content %}
+    {% if not hasProjects %}
+        <p>No project is available to assign.</p>
+    {% endif %}
+
+    {{ form(form) }}
+    {{ include('_back_link.html.twig', {href: path('app_' ~ label ~ 's'), label: 'Back to overview'}) }}
+{% endblock %}

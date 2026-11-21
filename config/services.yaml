@@ -18,6 +18,17 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/Entity/'
+            - '../src/Form/Model/'
+            - '../src/Kernel.php'
+            # value objects created with "new" or by #[MapQueryString], never injected
+            - '../src/Ai/LlmConfiguration.php'
+            - '../src/Ai/LlmConfigurationPageResult.php'
+            - '../src/Pagination/ListQuery.php'
+            - '../src/Pagination/Page.php'
+            - '../src/Run/RunCompareQuery.php'
+            - '../src/Run/RunVersionDiff.php'
 
     Sulu\Twig\Extensions\ComponentExtension: ~
 
@@ -32,6 +43,17 @@ services:
             $environment:
                 ANTHROPIC_API_KEY: '%env(ANTHROPIC_API_KEY)%'
                 CLAUDE_CODE_OAUTH_TOKEN: '%env(CLAUDE_CODE_OAUTH_TOKEN)%'
+                # false removes the variable from the environment the CLI child inherits (Symfony Process)
+                DATABASE_URL: false
+                APP_SECRET: false
+                API_KEY_ENCRYPTION_KEY: false
+                POSTGRES_PASSWORD: false
+                MESSENGER_TRANSPORT_DSN: false
+                MAILER_DSN: false
+                OPENAI_API_KEY: false
+                GEMINI_API_KEY: false
+                DEEPSEEK_API_KEY: false
+                HUGGINGFACE_API_KEY: false
             $eventDispatcher: '@event_dispatcher'
             # the platform logs the full command line including the prompt, which must not reach the logs
             $logger: '@app.null_logger'

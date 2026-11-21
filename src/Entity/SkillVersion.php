@@ -15,6 +15,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\UniqueConstraint(name: 'uniq_skill_one_draft', columns: ['skill_id'], options: ['where' => '(draft = true)'])]
 class SkillVersion implements VersionInterface
 {
+    public const TITLE_MAX = 255;
+    public const DESCRIPTION_MAX = 2000;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -31,7 +34,7 @@ class SkillVersion implements VersionInterface
         private int $number,
         #[ORM\Column]
         private bool $draft,
-        #[ORM\Column(length: 255)]
+        #[ORM\Column(length: self::TITLE_MAX)]
         private string $title,
         #[ORM\Column(type: Types::TEXT, nullable: true)]
         private ?string $description,

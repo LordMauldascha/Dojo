@@ -1,8 +1,11 @@
 {% extends 'layout.html.twig' %}
 
-{% macro versionSelect(label, name, versions, selected) %}
+{% macro version_select(label, name, versions, selected) %}
     <label>{{ label }}
         <select name="{{ name }}">
+            {% if null is same as selected %}
+                <option value="" selected></option>
+            {% endif %}
             {% for version in versions %}
                 <option value="{{ version.number }}"{{ selected and version.number == selected.number ? ' selected' }}>{{ version.number }}</option>
             {% endfor %}
@@ -39,8 +42,8 @@
         <p>At least two versions are needed to compare.</p>
     {% else %}
         <form method="get" action="{{ path('app_run_compare', {uuid: run.uuid}) }}">
-            {{ _self.versionSelect('From', 'from', run.versions, from) }}
-            {{ _self.versionSelect('To', 'to', run.versions, to) }}
+            {{ _self.version_select('From', 'from', run.versions, from) }}
+            {{ _self.version_select('To', 'to', run.versions, to) }}
             <button type="submit">Compare</button>
         </form>
 

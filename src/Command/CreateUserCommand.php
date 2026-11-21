@@ -19,14 +19,13 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[AsCommand(name: 'app:user:create', description: 'Create a database user (password is asked interactively)')]
-final class CreateUserCommand extends Command
+final readonly class CreateUserCommand
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly UserPasswordHasherInterface $hasher,
-        private readonly ValidatorInterface $validator,
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $hasher,
+        private ValidatorInterface $validator,
     ) {
-        parent::__construct();
     }
 
     public function __invoke(

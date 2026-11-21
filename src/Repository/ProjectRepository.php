@@ -21,6 +21,8 @@ use Doctrine\Persistence\ManagerRegistry;
 /** @extends ServiceEntityRepository<Project> */
 final class ProjectRepository extends ServiceEntityRepository
 {
+    public const OVERVIEW_LIMIT = 10;
+
     private const SORT_FIELDS = [
         'title' => 'p.title',
         'users' => 'userCount',

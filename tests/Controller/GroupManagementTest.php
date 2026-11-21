@@ -37,6 +37,19 @@ final class GroupManagementTest extends AppWebTestCase
         self::assertCount(1, $this->entityManager->getRepository(Group::class)->findAll());
     }
 
+    public function testInvalidEditKeepsTheStoredTitleInTheHeading(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $group = $this->persistGroup('Entwicklung');
+
+        $crawler = $this->client->request('GET', '/admin/groups/'.$group->getUuid());
+        $crawler = $this->client->submit($crawler->selectButton('Save')->form(['group[title]' => '   ']));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('h1', 'Group Entwicklung');
+        self::assertSame('Group Entwicklung', trim($crawler->filter('title')->text()));
+    }
+
     public function testTitlesAreUniqueIgnoringCase(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));

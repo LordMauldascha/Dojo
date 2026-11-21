@@ -2,9 +2,9 @@
 
 {% import '_forms.html.twig' as forms %}
 
-{% block title %}Project {{ project.title }}{% endblock %}
+{% block title %}Project {{ storedTitle }}{% endblock %}
 
-{% block heading %}Project {{ project.title }}{% endblock %}
+{% block heading %}Project {{ storedTitle }}{% endblock %}
 
 {% block content %}
     {{ include('_back_link.html.twig', {href: path('app_projects'), label: 'Back to overview'}) }}
@@ -48,7 +48,7 @@
                                 <tr>
                                     <td>{{ group.title }}</td>
                                     <td>
-                                        {{ forms.post(path('app_project_group_remove', {uuid: project.uuid, groupUuid: group.uuid}), 'remove-project-group-' ~ project.uuid ~ '-' ~ group.uuid, 'Remove') }}
+                                        {{ forms.post(path('app_project_group_remove', {uuid: project.uuid, groupUuid: group.uuid}), constant('App\\Controller\\ProjectController::CSRF_REMOVE_GROUP') ~ project.uuid ~ '-' ~ group.uuid, 'Remove') }}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -63,36 +63,13 @@
             <section>
                 <h2>Users</h2>
                 <p class="help-text">These users have direct access to this project.</p>
-                {% if project.users|length %}
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Role</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for user in project.users %}
-                                <tr>
-                                    <td>{{ user.username }}</td>
-                                    <td>{{ user.role.label }}</td>
-                                    <td>
-                                        {{ forms.post(path('app_project_user_remove', {uuid: project.uuid, userId: user.id}), 'remove-project-user-' ~ project.uuid ~ '-' ~ user.id, 'Remove') }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p>No users assigned.</p>
-                {% endif %}
+                {{ include('_members.html.twig', {users: project.users, owner: project, removeRoute: 'app_project_user_remove', removeTokenPrefix: constant('App\\Controller\\ProjectController::CSRF_REMOVE_USER'), emptyText: 'No users assigned.'}) }}
                 {{ form(addUserForm) }}
             </section>
         </div>
 
         <h2>Delete project</h2>
-        {{ forms.confirm_post(path('app_project_delete', {uuid: project.uuid}), 'delete-project-' ~ project.uuid, 'Delete', 'Delete project?', 'The project and its assignments to ' ~ project.groups|length ~ ' group(s) and ' ~ project.users|length ~ ' user(s) are deleted. The groups and users themselves are kept. ' ~ skillCount ~ ' skill(s) lose this project assignment but are kept. ' ~ testcaseCount ~ ' testcase(s) lose this project assignment but are kept; those without another project become admin-only. ' ~ runCount ~ ' run(s) and their versions are deleted.') }}
+        {{ forms.confirm_post(path('app_project_delete', {uuid: project.uuid}), constant('App\\Controller\\ProjectController::CSRF_DELETE') ~ project.uuid, 'Delete', 'Delete project?', 'The project and its assignments to ' ~ project.groups|length ~ ' group(s) and ' ~ project.users|length ~ ' user(s) are deleted. The groups and users themselves are kept. ' ~ skillCount ~ ' skill(s) lose this project assignment but are kept. ' ~ testcaseCount ~ ' testcase(s) lose this project assignment but are kept; those without another project become admin-only. ' ~ runCount ~ ' run(s) and their versions are deleted.') }}
     {% else %}
         <h2>Description</h2>
         <p>{{ project.description ?? 'No description.' }}</p>

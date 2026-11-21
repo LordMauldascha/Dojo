@@ -44,6 +44,19 @@ final class ProjectManagementTest extends AppWebTestCase
         self::assertCount(1, $this->entityManager->getRepository(Project::class)->findAll());
     }
 
+    public function testInvalidEditKeepsTheStoredTitleInTheHeading(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $project = $this->persistProject('Security');
+
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        $crawler = $this->client->submit($crawler->selectButton('Save')->form(['project[title]' => '   ']));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('h1', 'Project Security');
+        self::assertStringContainsString('Project Security', $crawler->filter('title')->text());
+    }
+
     public function testTitlesAreUniqueIgnoringCase(): void
     {
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));

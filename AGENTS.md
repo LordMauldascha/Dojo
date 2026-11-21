@@ -148,6 +148,8 @@ These points depend on the deployment or on code that does not exist yet, so the
   option names. Run the container as a non-root user. Prompts must not reach logs or the process list (the Claude Code
   platform logger is a `NullLogger` on purpose). Add a quota per project and user before a run can start paid calls. Pick one
   source of provider keys (database or environment), not both.
+- **CLI child**: the gateway must also set a neutral working directory (not the project root, which holds `.env.local` and
+  `.claude/settings.json`) and pass `--` before the prompt so a prompt starting with `-` is not read as a flag.
 - **Shared skills**: a skill in several projects is editable by members of any one of them and changes the input of runs in
   all of them. The skill page shows how many projects the editor cannot see. Decide whether that is acceptable before runs execute.
 - **Personal data**: free text may contain personal data despite the hints. Versions and run snapshots are immutable and

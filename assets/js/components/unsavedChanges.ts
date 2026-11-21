@@ -1,3 +1,5 @@
+import { isPlainLeftClick } from '../services/isPlainLeftClick';
+
 const FORMS = 'form[name][method="post"]';
 
 function isChanged(field: Element): boolean {
@@ -65,15 +67,7 @@ export function warnOnUnsavedChanges(
     };
 
     const onClick = (event: MouseEvent): void => {
-        if (
-            leaving ||
-            event.defaultPrevented ||
-            0 !== event.button ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.shiftKey ||
-            event.altKey
-        ) {
+        if (leaving || event.defaultPrevented || !isPlainLeftClick(event)) {
             return;
         }
 

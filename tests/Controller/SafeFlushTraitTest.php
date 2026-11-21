@@ -9,6 +9,7 @@ use Doctrine\DBAL\Driver\Exception as DriverException;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\OptimisticLockException;
 use PHPUnit\Framework\TestCase;
 
 final class SafeFlushTraitTest extends TestCase
@@ -55,6 +56,17 @@ final class SafeFlushTraitTest extends TestCase
 
         self::assertFalse($controller->run($entityManager));
         self::assertCount(1, $controller->flashes);
+    }
+
+    public function testAStaleOptimisticLockBecomesAnErrorFlash(): void
+    {
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('wrapInTransaction')->willThrowException(OptimisticLockException::lockFailed(new \stdClass()));
+        $controller = new SafeFlushDouble();
+
+        self::assertFalse($controller->run($entityManager));
+        self::assertSame('error', $controller->flashes[0][0]);
+        self::assertStringContainsString('Reload the page', $controller->flashes[0][1]);
     }
 
     public function testOtherErrorsAreNotSwallowed(): void

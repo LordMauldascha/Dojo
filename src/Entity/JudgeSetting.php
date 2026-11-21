@@ -25,7 +25,7 @@ class JudgeSetting
     public function __construct(
         #[ORM\Column(length: 32, enumType: Provider::class)]
         private Provider $provider,
-        #[ORM\Column(length: 100)]
+        #[ORM\Column(length: 255)]
         private string $model,
     ) {
         $this->updatedAt = new \DateTimeImmutable();
