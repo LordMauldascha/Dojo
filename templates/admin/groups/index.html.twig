@@ -7,9 +7,7 @@
 {% block heading %}Groups{% endblock %}
 
 {% block content %}
-    <p><a href="{{ path('app_admin_group_new') }}">New group</a></p>
-
-    {{ include('_list/controls.html.twig', {route: 'app_admin_groups', query: query, page: page}) }}
+    {{ include('_list/controls.html.twig', {route: 'app_admin_groups', query: query, page: page, newPath: path('app_admin_group_new'), newLabel: 'New group'}) }}
 
     {% if page.items %}
         <table>

@@ -1,30 +1,35 @@
-{# Search and page size of an overview. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter). #}
-<form method="get" action="{{ path(route, routeParams|default({})) }}">
-    <label>Search
-        <input type="search" name="q" value="{{ query.q }}" maxlength="100">
-    </label>
-    <label>Entries per page
-        <select name="perPage">
-            {% for size in constant('App\\Pagination\\PageSizeResolver::SIZES') %}
-                <option value="{{ size }}"{{ size == page.perPage ? ' selected' }}>{{ size }}</option>
-            {% endfor %}
-        </select>
-    </label>
-    {% if projectChoices is defined %}
-        <label>Project
-            <select name="project">
-                <option value="">All projects</option>
-                {% for project in projectChoices %}
-                    <option value="{{ project.uuid.toRfc4122 }}"{{ project.uuid.toRfc4122 == query.project ? ' selected' }}>{{ project.title }}</option>
+{# Toolbar of an overview: search, page size and the main action. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter), newPath and newLabel (optional, the "New ..." button). #}
+<div class="toolbar">
+    <form method="get" action="{{ path(route, routeParams|default({})) }}">
+        <label>Search
+            <input type="search" name="q" value="{{ query.q }}" maxlength="100">
+        </label>
+        <label>Entries per page
+            <select name="perPage">
+                {% for size in constant('App\\Pagination\\PageSizeResolver::SIZES') %}
+                    <option value="{{ size }}"{{ size == page.perPage ? ' selected' }}>{{ size }}</option>
                 {% endfor %}
             </select>
         </label>
+        {% if projectChoices is defined %}
+            <label>Project
+                <select name="project">
+                    <option value="">All projects</option>
+                    {% for project in projectChoices %}
+                        <option value="{{ project.uuid.toRfc4122 }}"{{ project.uuid.toRfc4122 == query.project ? ' selected' }}>{{ project.title }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        {% endif %}
+        {% if query.sort %}
+            <input type="hidden" name="sort" value="{{ query.sort }}">
+        {% endif %}
+        {% if 'asc' != query.dir %}
+            <input type="hidden" name="dir" value="{{ query.dir }}">
+        {% endif %}
+        <button type="submit">Apply</button>
+    </form>
+    {% if newPath is defined %}
+        <a class="button button-primary" href="{{ newPath }}">{{ newLabel }}</a>
     {% endif %}
-    {% if query.sort %}
-        <input type="hidden" name="sort" value="{{ query.sort }}">
-    {% endif %}
-    {% if 'asc' != query.dir %}
-        <input type="hidden" name="dir" value="{{ query.dir }}">
-    {% endif %}
-    <button type="submit">Apply</button>
-</form>
+</div>

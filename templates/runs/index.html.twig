@@ -8,9 +8,8 @@
 
 {% block content %}
     <p><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">Back to project</a></p>
-    <p><a href="{{ path('app_run_new', {uuid: project.uuid}) }}">New run</a></p>
 
-    {{ include('_list/controls.html.twig', {route: 'app_runs', routeParams: {uuid: project.uuid}, query: query, page: page}) }}
+    {{ include('_list/controls.html.twig', {route: 'app_runs', routeParams: {uuid: project.uuid}, query: query, page: page, newPath: path('app_run_new', {uuid: project.uuid}), newLabel: 'New run'}) }}
 
     {% if page.items %}
         <table>

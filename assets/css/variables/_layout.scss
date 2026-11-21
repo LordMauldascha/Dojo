@@ -4,8 +4,6 @@ $breakpoint-md: 64rem; // 1024px
 $breakpoint-lg: 80rem; // 1280px
 
 :root {
-    --content-max-width: 80rem;
-
     // Square joinery: edges are cut straight, only a hint of rounding remains
     --radius-sm: 0;
     --radius-md: 2px;

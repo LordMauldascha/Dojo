@@ -1,0 +1,25 @@
+// A wooden board like the ones broken in karate: grain along the length, bevelled edges, optionally one knot.
+// Used by the current navigation item and the toolbar rails (see docs/Design.md).
+@mixin wood-board($knot: true) {
+    $grain:
+        repeating-linear-gradient(
+            180deg,
+            transparent 0 0.2rem,
+            var(--color-wood-grain-dark) 0.2rem 0.25rem,
+            transparent 0.25rem 0.55rem
+        ),
+        repeating-linear-gradient(180deg, var(--color-wood-grain-light) 0 1px, transparent 1px 0.35rem),
+        linear-gradient(180deg, var(--color-wood-light), var(--color-selected) 45%, var(--color-wood-dark));
+
+    @if $knot {
+        background:
+            radial-gradient(ellipse 0.55rem 0.3rem at 88% 52%, var(--color-wood-knot) 0 45%, transparent 75%),
+            radial-gradient(ellipse 1rem 0.55rem at 88% 52%, var(--color-wood-ring) 0 55%, transparent 100%), $grain;
+    } @else {
+        background: $grain;
+    }
+
+    box-shadow:
+        inset 0 1px 0 var(--color-wood-edge-light),
+        inset 0 -2px 0 var(--color-wood-edge-dark);
+}

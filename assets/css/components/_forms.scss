@@ -1,17 +1,20 @@
 // Symfony's form_div_layout: form[name] > div > (row div: label, errors ul, widget, .help-text)
-button {
+// .button gives a link the look of a button (New ..., Previous, Next).
+button,
+.button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-height: var(--control-height);
     padding: 0 var(--space-4);
-    background: transparent;
+    background: var(--color-surface-raised);
     border: var(--border-width) solid var(--color-border-strong);
     border-radius: var(--radius-md);
     color: var(--color-text);
     font: inherit;
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
+    text-decoration: none;
     cursor: pointer;
     transition:
         background-color var(--duration-fast) var(--ease-out),
@@ -19,7 +22,8 @@ button {
         color var(--duration-fast) var(--ease-out);
 
     &:hover {
-        background: var(--color-surface-raised);
+        background: var(--color-border);
+        color: var(--color-text);
     }
 
     &:active {
@@ -27,7 +31,8 @@ button {
         transform: translateY(1px);
     }
 
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
         border-color: var(--color-border);
         color: var(--color-text-disabled);
         background: transparent;
@@ -45,6 +50,7 @@ form[name] button[type='submit'],
     &:hover {
         background: var(--color-highlight-strong);
         border-color: var(--color-highlight-strong);
+        color: var(--color-text-on-highlight);
     }
 
     &:active {

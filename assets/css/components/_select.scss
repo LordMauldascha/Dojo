@@ -1,0 +1,89 @@
+@use '../variables' as *;
+
+// Styled, animated dropdowns: the customizable <select> (appearance: base-select), no markup changes needed.
+// Browsers without support (Firefox) keep the native select.
+@supports (appearance: base-select) {
+    select,
+    select::picker(select) {
+        appearance: base-select;
+    }
+
+    select {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        cursor: pointer;
+
+        &::picker-icon {
+            color: var(--color-accent);
+            transition: rotate var(--duration-base) var(--ease-out);
+        }
+
+        &:open::picker-icon {
+            rotate: 180deg;
+        }
+    }
+
+    // The list opens in the top layer: it fades and drops in, and fades out again on close.
+    select::picker(select) {
+        min-width: anchor-size(width);
+        margin-block: var(--space-1);
+        padding: var(--space-1);
+        background: var(--color-bg-sunken);
+        border: var(--border-width) solid var(--color-border-strong);
+        border-radius: var(--radius-md);
+        color: var(--color-text);
+        box-shadow: var(--shadow-overlay);
+        opacity: 0;
+        translate: 0 -0.5rem;
+        transition:
+            display var(--duration-base),
+            overlay var(--duration-base),
+            opacity var(--duration-base) var(--ease-out),
+            translate var(--duration-base) var(--ease-out);
+        // separate from the shorthand: older browsers would drop the whole transition otherwise
+        transition-behavior: allow-discrete;
+    }
+
+    select:open::picker(select) {
+        opacity: 1;
+        translate: 0 0;
+    }
+
+    @starting-style {
+        select:open::picker(select) {
+            opacity: 0;
+            translate: 0 -0.5rem;
+        }
+    }
+
+    select option {
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-md);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--color-surface-raised);
+        }
+
+        // Selected: the same breaking board as the current navigation item, plus bold text and the checkmark.
+        &:checked {
+            @include wood-board($knot: false);
+
+            font-weight: var(--font-weight-semibold);
+        }
+
+        &::checkmark {
+            color: var(--color-highlight);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        select::picker(select),
+        select::picker-icon {
+            transition: none;
+        }
+    }
+}

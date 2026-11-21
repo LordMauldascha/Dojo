@@ -11,11 +11,15 @@
     {% set base = {q: query.q ?: null, project: query.project ?: null, sort: query.sort, dir: 'asc' == query.dir ? null : query.dir, perPage: page.perPage} %}
     <nav aria-label="Pagination">
         {% if 1 < page.page %}
-            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page - 1})) }}" rel="prev">Previous</a>
+            <a class="button" href="{{ path(route, routeParams|merge(base)|merge({page: page.page - 1})) }}" rel="prev">Previous</a>
+        {% else %}
+            <span class="button" aria-disabled="true">Previous</span>
         {% endif %}
         <span>Page {{ page.page }} of {{ page.pageCount }} ({{ page.total }} {{ 1 == page.total ? 'entry' : 'entries' }})</span>
         {% if page.page < page.pageCount %}
-            <a href="{{ path(route, routeParams|merge(base)|merge({page: page.page + 1})) }}" rel="next">Next</a>
+            <a class="button" href="{{ path(route, routeParams|merge(base)|merge({page: page.page + 1})) }}" rel="next">Next</a>
+        {% else %}
+            <span class="button" aria-disabled="true">Next</span>
         {% endif %}
     </nav>
 {% endmacro %}

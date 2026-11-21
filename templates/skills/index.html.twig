@@ -7,9 +7,7 @@
 {% block heading %}Skills{% endblock %}
 
 {% block content %}
-    <p><a href="{{ path('app_skill_new') }}">New skill</a></p>
-
-    {{ include('_list/controls.html.twig', {route: 'app_skills', query: query, page: page, projectChoices: projectChoices}) }}
+    {{ include('_list/controls.html.twig', {route: 'app_skills', query: query, page: page, projectChoices: projectChoices, newPath: path('app_skill_new'), newLabel: 'New skill'}) }}
 
     {% if page.items %}
         <table>

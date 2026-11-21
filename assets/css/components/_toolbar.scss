@@ -1,0 +1,37 @@
+@use '../variables' as *;
+
+// Toolbar of an overview (_list/controls): a wooden rail with the filters on the left and the main action on the right.
+.toolbar {
+    @include wood-board($knot: false);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3) var(--space-5);
+    margin-bottom: var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+
+    form {
+        margin: 0;
+    }
+
+    // Secondary buttons need a dark, solid face to stand out from the wood.
+    button:not(.button-primary),
+    .button:not(.button-primary) {
+        background: var(--color-bg-sunken);
+
+        &:hover {
+            background: var(--color-surface);
+        }
+    }
+
+    > .button {
+        margin-left: auto;
+
+        @media (max-width: $breakpoint-sm) {
+            width: 100%;
+            margin-left: 0;
+        }
+    }
+}

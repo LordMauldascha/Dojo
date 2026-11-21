@@ -28,6 +28,29 @@ no hex values, pixel sizes or durations outside `variables/`. Breakpoints are th
 - Spacing: 4px grid, `--space-1` to `--space-8`.
 - Tables carry no colors and no icons.
 
+## Overviews
+
+All five overviews (groups, projects, skills, testcases, runs) share `templates/_list/controls.html.twig` and
+`_list/macros.html.twig`; change them there, not per page.
+
+- Toolbar: a wooden rail (`.toolbar`, the `wood-board` mixin in `variables/_mixins.scss`, the same board as the current
+  navigation item, without the knot). Filters on the left, the "New ..." action on the right. A page passes `newPath` and
+  `newLabel` to the controls include; no separate "New ..." link above the table.
+- Buttons: `.button` gives a link the look of a `<button>` (New ..., Previous, Next); `.button-primary` is the one gold
+  main action.
+- Pagination: centered below the table; Previous and Next are `.button` links, rendered as disabled spans
+  (`aria-disabled`) when there is no such page, so the line does not jump.
+- Width: the page content uses the full width next to the sidebar with the padding as margin (`.app-main` has no
+  max-width). Tables span it; forms and paragraphs keep their own limits (`--measure`, input `max-width`).
+
+## Dropdowns
+
+`<select>` elements are styled and animated through the customizable select (`appearance: base-select`,
+`assets/css/components/_select.scss`), so Symfony forms and templates keep plain `<select>` markup. The list opens in
+the top layer, fades and drops in, fades out on close and rotates the arrow; the selected option sits on the breaking
+board. Do not build JavaScript dropdowns or put `overflow: hidden` on `::picker(select)`. Firefox has no support yet and
+shows its native select; all other current browsers show the styled one.
+
 ## Page transitions
 
 **Every navigation between pages uses cross-document view transitions.** New pages get them for free, as long as they
