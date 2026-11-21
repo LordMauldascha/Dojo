@@ -43,7 +43,7 @@ final readonly class RunAssignmentPruner
 
         $this->connection->executeStatement(
             'DELETE FROM run_testcase WHERE testcase_id = :id AND run_id IN ('
-            .'SELECT r.id FROM run r WHERE r.project_id IS DISTINCT FROM (SELECT t.project_id FROM testcase t WHERE t.id = :id))',
+            .'SELECT r.id FROM run r WHERE r.project_id NOT IN (SELECT tp.project_id FROM testcase_project tp WHERE tp.testcase_id = :id))',
             ['id' => $testcase->getId()],
         );
     }

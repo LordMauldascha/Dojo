@@ -23,7 +23,7 @@ final class RunVersionDifferTest extends PhpUnitTestCase
     protected function setUp(): void
     {
         $this->project = new Project();
-        $this->testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1', $this->project);
+        $this->testcase = $this->makeTestcase('Greeting', 'prompt 1', 'output 1', $this->project);
         $this->run = new Run($this->project);
         $this->run->setTitle('Nightly');
         $this->run->setDescription('All reviews');
@@ -93,7 +93,7 @@ final class RunVersionDifferTest extends PhpUnitTestCase
 
     public function testTestcasesAddedRemovedAndChangedAreReported(): void
     {
-        $extra = new Testcase('Extra', null, 'p', 'o', $this->project);
+        $extra = $this->makeTestcase('Extra', 'p', 'o', $this->project);
         $first = $this->run->start();
 
         $this->testcase->saveFinal('Greeting', null, 'prompt 2', 'output 2');
@@ -134,5 +134,13 @@ final class RunVersionDifferTest extends PhpUnitTestCase
         $skill->addProject($this->project);
 
         return $skill;
+    }
+
+    private function makeTestcase(string $title, string $prompt, string $expectedOutput, Project $project): Testcase
+    {
+        $testcase = new Testcase($title, null, $prompt, $expectedOutput);
+        $testcase->addProject($project);
+
+        return $testcase;
     }
 }

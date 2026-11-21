@@ -14,7 +14,7 @@ The whole interface is in English. Each feature has its own page in [features/](
 | [Groups](features/groups.md) | Named sets of users that are assigned to projects |
 | [Projects](features/projects.md) | The central unit: members, skills, testcases, runs |
 | [Skills](features/skills.md) | SKILL.md texts with version history, assigned to projects |
-| [Testcases](features/testcases.md) | Prompt and expected output with version history, belong to one project |
+| [Testcases](features/testcases.md) | Prompt and expected output with version history, assigned to projects |
 | [Runs](features/runs.md) | LLM configurations plus skills and testcases, snapshot on every start, version compare |
 | [Versioning](features/versioning.md) | Draft and final versions of skills and testcases |
 | [Access control](features/access-control.md) | Who may see and do what, and how it is enforced |
@@ -32,7 +32,7 @@ User  ── n:m ──  Group
               │     ├── testcases   (only testcases of the run's project)
               │     └── versions    (snapshot on every start)
               ├── Skill     n:m    0 to n projects, 0 = admin only
-              └── Testcase  n:1    0 or 1 project, none = admin only
+              └── Testcase  n:m    0 to n projects, 0 = admin only
 ```
 
 Everything below a project inherits its access rules. Admins see and change everything, normal users only what belongs

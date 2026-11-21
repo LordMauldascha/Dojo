@@ -86,9 +86,13 @@ abstract class AppWebTestCase extends WebTestCase
         return $skill;
     }
 
-    protected function persistTestcase(string $title, ?Project $project = null, ?User $creator = null, string $prompt = 'prompt', string $expectedOutput = 'output', ?string $description = null): Testcase
+    /** @param Project|list<Project>|null $projects a single project, several or none (admin-only) */
+    protected function persistTestcase(string $title, Project|array|null $projects = null, ?User $creator = null, string $prompt = 'prompt', string $expectedOutput = 'output', ?string $description = null): Testcase
     {
-        $testcase = new Testcase($title, $description, $prompt, $expectedOutput, $project, $creator);
+        $testcase = new Testcase($title, $description, $prompt, $expectedOutput, $creator);
+        foreach ($projects instanceof Project ? [$projects] : ($projects ?? []) as $project) {
+            $testcase->addProject($project);
+        }
         $this->entityManager->persist($testcase);
         $this->entityManager->flush();
 

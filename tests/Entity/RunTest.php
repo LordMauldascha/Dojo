@@ -60,7 +60,7 @@ final class RunTest extends PhpUnitTestCase
         }
 
         $withoutConfiguration = $this->newRun();
-        $withoutConfiguration->setTestcases([new Testcase('T', null, 'p', 'o', $this->project)]);
+        $withoutConfiguration->setTestcases([$this->makeTestcase('T', 'p', 'o', $this->project)]);
         try {
             $withoutConfiguration->start();
             self::fail('start without configuration must fail');
@@ -76,7 +76,7 @@ final class RunTest extends PhpUnitTestCase
         $skill = $this->skill('Review', 'skill v1');
         $skill->saveFinal('Review', null, 'skill v2');
         $skill->saveDraft('Review', null, 'skill draft');
-        $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1', $this->project);
+        $testcase = $this->makeTestcase('Greeting', 'prompt 1', 'output 1', $this->project);
         $testcase->saveDraft('Greeting', null, 'prompt draft', 'output draft');
         $run = $this->newRun();
         $run->setTitle('Nightly');
@@ -105,7 +105,7 @@ final class RunTest extends PhpUnitTestCase
         $run->setTitle('Nightly');
         $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
         $run->setSkills([$skill]);
-        $run->setTestcases([new Testcase('T', null, 'p', 'o', $this->project)]);
+        $run->setTestcases([$this->makeTestcase('T', 'p', 'o', $this->project)]);
         $first = $run->start();
 
         $run->setTitle('Renamed');
@@ -142,10 +142,10 @@ final class RunTest extends PhpUnitTestCase
         $deleted->softDelete();
         $foreign = new Skill('Foreign', null, 'x');
         $foreign->addProject(new Project());
-        $testcase = new Testcase('Greeting', null, 'p', 'o', $this->project);
-        $deletedTestcase = new Testcase('Deleted case', null, 'p', 'o', $this->project);
+        $testcase = $this->makeTestcase('Greeting', 'p', 'o', $this->project);
+        $deletedTestcase = $this->makeTestcase('Deleted case', 'p', 'o', $this->project);
         $deletedTestcase->softDelete();
-        $foreignTestcase = new Testcase('Foreign case', null, 'p', 'o', new Project());
+        $foreignTestcase = $this->makeTestcase('Foreign case', 'p', 'o', new Project());
         $run = $this->newRun();
         $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
         $run->setSkills([$kept, $deleted, $foreign]);
@@ -159,7 +159,7 @@ final class RunTest extends PhpUnitTestCase
 
     public function testStartNeedsAValidTestcaseNotOnlyAnAssignedOne(): void
     {
-        $deleted = new Testcase('Deleted case', null, 'p', 'o', $this->project);
+        $deleted = $this->makeTestcase('Deleted case', 'p', 'o', $this->project);
         $deleted->softDelete();
         $run = $this->newRun();
         $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
@@ -218,5 +218,13 @@ final class RunTest extends PhpUnitTestCase
         $skill->addProject($this->project);
 
         return $skill;
+    }
+
+    private function makeTestcase(string $title, string $prompt, string $expectedOutput, Project $project): Testcase
+    {
+        $testcase = new Testcase($title, null, $prompt, $expectedOutput);
+        $testcase->addProject($project);
+
+        return $testcase;
     }
 }

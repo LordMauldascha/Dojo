@@ -10,5 +10,5 @@
     {% endif %}
 
     {{ form(form) }}
-    <p><a href="{{ path('app_skills') }}">Back to overview</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_skills'), label: 'Back to overview'}) }}
 {% endblock %}

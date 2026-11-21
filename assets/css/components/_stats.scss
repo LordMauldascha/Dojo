@@ -46,9 +46,24 @@
 
     dd {
         margin: 0;
+        overflow-wrap: anywhere;
         font-size: var(--font-size-3xl);
         font-variant-numeric: tabular-nums;
         font-weight: var(--font-weight-semibold);
         line-height: 1.2;
+    }
+}
+
+// The Runs tile on a project page: wider, with its main action inside.
+.stat--wide {
+    @media (min-width: $breakpoint-md) {
+        grid-column: span 2;
+    }
+
+    dd {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
     }
 }

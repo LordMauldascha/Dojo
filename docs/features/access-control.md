@@ -14,7 +14,7 @@
 | Area | Admin | User with project access | Other users |
 | --- | --- | --- | --- |
 | Users, groups, API keys | everything | no access | no access |
-| Projects | create, edit, delete, assign groups, users and skills | view (counts only, no member names) | no access |
+| Projects | create, edit, delete, assign groups and users | view (counts only, no member names) | no access |
 | Skills | see, edit, delete all (also without project) | see and edit skills of their projects, delete own | no access |
 | Testcases | see, edit, delete all (also without project) | see and edit testcases of their projects, delete own | no access |
 | Runs | everything | see, create, edit, start; delete own | no access |
@@ -24,7 +24,7 @@
 delete the item.
 
 Skills and testcases without a project are admin only. The way to hide an item from normal users is to give it no project
-(or a project without groups and users).
+(or projects without groups and users).
 
 ## How it is enforced
 

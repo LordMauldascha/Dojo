@@ -164,3 +164,18 @@ pre {
         transform: none;
     }
 }
+
+// Two sections side by side; they stack once a column would get narrower than 22rem.
+.split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 0 var(--space-6);
+
+    > * {
+        min-width: 0;
+    }
+
+    h2 {
+        margin-top: var(--space-5);
+    }
+}

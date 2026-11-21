@@ -168,7 +168,7 @@ class Project
         return $this->updatedAt;
     }
 
-    /** Also called by Skill when its project assignment changes. */
+    /** Also called by Skill and Testcase when their project assignment changes. */
     public function touch(): void
     {
         $this->updatedAt = new \DateTimeImmutable();

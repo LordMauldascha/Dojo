@@ -13,11 +13,11 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Count;
 
 /**
  * Title, description, prompt and expected output. With the "projects" option (list of selectable projects) the form
- * also asks for the project and offers a single create button, else the draft/final buttons.
+ * also asks for the projects and offers a single create button, else the draft/final buttons.
  *
  * @extends AbstractType<TestcaseData>
  */
@@ -45,15 +45,16 @@ final class TestcaseContentType extends AbstractType
         }
 
         $builder
-            ->add('project', EntityType::class, [
+            ->add('projects', EntityType::class, [
                 'class' => Project::class,
                 'choices' => $options['projects'],
                 'choice_label' => 'title',
-                'label' => 'Project',
-                'placeholder' => $options['require_project'] ? 'Select a project' : 'No project (admins only)',
-                'required' => $options['require_project'],
+                'label' => 'Projects',
+                'multiple' => true,
+                'expanded' => true,
+                'required' => false,
                 'mapped' => false,
-                'constraints' => $options['require_project'] ? [new NotBlank(message: 'Select a project.')] : [],
+                'constraints' => $options['require_project'] ? [new Count(min: 1, minMessage: 'Select at least one project.')] : [],
             ])
             ->add('create', SubmitType::class, ['label' => 'Create testcase']);
     }

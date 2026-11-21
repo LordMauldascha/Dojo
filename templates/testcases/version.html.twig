@@ -5,7 +5,7 @@
 {% block heading %}{{ version.title }} – version {{ version.label }}{% endblock %}
 
 {% block content %}
-    <p><a href="{{ path('app_testcase_show', {uuid: testcase.uuid}) }}">Back to testcase</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_testcase_show', {uuid: testcase.uuid}), label: 'Back to testcase'}) }}
 
     <p>Saved: {{ version.savedAt|date }}</p>
 

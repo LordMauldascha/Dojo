@@ -26,7 +26,7 @@ are available in every project. Adding a model is a code change.
 Only skills and testcases of the run's project can be selected, and deleted ones are not offered. Starting a run also leaves out anything deleted or no longer in the project. This also holds
 afterwards: a skill or testcase is removed from a run automatically when it
 
-- is removed from the run's project (skill) or moved to another project or cleared (testcase),
+- is removed from the run's project (the run's project is no longer among its projects),
 - or is deleted.
 
 Existing run versions are snapshots and keep their content.
@@ -46,7 +46,7 @@ Runs have no own members. Everything derives from the project.
 | --- | --- | --- |
 | Runs of a project | `/projects/{uuid}/runs` | Table of that project's runs; reached from the project page |
 | New run | `/projects/{uuid}/runs/new` | Title and description, then continue on the run page |
-| Run | `/runs/{uuid}` | Edit details, configurations, skills, testcases; start; version list |
+| Run | `/runs/{uuid}` | Tiles at the top (versions with the Start button, configurations, skills, testcases; a hint says what is missing to start), version list, edit details and configurations, skills and testcases side by side |
 | Version | `/runs/{uuid}/versions/{number}` | Read-only snapshot |
 | Compare | `/runs/{uuid}/compare?from=1&to=2` | Differences between two versions |
 

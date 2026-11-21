@@ -13,6 +13,7 @@ use App\Entity\Testcase;
 use App\Form\Help;
 use App\Security\UserRole;
 use App\Tests\Support\AppWebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 final class RunManagementTest extends AppWebTestCase
 {
@@ -372,7 +373,7 @@ final class RunManagementTest extends AppWebTestCase
         $this->client->loginUser($admin);
 
         $this->client->request('GET', '/projects/'.$project->getUuid());
-        self::assertSelectorTextContains('body', 'Runs: 1');
+        self::assertSame('1', trim($this->client->getCrawler()->filter('.stats .stat:first-child dd a:first-child')->text()));
         self::assertSelectorExists('a[href$="/runs"]');
 
         $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
@@ -449,5 +450,28 @@ final class RunManagementTest extends AppWebTestCase
         self::assertInstanceOf(Run::class, $run);
 
         return $run;
+    }
+
+    public function testRunDetailLeadsWithVersionsTileAndStartAndExplainsWhatIsMissing(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $skill = $this->persistSkill('Review', [$project]);
+        $testcase = $this->persistTestcase('T1', $project);
+        $run = $this->persistRun($project, 'Empty', creator: $user);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSame('Versions', trim($crawler->filter('.stats .stat:first-child dt')->text()));
+        self::assertSelectorExists('.stats .stat--wide form[action$="/start"]');
+        self::assertSelectorTextContains('p.help-text', 'To start, add at least one testcase and one LLM configuration.');
+        self::assertSame(['Skills', 'Testcases'], $crawler->filter('.split section h2')->each(static fn (Crawler $h): string => trim($h->text())));
+        self::assertSelectorTextContains('.split', 'Only skills assigned to this run');
+
+        $ready = $this->persistRun($project, 'Ready', [$skill], [$testcase], true, $user);
+        $crawler = $this->client->request('GET', '/runs/'.$ready->getUuid());
+        self::assertSame('0', trim($crawler->filter('.stats .stat--wide dd a')->text()));
+        self::assertSame(['1', '1', '1'], $crawler->filter('.stats .stat:not(.stat--wide) dd')->each(static fn (Crawler $dd): string => trim($dd->text())));
+        self::assertSelectorTextNotContains('body', 'To start, add');
     }
 }

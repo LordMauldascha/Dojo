@@ -44,21 +44,30 @@ class Testcase implements VersionedInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $deletedAt = null;
 
-    /** Creates version 1 as the final, active version. No project means admin-only. */
+    /**
+     * The projects whose members may see and edit the testcase; none means admin-only.
+     *
+     * @var Collection<int, Project>
+     */
+    #[ORM\ManyToMany(targetEntity: Project::class)]
+    #[ORM\JoinTable(name: 'testcase_project')]
+    #[ORM\JoinColumn(name: 'testcase_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'project_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    private Collection $projects;
+
+    /** Creates version 1 as the final, active version. Without projects it is admin-only. */
     public function __construct(
         string $title,
         ?string $description,
         string $prompt,
         string $expectedOutput,
-        #[ORM\ManyToOne(targetEntity: Project::class)]
-        #[ORM\JoinColumn(name: 'project_id', nullable: true, onDelete: 'SET NULL')]
-        private ?Project $project = null,
         #[ORM\ManyToOne(targetEntity: User::class)]
         #[ORM\JoinColumn(name: 'created_by_id', nullable: true, onDelete: 'SET NULL')]
         private ?User $createdBy = null,
     ) {
         $this->uuid = Uuid::v7();
         $this->versions = new ArrayCollection();
+        $this->projects = new ArrayCollection();
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
         $this->addVersion(false, $title, $description, $prompt, $expectedOutput);
     }
@@ -76,19 +85,6 @@ class Testcase implements VersionedInterface
     public function getCreatedBy(): ?User
     {
         return $this->createdBy;
-    }
-
-    public function getProject(): ?Project
-    {
-        return $this->project;
-    }
-
-    public function moveToProject(?Project $project): void
-    {
-        if ($project !== $this->project) {
-            $this->project = $project;
-            $this->touch();
-        }
     }
 
     /** @return Collection<int, TestcaseVersion> */
@@ -183,6 +179,50 @@ class Testcase implements VersionedInterface
         $this->touch();
 
         return $restored;
+    }
+
+    /**
+     * Applies a project selection made within $editable (the projects the user may change); other assignments stay.
+     * Returns false and changes nothing if that would leave the testcase without any project and that is not allowed.
+     *
+     * @param list<Project> $editable
+     * @param list<Project> $chosen
+     */
+    public function replaceProjects(array $editable, array $chosen, bool $mayBeEmpty): bool
+    {
+        $untouched = array_filter($this->projects->toArray(), static fn (Project $project): bool => !\in_array($project, $editable, true));
+        if (!$mayBeEmpty && [] === $untouched && [] === $chosen) {
+            return false;
+        }
+
+        foreach ($editable as $project) {
+            \in_array($project, $chosen, true) ? $this->addProject($project) : $this->removeProject($project);
+        }
+
+        return true;
+    }
+
+    /** @return Collection<int, Project> */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProject(Project $project): void
+    {
+        if (!$this->projects->contains($project)) {
+            $this->projects->add($project);
+            $project->touch();
+            $this->touch();
+        }
+    }
+
+    public function removeProject(Project $project): void
+    {
+        if ($this->projects->removeElement($project)) {
+            $project->touch();
+            $this->touch();
+        }
     }
 
     public function getCreatedAt(): \DateTimeImmutable

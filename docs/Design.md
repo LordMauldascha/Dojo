@@ -65,6 +65,18 @@ the number in `--color-text-muted`. The grid wraps with `auto-fit` and is one co
 be a link. No icons, no colors per tile and no animation. `dl.facts` in the same file is the matching label-over-value row
 for profile data.
 
+A tile can be wider with `.stat--wide` (two columns from `$breakpoint-md`) and may hold its main action; the project page
+uses it for Runs, followed by Skills and Testcases; the run page uses it for Versions with the Start button. A tile may also
+hold a text value (version label, project name); long values wrap. The run counts on skill and testcase pages count only runs
+of projects the viewer can access.
+
+## Back link and split layout
+
+Detail and form pages start with a back link: `templates/_back_link.html.twig` (`href`, `label`), styled in
+`assets/css/components/_back-link.scss`: muted, small, a left arrow from CSS, no underline, accent on hover. Never a bare
+`<p><a>`. `.split` (in `_base.scss`) puts two sections side by side and stacks them when a column would get narrower than
+22rem; use it for equal-weight sections such as groups and users.
+
 ## Confirmation dialog
 
 Every button that deletes something (users, API keys, groups, projects, skills, testcases, runs, drafts) opens a modal first.

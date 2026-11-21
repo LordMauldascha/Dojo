@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Project;
+use App\Entity\Run;
 use App\Entity\Testcase;
 use App\Entity\TestcaseVersion;
 use App\Entity\User;
 use App\Pagination\ListQuery;
 use App\Pagination\ListQueryApplier;
 use App\Pagination\Page;
+use App\Security\UserRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -36,27 +38,29 @@ final class TestcaseRepository extends ServiceEntityRepository
         return $this->findOneBy(['uuid' => $uuid, 'deletedAt' => null]);
     }
 
-    /** Items are testcases with their active version and project loaded. */
+    /** Items are testcases with their active version and projects loaded. */
     public function paginate(ListQuery $query, int $perPage, User $viewer): Page
     {
         $queryBuilder = $this->createQueryBuilder('t')
             ->addSelect('v')
-            ->addSelect('p')
-            ->join('t.activeVersion', 'v')
-            ->leftJoin('t.project', 'p');
+            ->join('t.activeVersion', 'v');
         $this->applyAccessFilter($queryBuilder, 't', $viewer);
 
         ListQueryApplier::search($queryBuilder, $query, ['v.title', 'v.description']);
 
         if (null !== $query->project && '' !== $query->project) {
+            $accessibleOnly = $viewer->isAdmin() ? '' : ' AND fp.id IN ('.$this->projects->accessibleProjectIdsDql('f').')';
             $queryBuilder
-                ->andWhere('p.uuid = :filterProject')
+                ->andWhere('t.id IN (SELECT ft.id FROM '.Testcase::class.' ft JOIN ft.projects fp WHERE fp.uuid = :filterProject'.$accessibleOnly.')')
                 ->setParameter('filterProject', Uuid::fromString($query->project), UuidType::NAME);
         }
 
         ListQueryApplier::sort($queryBuilder, $query, self::SORT_FIELDS, 't.id');
 
-        return Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
+        $page = Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
+        $this->initializeProjects($page->items);
+
+        return $page;
     }
 
     /** Limits a query to the non-deleted testcases the user may see: all for admins, else via an accessible project. */
@@ -68,7 +72,12 @@ final class TestcaseRepository extends ServiceEntityRepository
         }
 
         $queryBuilder
-            ->andWhere(\sprintf('IDENTITY(%s.project) IN (%s)', $alias, $this->projects->accessibleProjectIdsDql()))
+            ->andWhere(\sprintf(
+                '%1$s.id IN (SELECT atc.id FROM %2$s atc JOIN atc.projects atp WHERE atp.id IN (%3$s))',
+                $alias,
+                Testcase::class,
+                $this->projects->accessibleProjectIdsDql(),
+            ))
             ->setParameter('accessUser', $user);
     }
 
@@ -111,7 +120,8 @@ final class TestcaseRepository extends ServiceEntityRepository
         $testcases = $this->createQueryBuilder('t')
             ->addSelect('v')
             ->join('t.activeVersion', 'v')
-            ->where('t.project = :project')
+            ->join('t.projects', 'p')
+            ->where('p = :project')
             ->andWhere('t.deletedAt IS NULL')
             ->setParameter('project', $project)
             ->orderBy('v.title', 'ASC')
@@ -156,11 +166,64 @@ final class TestcaseRepository extends ServiceEntityRepository
     public function countByProject(Project $project): int
     {
         return (int) $this->createQueryBuilder('t')
-            ->select('COUNT(t.id)')
-            ->where('t.project = :project')
+            ->select('COUNT(DISTINCT t.id)')
+            ->join('t.projects', 'p')
+            ->where('p = :project')
             ->andWhere('t.deletedAt IS NULL')
             ->setParameter('project', $project)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * Number of runs per testcase id; non-admins only count runs of projects they can access.
+     *
+     * @param list<mixed> $testcases
+     *
+     * @return array<int, int>
+     */
+    public function runCounts(array $testcases, User $viewer): array
+    {
+        if ([] === $testcases) {
+            return [];
+        }
+
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder()
+            ->select('t.id AS testcaseId', 'COUNT(r.id) AS runCount')
+            ->from(Run::class, 'r')
+            ->join('r.testcases', 't')
+            ->where('t IN (:testcases)')
+            ->setParameter('testcases', $testcases)
+            ->groupBy('t.id');
+        if (UserRole::Admin !== $viewer->getRole()) {
+            $queryBuilder
+                ->andWhere(\sprintf('IDENTITY(r.project) IN (%s)', $this->projects->accessibleProjectIdsDql()))
+                ->setParameter('accessUser', $viewer);
+        }
+
+        $counts = [];
+        /** @var list<array{testcaseId: int, runCount: int|string}> $rows */
+        $rows = $queryBuilder->getQuery()->getArrayResult();
+        foreach ($rows as $row) {
+            $counts[$row['testcaseId']] = (int) $row['runCount'];
+        }
+
+        return $counts;
+    }
+
+    /** @param list<mixed> $testcases */
+    private function initializeProjects(array $testcases): void
+    {
+        if ([] === $testcases) {
+            return;
+        }
+
+        $this->createQueryBuilder('t')
+            ->addSelect('p')
+            ->leftJoin('t.projects', 'p')
+            ->where('t IN (:testcases)')
+            ->setParameter('testcases', $testcases)
+            ->getQuery()
+            ->getResult();
     }
 }

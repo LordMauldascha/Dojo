@@ -9,7 +9,61 @@
 {% block content %}
     {% set latest = run.latestVersion %}
 
-    <p><a href="{{ path('app_runs', {uuid: run.project.uuid}) }}">Back to runs of project {{ run.project.title }}</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_runs', {uuid: run.project.uuid}), label: 'Back to runs of project ' ~ run.project.title}) }}
+
+    <dl class="stats">
+        <div class="stat stat--wide">
+            <dt>Versions</dt>
+            <dd>
+                <a href="#versions">{{ run.versions|length }}</a>
+                {{ forms.post(path('app_run_start', {uuid: run.uuid}), 'start-run-' ~ run.uuid, 'Start', 'button-primary') }}
+            </dd>
+        </div>
+        <div class="stat">
+            <dt>Configurations</dt>
+            <dd>{{ run.configurations|length }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Skills</dt>
+            <dd>{{ run.skills|length }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Testcases</dt>
+            <dd>{{ run.testcases|length }}</dd>
+        </div>
+    </dl>
+    {% if not run.testcases|length and not run.configurations|length %}
+        <p class="help-text">To start, add at least one testcase and one LLM configuration.</p>
+    {% elseif not run.testcases|length %}
+        <p class="help-text">To start, add at least one testcase.</p>
+    {% elseif not run.configurations|length %}
+        <p class="help-text">To start, add at least one LLM configuration.</p>
+    {% endif %}
+
+    {% if run.versions|length %}
+        <h2 id="versions">Versions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for version in run.versions|reverse %}
+                    <tr>
+                        <td>{{ version.number }}</td>
+                        <td>{{ version.createdAt|date }}</td>
+                        <td><a href="{{ path('app_run_version', {uuid: run.uuid, number: version.number}) }}">View</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if 1 < run.versions|length %}
+            <p><a href="{{ path('app_run_compare', {uuid: run.uuid}) }}">Compare versions</a></p>
+        {% endif %}
+    {% endif %}
 
     <h2>Details</h2>
     {{ form(form) }}
@@ -39,50 +93,27 @@
     {% endif %}
     {{ form(configurationForm) }}
 
-    <h2>Skills</h2>
-    {% if hasSkills %}
-        {{ form(skillsForm) }}
-    {% else %}
-        <p>The project has no skills.</p>
-    {% endif %}
+    <div class="split">
+        <section>
+            <h2>Skills</h2>
+            <p class="help-text">Only skills assigned to this run's project can be selected.</p>
+            {% if hasSkills %}
+                {{ form(skillsForm) }}
+            {% else %}
+                <p>The project has no skills.</p>
+            {% endif %}
+        </section>
 
-    <h2>Testcases</h2>
-    {% if hasTestcases %}
-        {{ form(testcasesForm) }}
-    {% else %}
-        <p>The project has no testcases.</p>
-    {% endif %}
-
-    <h2>Start</h2>
-    <p>Starting creates a new version of this run. No LLM is called yet. A run needs at least one testcase and one configuration.</p>
-    {{ forms.post(path('app_run_start', {uuid: run.uuid}), 'start-run-' ~ run.uuid, 'Start', 'button-primary') }}
-
-    <h2>Versions</h2>
-    {% if run.versions|length %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Version</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for version in run.versions|reverse %}
-                    <tr>
-                        <td>{{ version.number }}</td>
-                        <td>{{ version.createdAt|date }}</td>
-                        <td><a href="{{ path('app_run_version', {uuid: run.uuid, number: version.number}) }}">View</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if 1 < run.versions|length %}
-            <p><a href="{{ path('app_run_compare', {uuid: run.uuid}) }}">Compare versions</a></p>
-        {% endif %}
-    {% else %}
-        <p>Not started yet.</p>
-    {% endif %}
+        <section>
+            <h2>Testcases</h2>
+            <p class="help-text">Only testcases of this run's project can be selected.</p>
+            {% if hasTestcases %}
+                {{ form(testcasesForm) }}
+            {% else %}
+                <p>The project has no testcases.</p>
+            {% endif %}
+        </section>
+    </div>
 
     {% if canDelete %}
         <h2>Delete run</h2>

@@ -10,7 +10,7 @@ A skill is an LLM skill: a title, a description and the text of its `SKILL.md`. 
 | Title | required, at most 255 characters | yes |
 | Description | optional, at most 2000 characters | yes |
 | SKILL.md | required, at most 100 000 characters; stored exactly as typed (line breaks normalised, no trimming) | yes |
-| Projects | 0 to n; the assignment only controls who may see and edit the skill | no |
+| Projects | 0 to n; the assignment only controls who may see and edit the skill; it is set on the skill page, the project page shows only a count | no |
 
 Also stored: creator, created, updated and deleted time.
 
@@ -31,7 +31,7 @@ Also stored: creator, created, updated and deleted time.
 | --- | --- | --- |
 | Overview | `/skills` | Search, sort, project filter; columns Title, Description, Projects, Version, Runs, Updated, Created |
 | New skill | `/skills/new` | Create version 1 with title, description, SKILL.md and projects |
-| Skill | `/skills/{uuid}` | Edit and save as draft or final, discard the draft, change projects, version history |
+| Skill | `/skills/{uuid}` | Tiles (active version, projects, runs using it), edit and save as draft or final, discard the draft, change projects, version history |
 | Version | `/skills/{uuid}/versions/{number}` | Read-only view of one version |
 
 The overview searches the title and description of the active version and can be filtered with `?project=<uuid>`

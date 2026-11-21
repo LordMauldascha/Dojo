@@ -16,7 +16,7 @@ final class TestcaseTest extends PhpUnitTestCase
 
         self::assertSame('1', $testcase->getActiveVersion()->getLabel());
         self::assertNull($testcase->getDraft());
-        self::assertNull($testcase->getProject());
+        self::assertCount(0, $testcase->getProjects());
         self::assertCount(1, $testcase->getVersions());
     }
 
@@ -114,17 +114,54 @@ final class TestcaseTest extends PhpUnitTestCase
         $testcase->restore($draft);
     }
 
-    public function testMovingToAProjectAndSoftDelete(): void
+    public function testSoftDelete(): void
     {
         $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1');
-        $project = new Project();
-
-        $testcase->moveToProject($project);
-        self::assertSame($project, $testcase->getProject());
-        $testcase->moveToProject(null);
-        self::assertNull($testcase->getProject());
 
         $testcase->softDelete();
+
         self::assertTrue($testcase->isDeleted());
+    }
+
+    public function testAssigningAndRemovingAProjectTouchesTheProject(): void
+    {
+        $project = new Project();
+        $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1');
+        $before = $project->getUpdatedAt();
+
+        usleep(2000);
+        $testcase->addProject($project);
+        $afterAdding = $project->getUpdatedAt();
+        usleep(2000);
+        $testcase->removeProject($project);
+
+        self::assertGreaterThan($before, $afterAdding);
+        self::assertGreaterThan($afterAdding, $project->getUpdatedAt());
+    }
+
+    public function testReplacingProjectsKeepsTheAssignmentsTheEditorCannotChange(): void
+    {
+        $mine = new Project();
+        $foreign = new Project();
+        $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1');
+        $testcase->addProject($mine);
+        $testcase->addProject($foreign);
+
+        self::assertTrue($testcase->replaceProjects([$mine], [], false));
+
+        self::assertSame([$foreign], array_values($testcase->getProjects()->toArray()));
+    }
+
+    public function testReplacingProjectsRefusesToLeaveTheTestcaseWithoutAnyProjectUnlessAllowed(): void
+    {
+        $mine = new Project();
+        $testcase = new Testcase('Greeting', null, 'prompt 1', 'output 1');
+        $testcase->addProject($mine);
+
+        self::assertFalse($testcase->replaceProjects([$mine], [], false));
+        self::assertSame([$mine], array_values($testcase->getProjects()->toArray()));
+
+        self::assertTrue($testcase->replaceProjects([$mine], [], true));
+        self::assertCount(0, $testcase->getProjects());
     }
 }

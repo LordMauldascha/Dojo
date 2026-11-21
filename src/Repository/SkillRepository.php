@@ -130,22 +130,17 @@ final class SkillRepository extends ServiceEntityRepository
         return $skills;
     }
 
-    /** @return list<Skill> */
-    public function findAssignableToProject(Project $project): array
+    public function countByProject(Project $project): int
     {
-        /** @var list<Skill> $skills */
-        $skills = $this->createQueryBuilder('s')
-            ->addSelect('v')
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(DISTINCT s.id)')
             ->join('s.activeVersion', 'v')
-            ->where('s.deletedAt IS NULL')
-            ->andWhere('s.id NOT IN (SELECT ps.id FROM '.Skill::class.' ps JOIN ps.projects pp WHERE pp = :project)')
+            ->join('s.projects', 'p')
+            ->where('p = :project')
+            ->andWhere('s.deletedAt IS NULL')
             ->setParameter('project', $project)
-            ->orderBy('v.title', 'ASC')
-            ->addOrderBy('s.id', 'ASC')
             ->getQuery()
-            ->getResult();
-
-        return $skills;
+            ->getSingleScalarResult();
     }
 
     /**

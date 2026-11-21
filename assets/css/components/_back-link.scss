@@ -1,0 +1,26 @@
+// Quiet way back to the parent list or page, above the page heading content.
+.back-link {
+    margin-bottom: var(--space-5);
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+        text-decoration: none;
+
+        &::before {
+            content: '\2190' / '';
+            transition: transform var(--duration-fast) var(--ease-out);
+        }
+
+        &:hover {
+            color: var(--color-accent);
+
+            &::before {
+                transform: translateX(calc(-1 * var(--space-1)));
+            }
+        }
+    }
+}

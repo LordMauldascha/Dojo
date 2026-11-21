@@ -7,9 +7,10 @@ namespace App\Controller;
 use App\Entity\Project;
 use App\Entity\Testcase;
 use App\Entity\User;
+use App\Form\FormData;
 use App\Form\Model\TestcaseData;
 use App\Form\TestcaseContentType;
-use App\Form\TestcaseProjectType;
+use App\Form\TestcaseProjectsType;
 use App\Pagination\ListQuery;
 use App\Pagination\PageSizeResolver;
 use App\Repository\ProjectRepository;
@@ -18,6 +19,7 @@ use App\Routing\Requirements;
 use App\Run\RunAssignmentPruner;
 use App\Security\Voter\TestcaseVoter;
 use App\Versioning\VersionWorkflow;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -51,13 +53,15 @@ final class TestcaseController extends AbstractController
         #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
         ListQuery $query = new ListQuery(),
     ): Response {
+        $accessible = $projects->findAccessibleBy($viewer);
         $page = $testcases->paginate($query, $pageSizes->resolve(self::LIST_KEY, $query->perPage), $viewer);
 
         return $this->render('testcases/index.html.twig', [
             'page' => $page,
             'draftNumbers' => $testcases->draftNumbers($page->items),
             'query' => $query,
-            'projectChoices' => $projects->findAccessibleBy($viewer),
+            'projectChoices' => $accessible,
+            'visibleProjectIds' => array_map(static fn (Project $project): ?int => $project->getId(), $accessible),
         ]);
     }
 
@@ -73,15 +77,16 @@ final class TestcaseController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            $project = $form->get('project')->getData();
             $testcase = new Testcase(
                 $data->normalizedTitle(),
                 $data->normalizedDescription(),
                 $data->normalizedPrompt(),
                 $data->normalizedExpectedOutput(),
-                $project instanceof Project ? $project : null,
                 $user,
             );
+            foreach (FormData::entities(Project::class, $form->get('projects')->getData()) as $project) {
+                $testcase->addProject($project);
+            }
             $entityManager->persist($testcase);
             $entityManager->flush();
             $this->addFlash('success', \sprintf('Testcase "%s" created.', $testcase->getActiveVersion()->getTitle()));
@@ -98,6 +103,7 @@ final class TestcaseController extends AbstractController
         #[MapEntity(expr: self::FIND_TESTCASE)] Testcase $testcase,
         Request $request,
         ProjectRepository $projects,
+        TestcaseRepository $testcases,
         EntityManagerInterface $entityManager,
         #[CurrentUser] User $user,
     ): Response {
@@ -117,17 +123,21 @@ final class TestcaseController extends AbstractController
             return $this->redirectToRoute('app_testcase_show', ['uuid' => $testcase->getUuid()]);
         }
 
+        $editable = $projects->findAccessibleBy($user);
+
         return $this->render('testcases/show.html.twig', [
             'testcase' => $testcase,
             'form' => $form,
-            'projectForm' => $this->createProjectForm($testcase, $projects->findAccessibleBy($user), $user),
+            'projectsForm' => $this->createProjectsForm($testcase, $editable),
+            'hiddenProjectCount' => $testcase->getProjects()->count() - \count($this->selectedAmong($testcase, $editable)),
+            'runCount' => $testcases->runCounts([$testcase], $user)[(int) $testcase->getId()] ?? 0,
             'canDelete' => $this->isGranted(TestcaseVoter::DELETE, $testcase),
         ]);
     }
 
-    #[Route('/{uuid}/project', name: 'app_testcase_project', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
+    #[Route('/{uuid}/projects', name: 'app_testcase_projects', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(TestcaseVoter::EDIT, subject: 'testcase')]
-    public function project(
+    public function projects(
         #[MapEntity(expr: self::FIND_TESTCASE)] Testcase $testcase,
         Request $request,
         ProjectRepository $projects,
@@ -135,16 +145,21 @@ final class TestcaseController extends AbstractController
         EntityManagerInterface $entityManager,
         #[CurrentUser] User $user,
     ): Response {
-        $form = $this->createProjectForm($testcase, $projects->findAccessibleBy($user), $user);
+        $editable = $projects->findAccessibleBy($user);
+        $form = $this->createProjectsForm($testcase, $editable);
         $form->handleRequest($request);
 
-        $project = $form->get('project')->getData();
-        if (!$form->isSubmitted() || !$form->isValid() || (!$project instanceof Project && !$user->isAdmin())) {
-            $this->addFlash('error', 'The project could not be saved.');
-        } else {
-            $testcase->moveToProject($project instanceof Project ? $project : null);
-            if ($this->flushOrConflict($entityManager, static fn () => $pruner->pruneTestcase($testcase))) {
-                $this->addFlash('success', 'Project saved.');
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $this->addFlash('error', 'The projects could not be saved.');
+        } elseif (!$testcase->replaceProjects($editable, FormData::entities(Project::class, $form->get('projects')->getData()), $user->isAdmin())) {
+            $this->addFlash('error', 'A testcase must keep at least one project.');
+        } elseif ($this->flushOrConflict($entityManager, static fn () => $pruner->pruneTestcase($testcase))) {
+            $this->addFlash('success', 'Projects saved.');
+
+            if (!$this->isGranted(TestcaseVoter::VIEW, $testcase)) {
+                $this->addFlash('info', 'You no longer have access to this testcase.');
+
+                return $this->redirectToRoute('app_testcases');
             }
         }
 
@@ -213,14 +228,23 @@ final class TestcaseController extends AbstractController
     /**
      * @param list<Project> $editable
      *
-     * @return FormInterface<array{project: Project|null}>
+     * @return FormInterface<array<string, mixed>>
      */
-    private function createProjectForm(Testcase $testcase, array $editable, User $user): FormInterface
+    private function createProjectsForm(Testcase $testcase, array $editable): FormInterface
     {
-        return $this->createForm(TestcaseProjectType::class, ['project' => $testcase->getProject()], [
-            'action' => $this->generateUrl('app_testcase_project', ['uuid' => $testcase->getUuid()]),
-            'available_projects' => $editable,
-            'allow_none' => $user->isAdmin(),
+        return $this->createForm(TestcaseProjectsType::class, ['projects' => new ArrayCollection($this->selectedAmong($testcase, $editable))], [
+            'action' => $this->generateUrl('app_testcase_projects', ['uuid' => $testcase->getUuid()]),
+            'choices' => $editable,
         ]);
+    }
+
+    /**
+     * @param list<Project> $editable
+     *
+     * @return list<Project>
+     */
+    private function selectedAmong(Testcase $testcase, array $editable): array
+    {
+        return array_values(array_filter($testcase->getProjects()->toArray(), static fn (Project $project): bool => \in_array($project, $editable, true)));
     }
 }

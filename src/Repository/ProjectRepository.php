@@ -185,6 +185,6 @@ final class ProjectRepository extends ServiceEntityRepository
     {
         $queryBuilder
             ->addSelect('(SELECT COUNT(sk.id) FROM '.Skill::class.' sk JOIN sk.projects skp WHERE skp = p AND sk.deletedAt IS NULL) AS skillCount')
-            ->addSelect('(SELECT COUNT(tc.id) FROM '.Testcase::class.' tc WHERE tc.project = p AND tc.deletedAt IS NULL) AS testcaseCount');
+            ->addSelect('(SELECT COUNT(tc.id) FROM '.Testcase::class.' tc JOIN tc.projects tcp WHERE tcp = p AND tc.deletedAt IS NULL) AS testcaseCount');
     }
 }

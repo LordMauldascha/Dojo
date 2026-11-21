@@ -7,7 +7,7 @@
 {% block heading %}Group {{ group.title }}{% endblock %}
 
 {% block content %}
-    <p><a href="{{ path('app_admin_groups') }}">Back to overview</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_admin_groups'), label: 'Back to overview'}) }}
 
     <h2>Title</h2>
     {{ form(form) }}

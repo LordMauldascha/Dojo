@@ -227,7 +227,7 @@ class Run
     public function start(): RunVersion
     {
         $skills = array_filter($this->skills->toArray(), fn (Skill $skill): bool => !$skill->isDeleted() && $skill->getProjects()->contains($this->project));
-        $testcases = array_filter($this->testcases->toArray(), fn (Testcase $testcase): bool => !$testcase->isDeleted() && $testcase->getProject() === $this->project);
+        $testcases = array_filter($this->testcases->toArray(), fn (Testcase $testcase): bool => !$testcase->isDeleted() && $testcase->getProjects()->contains($this->project));
 
         if ([] === $testcases) {
             throw new \LogicException('A run needs at least one testcase to start.');

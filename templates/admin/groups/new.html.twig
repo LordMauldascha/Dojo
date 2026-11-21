@@ -6,5 +6,5 @@
 
 {% block content %}
     {{ form(form) }}
-    <p><a href="{{ path('app_admin_groups') }}">Back to overview</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_admin_groups'), label: 'Back to overview'}) }}
 {% endblock %}

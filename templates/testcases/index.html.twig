@@ -15,7 +15,7 @@
                 <tr>
                     {{ list.sort_header('app_testcases', {}, query, page, 'title', 'Title') }}
                     <th>Description</th>
-                    <th>Project</th>
+                    <th>Projects</th>
                     <th>Version</th>
                     {{ list.sort_header('app_testcases', {}, query, page, 'updatedAt', 'Updated') }}
                     {{ list.sort_header('app_testcases', {}, query, page, 'createdAt', 'Created') }}
@@ -23,10 +23,16 @@
             </thead>
             <tbody>
                 {% for testcase in page.items %}
+                    {% set titles = [] %}
+                    {% for project in testcase.projects %}
+                        {% if project.id in visibleProjectIds %}
+                            {% set titles = titles|merge([project.title]) %}
+                        {% endif %}
+                    {% endfor %}
                     <tr>
                         <td><a href="{{ path('app_testcase_show', {uuid: testcase.uuid}) }}">{{ testcase.activeVersion.title }}</a></td>
                         <td>{{ list.excerpt(testcase.activeVersion.description) }}</td>
-                        <td>{{ testcase.project ? testcase.project.title : '–' }}</td>
+                        <td>{{ titles|join(', ') }}</td>
                         <td>{{ list.version_status(testcase.activeVersion.number, draftNumbers[testcase.id] ?? null) }}</td>
                         <td>{{ testcase.updatedAt|date }}</td>
                         <td>{{ testcase.createdAt|date }}</td>

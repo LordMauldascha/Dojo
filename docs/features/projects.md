@@ -8,7 +8,7 @@ limited (for example software development, IT security, data protection).
 - **Title**: required, at most 255 characters, unique regardless of letter case (`Security` and `security` are the same title).
 - **Description**: optional, at most 5000 characters.
 - **Groups** and **users** with access (see below).
-- **Skills** assigned to the project, **testcases** belonging to it, and its **runs**.
+- **Skills** and **testcases** assigned to the project, and its **runs**.
 
 ## Who has access
 
@@ -29,11 +29,13 @@ testcases.
 testcases are counts; skills and testcases link to the matching overview filtered by this project. Search covers title
 and description. See [Overview tables](overview-tables.md).
 
-**Detail page, admins**: edit title and description; add and remove groups; add and remove users; add and remove skills
-(the skill is assigned to the project); counts and links for testcases and runs; delete.
+**Detail page, admins**: stat tiles at the top (runs first, with a "New run" button, then skills and testcases; each count
+links to the matching list); edit title and description; add and remove groups and users, shown side by side (stacked on
+narrow screens) with a hint that they control access; delete. Skills and testcases cannot be assigned here, that happens
+on their own pages.
 
-**Detail page, other users**: read-only title and description plus the counts of groups, users, skills and testcases and
-links to the filtered skill overview, testcase overview and the runs of the project. Names of other users and groups
+**Detail page, other users**: the same stat tiles, read-only title and description plus the counts of groups and users.
+The tiles link to the filtered skill overview, testcase overview and the runs of the project. Names of other users and groups
 are not shown.
 
 ## Runs of a project
@@ -46,7 +48,7 @@ The *Delete* button on the project page opens a confirmation dialog that states 
 
 - the project's **runs and their versions are deleted** for good;
 - **skills** are kept and only lose the assignment to this project;
-- **testcases** are kept but lose their project, so only admins can reach them afterwards;
+- **testcases** are kept and only lose the assignment to this project; a testcase without any other project is then admin only;
 - groups and users are not touched.
 
 ## Related

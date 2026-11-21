@@ -331,49 +331,45 @@ final class ProjectManagementTest extends AppWebTestCase
         self::assertSame(['Project 12'], $this->titles($this->client->request('GET', '/projects', ['q' => '12'])));
     }
 
-    public function testAdminAddsAndRemovesSkillsOnProjectDetail(): void
-    {
-        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
-        $project = $this->persistProject('Security');
-        $skill = $this->persistSkill('Review');
-        $path = '/projects/'.$project->getUuid();
-
-        $crawler = $this->client->request('GET', $path);
-        $this->client->submit($crawler->filter('form[action$="/skills"]')->form(['add_skill[skill]' => (string) $skill->getId()]));
-        self::assertResponseRedirects($path);
-        $crawler = $this->client->request('GET', $path);
-        self::assertSelectorTextContains('body', 'Review');
-        self::assertSelectorExists('a[href*="/skills?project="]');
-        $this->entityManager->clear();
-        self::assertCount(1, $this->entityManager->getRepository(Skill::class)->findAll()[0]->getProjects());
-
-        $this->client->submit($crawler->filter('form[action*="/skills/"]')->form());
-        self::assertResponseRedirects($path);
-        $this->entityManager->clear();
-        self::assertCount(0, $this->entityManager->getRepository(Skill::class)->findAll()[0]->getProjects());
-        self::assertCount(1, $this->entityManager->getRepository(Skill::class)->findAll());
-    }
-
-    public function testNonAdminCannotManageSkillsOfAProjectButSeesTheCount(): void
+    public function testProjectDetailShowsTheSkillCountToEveryoneWithAccessAndNoSkillAssignment(): void
     {
         $user = $this->persistUser('alice');
         $project = $this->persistProject('Security');
         $project->addUser($user);
         $this->entityManager->flush();
-        $skill = $this->persistSkill('Review', [$project]);
+        $this->persistSkill('Review', [$project]);
         $deleted = $this->persistSkill('Gone', [$project]);
         $deleted->softDelete();
         $this->entityManager->flush();
         $this->client->loginUser($user);
 
         $this->client->request('GET', '/projects/'.$project->getUuid());
-        self::assertSelectorTextContains('body', 'Skills: 1');
+        self::assertSame('1', trim($this->client->getCrawler()->filter('.stats .stat:nth-child(2) dd')->text()));
+        self::assertSelectorExists('a[href*="/skills?project="]');
         self::assertSelectorNotExists('form');
 
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSame('1', trim($crawler->filter('.stats .stat:nth-child(2) dd')->text()));
+        self::assertSelectorNotExists('form[action$="/skills"]');
+        self::assertSelectorNotExists('form[action*="/skills/"]');
+
         $this->client->request('POST', '/projects/'.$project->getUuid().'/skills');
-        self::assertResponseStatusCodeSame(403);
-        $this->client->request('POST', \sprintf('/projects/%s/skills/%s/remove', $project->getUuid(), $skill->getUuid()));
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testProjectDetailLeadsWithRunsTileAndShowsPermissionHintsSideBySide(): void
+    {
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $project = $this->persistProject('Security');
+
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorExists('p.back-link a[href="/projects"]');
+        self::assertSame('Runs', trim($crawler->filter('.stats .stat:first-child dt')->text()));
+        self::assertSelectorExists('.stats .stat--wide a.button-primary[href$="/runs/new"]');
+        self::assertSame(['Groups', 'Users'], $crawler->filter('.split section h2')->each(static fn (Crawler $h): string => trim($h->text())));
+        self::assertSelectorTextContains('.split', 'Members of these groups can access this project.');
+        self::assertSelectorTextContains('.split', 'These users have direct access to this project.');
     }
 
     public function testProjectListCountsOnlyNonDeletedSkillsAndSortsBySkillCount(): void
@@ -443,12 +439,12 @@ final class ProjectManagementTest extends AppWebTestCase
 
         $this->client->loginUser($user);
         $this->client->request('GET', '/projects/'.$project->getUuid());
-        self::assertSelectorTextContains('body', 'Testcases: 1');
+        self::assertSame('1', trim($this->client->getCrawler()->filter('.stats .stat:nth-child(3) dd')->text()));
         self::assertSelectorExists('a[href*="/testcases?project="]');
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
-        $this->client->request('GET', '/projects/'.$project->getUuid());
-        self::assertSelectorTextContains('body', 'Testcases: 1');
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSame('1', trim($crawler->filter('.stats .stat:nth-child(3) dd')->text()));
     }
 
     public function testDeletingAProjectKeepsTestcasesAsAdminOnly(): void
@@ -462,14 +458,14 @@ final class ProjectManagementTest extends AppWebTestCase
         $this->client->loginUser($admin);
 
         $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
-        self::assertSelectorTextContains('dialog', '1 testcase(s) lose their project and become admin-only');
+        self::assertSelectorTextContains('dialog', '1 testcase(s) lose this project assignment but are kept; those without another project become admin-only');
         $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/projects');
 
         $this->entityManager->clear();
         $stored = $this->entityManager->getRepository(Testcase::class)->findAll();
         self::assertCount(1, $stored);
-        self::assertNull($stored[0]->getProject());
+        self::assertCount(0, $stored[0]->getProjects());
         self::assertFalse($stored[0]->isDeleted());
 
         $this->client->request('GET', '/testcases/'.$testcase->getUuid());

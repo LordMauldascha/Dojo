@@ -32,24 +32,6 @@ final class RunPruningTest extends AppWebTestCase
         self::assertSame(['Review'], $this->skillTitles('Run B'));
     }
 
-    public function testAdminRemovingASkillOnTheProjectDetailPrunesTheProjectsRuns(): void
-    {
-        $admin = $this->persistUser('root', UserRole::Admin);
-        $projectA = $this->persistProject('Project A');
-        $projectB = $this->persistProject('Project B');
-        $skill = $this->persistSkill('Review', [$projectA, $projectB]);
-        $this->persistRun($projectA, 'Run A', [$skill]);
-        $this->persistRun($projectB, 'Run B', [$skill]);
-        $this->client->loginUser($admin);
-
-        $crawler = $this->client->request('GET', '/projects/'.$projectA->getUuid());
-        $this->client->submit($crawler->filter('form[action*="/skills/"]')->form());
-
-        self::assertResponseRedirects('/projects/'.$projectA->getUuid());
-        self::assertSame([], $this->skillTitles('Run A'));
-        self::assertSame(['Review'], $this->skillTitles('Run B'));
-    }
-
     public function testDeletingASkillRemovesItFromAllRuns(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
@@ -80,10 +62,28 @@ final class RunPruningTest extends AppWebTestCase
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
-        $this->submit($crawler, 'Save project', 'testcase_project', ['project' => (string) $projectB->getId()]);
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => [(string) $projectB->getId()]]);
 
         self::assertResponseRedirects('/testcases/'.$testcase->getUuid());
         self::assertSame(['Kept'], $this->testcaseTitles('Run A'));
+    }
+
+    public function testRemovingOneOfSeveralProjectsOnlyPrunesThatProjectsRuns(): void
+    {
+        $user = $this->persistUser('alice');
+        $projectA = $this->persistProject('Project A', [$user]);
+        $projectB = $this->persistProject('Project B', [$user]);
+        $testcase = $this->persistTestcase('Greeting', [$projectA, $projectB]);
+        $this->persistRun($projectA, 'Run A', [], [$testcase]);
+        $this->persistRun($projectB, 'Run B', [], [$testcase]);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => [(string) $projectB->getId()]]);
+
+        self::assertResponseRedirects('/testcases/'.$testcase->getUuid());
+        self::assertSame([], $this->testcaseTitles('Run A'));
+        self::assertSame(['Greeting'], $this->testcaseTitles('Run B'));
     }
 
     public function testAdminClearingATestcasesProjectRemovesItFromRuns(): void
@@ -95,7 +95,7 @@ final class RunPruningTest extends AppWebTestCase
         $this->client->loginUser($admin);
 
         $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
-        $this->submit($crawler, 'Save project', 'testcase_project', ['project' => '']);
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => []]);
 
         self::assertResponseRedirects('/testcases/'.$testcase->getUuid());
         self::assertSame([], $this->testcaseTitles('Run A'));

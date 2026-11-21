@@ -520,4 +520,20 @@ final class SkillManagementTest extends AppWebTestCase
         }
         self::fail('Skill not found: '.$title);
     }
+
+    public function testSkillDetailShowsTilesWithRunCountAndPermissionHint(): void
+    {
+        $user = $this->persistUser('alice');
+        $own = $this->persistProject('Own', [$user]);
+        $foreign = $this->persistProject('Foreign');
+        $skill = $this->persistSkill('Shared', [$own, $foreign]);
+        $this->persistRun($own, 'Mine', [$skill]);
+        $this->persistRun($foreign, 'Theirs', [$skill]);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+        $tiles = $crawler->filter('.stats .stat dd')->each(static fn (Crawler $dd): string => trim($dd->text()));
+        self::assertSame([$skill->getActiveVersion()->getLabel(), '2', '1'], $tiles);
+        self::assertSelectorTextContains('p.help-text', 'Members of these projects can see and edit this skill.');
+    }
 }

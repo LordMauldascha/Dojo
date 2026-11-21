@@ -10,9 +10,26 @@
     {% set active = testcase.activeVersion %}
     {% set draft = testcase.draft %}
 
-    <p><a href="{{ path('app_testcases') }}">Back to overview</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_testcases'), label: 'Back to overview'}) }}
 
-    <p>Active version: {{ active.label }}</p>
+    <dl class="stats">
+        <div class="stat">
+            <dt>Active version</dt>
+            <dd>{{ active.label }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Projects</dt>
+            <dd>{{ testcase.projects|length }}</dd>
+        </div>
+        <div class="stat">
+            <dt>Runs</dt>
+            <dd>{{ runCount }}</dd>
+        </div>
+    </dl>
+
+    {% if 0 < hiddenProjectCount %}
+        <p>This testcase is also assigned to {{ hiddenProjectCount }} project(s) you cannot see. Changes apply there too.</p>
+    {% endif %}
     {% if draft %}
         <p>Draft {{ draft.label }} exists and is shown in the form below. It is ignored until it is saved as final.</p>
     {% endif %}
@@ -23,8 +40,9 @@
         {{ forms.confirm_post(path('app_testcase_draft_discard', {uuid: testcase.uuid}), 'discard-testcase-draft-' ~ testcase.uuid, 'Discard draft', 'Discard draft?', 'The unfinished draft is deleted. The final versions are kept.') }}
     {% endif %}
 
-    <h2>Project</h2>
-    {{ form(projectForm) }}
+    <h2>Projects</h2>
+    <p class="help-text">Members of these projects can see and edit this testcase. Without a project only admins can.</p>
+    {{ form(projectsForm) }}
 
     {{ include('_versions.html.twig', {entity: testcase, versionRoute: 'app_testcase_version', restoreRoute: 'app_testcase_restore', restoreTokenPrefix: 'restore-testcase-'}) }}
 

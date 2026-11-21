@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\Project;
 use App\Entity\Testcase;
 use App\Entity\User;
 use App\Form\Help;
@@ -30,30 +31,31 @@ final class TestcaseManagementTest extends AppWebTestCase
         self::assertSame('1', $testcase->getActiveVersion()->getLabel());
         self::assertSame('Say hello', $testcase->getActiveVersion()->getPrompt());
         self::assertSame('Hello', $testcase->getActiveVersion()->getExpectedOutput());
-        self::assertNull($testcase->getProject());
+        self::assertCount(0, $testcase->getProjects());
         self::assertSame('root', $testcase->getCreatedBy()?->getUsername());
     }
 
-    public function testNormalUserMustSelectAnAccessibleProject(): void
+    public function testNormalUserMustSelectAccessibleProjectsAndMayPickSeveral(): void
     {
         $user = $this->persistUser('alice');
         $own = $this->persistProject('Own', [$user]);
+        $second = $this->persistProject('Second', [$user]);
         $foreign = $this->persistProject('Foreign');
         $this->client->loginUser($user);
         $fields = ['title' => 'Greeting', 'prompt' => 'Say hello', 'expectedOutput' => 'Hello'];
 
         $crawler = $this->client->request('GET', '/testcases/new');
-        $this->submit($crawler, 'Create testcase', 'testcase_content', $fields + ['project' => '']);
+        $this->submit($crawler, 'Create testcase', 'testcase_content', $fields);
         self::assertResponseStatusCodeSame(422);
 
-        $this->submit($crawler, 'Create testcase', 'testcase_content', $fields + ['project' => (string) $foreign->getId()]);
+        $this->submit($crawler, 'Create testcase', 'testcase_content', $fields + ['projects' => [(string) $foreign->getId()]]);
         self::assertResponseStatusCodeSame(422);
 
-        $this->submit($crawler, 'Create testcase', 'testcase_content', $fields + ['project' => (string) $own->getId()]);
+        $this->submit($crawler, 'Create testcase', 'testcase_content', $fields + ['projects' => [(string) $own->getId(), (string) $second->getId()]]);
         self::assertResponseRedirects();
         $this->entityManager->clear();
         $testcase = $this->findTestcase('Greeting');
-        self::assertSame('Own', $testcase->getProject()?->getTitle());
+        self::assertSame(['Own', 'Second'], $this->projectTitles($testcase));
         self::assertSame('alice', $testcase->getCreatedBy()?->getUsername());
     }
 
@@ -227,7 +229,7 @@ final class TestcaseManagementTest extends AppWebTestCase
         foreach ([
             ['GET', '/testcases/'.$uuid],
             ['POST', '/testcases/'.$uuid],
-            ['POST', '/testcases/'.$uuid.'/project'],
+            ['POST', '/testcases/'.$uuid.'/projects'],
             ['GET', '/testcases/'.$uuid.'/versions/1'],
             ['POST', '/testcases/'.$uuid.'/versions/1/restore'],
             ['POST', '/testcases/'.$uuid.'/draft/discard'],
@@ -275,7 +277,33 @@ final class TestcaseManagementTest extends AppWebTestCase
         self::assertResponseRedirects('http://localhost/login');
     }
 
-    public function testNormalUserMovesBetweenOwnProjectsButNotToForeignOrNone(): void
+    public function testProjectAssignmentKeepsForeignProjectsAndProtectsTheLastOne(): void
+    {
+        $user = $this->persistUser('alice');
+        $own = $this->persistProject('Own', [$user]);
+        $other = $this->persistProject('Other');
+        $shared = $this->persistTestcase('Shared', [$own, $other]);
+        $onlyOwn = $this->persistTestcase('Only own', $own);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/testcases/'.$onlyOwn->getUuid());
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => []]);
+        self::assertResponseRedirects('/testcases/'.$onlyOwn->getUuid());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'A testcase must keep at least one project.');
+        $this->entityManager->clear();
+        self::assertSame(['Own'], $this->projectTitles($this->findTestcase('Only own')));
+
+        $crawler = $this->client->request('GET', '/testcases/'.$shared->getUuid());
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => []]);
+        self::assertResponseRedirects('/testcases');
+        $this->entityManager->clear();
+        self::assertSame(['Other'], $this->projectTitles($this->findTestcase('Shared')));
+        $this->client->request('GET', '/testcases/'.$shared->getUuid());
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testNormalUserCanAddSeveralOwnProjectsButNotAForeignOne(): void
     {
         $user = $this->persistUser('alice');
         $first = $this->persistProject('First', [$user]);
@@ -286,23 +314,21 @@ final class TestcaseManagementTest extends AppWebTestCase
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', $path);
-        $this->submit($crawler, 'Save project', 'testcase_project', ['project' => (string) $second->getId()]);
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => [(string) $first->getId(), (string) $second->getId()]]);
         self::assertResponseRedirects($path);
         $this->entityManager->clear();
-        self::assertSame('Second', $this->findTestcase('Greeting')->getProject()?->getTitle());
+        self::assertSame(['First', 'Second'], $this->projectTitles($this->findTestcase('Greeting')));
 
-        foreach ([(string) $foreign->getId(), ''] as $target) {
-            $crawler = $this->client->request('GET', $path);
-            $this->submit($crawler, 'Save project', 'testcase_project', ['project' => $target]);
-            self::assertResponseRedirects($path);
-            $this->client->followRedirect();
-            self::assertSelectorTextContains('body', 'The project could not be saved.');
-            $this->entityManager->clear();
-            self::assertSame('Second', $this->findTestcase('Greeting')->getProject()?->getTitle());
-        }
+        $crawler = $this->client->request('GET', $path);
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => [(string) $first->getId(), (string) $foreign->getId()]]);
+        self::assertResponseRedirects($path);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'The projects could not be saved.');
+        $this->entityManager->clear();
+        self::assertSame(['First', 'Second'], $this->projectTitles($this->findTestcase('Greeting')));
     }
 
-    public function testAdminCanMoveAndClearTheProject(): void
+    public function testAdminCanClearAllProjects(): void
     {
         $admin = $this->persistUser('root', UserRole::Admin);
         $project = $this->persistProject('Security');
@@ -310,10 +336,43 @@ final class TestcaseManagementTest extends AppWebTestCase
         $this->client->loginUser($admin);
 
         $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
-        $this->submit($crawler, 'Save project', 'testcase_project', ['project' => '']);
+        $this->submit($crawler, 'Save projects', 'testcase_projects', ['projects' => []]);
 
         $this->entityManager->clear();
-        self::assertNull($this->findTestcase('Greeting')->getProject());
+        self::assertSame([], $this->projectTitles($this->findTestcase('Greeting')));
+    }
+
+    public function testTheEditorIsToldAboutProjectsHeCannotSee(): void
+    {
+        $user = $this->persistUser('alice');
+        $visible = $this->persistProject('Own', [$user]);
+        $hidden = $this->persistProject('Hidden');
+        $shared = $this->persistTestcase('Shared', [$visible, $hidden]);
+        $own = $this->persistTestcase('Only own', $visible);
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/testcases/'.$shared->getUuid());
+        self::assertSelectorTextContains('body', 'also assigned to 1 project(s) you cannot see');
+
+        $this->client->request('GET', '/testcases/'.$own->getUuid());
+        self::assertSelectorTextNotContains('body', 'you cannot see');
+    }
+
+    public function testListShowsVisibleProjectsAndAMultiProjectTestcaseOnlyOnce(): void
+    {
+        $user = $this->persistUser('alice');
+        $one = $this->persistProject('One', [$user]);
+        $two = $this->persistProject('Two', [$user]);
+        $hidden = $this->persistProject('Hidden');
+        $this->persistTestcase('Shared', [$one, $two, $hidden]);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/testcases');
+        self::assertSame(['Shared'], $this->titles($crawler));
+        self::assertSame('One, Two', trim($crawler->filter('tbody tr td:nth-child(3)')->text()));
+
+        self::assertSame(['Shared'], $this->titles($this->client->request('GET', '/testcases', ['project' => (string) $one->getUuid()])));
+        self::assertSame([], $this->titles($this->client->request('GET', '/testcases', ['project' => (string) $hidden->getUuid()])));
     }
 
     public function testCreatorAndAdminMayDeleteOthersMayNot(): void
@@ -475,5 +534,35 @@ final class TestcaseManagementTest extends AppWebTestCase
             }
         }
         self::fail('Testcase not found: '.$title);
+    }
+
+    public function testTestcaseDetailShowsTilesWithProjectCountAndRunCount(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Own', [$user]);
+        $second = $this->persistProject('Second', [$user]);
+        $testcase = $this->persistTestcase('Greeting', [$project, $second]);
+        $this->persistRun($project, 'Mine', [], [$testcase]);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+        $tiles = $crawler->filter('.stats .stat dd')->each(static fn (Crawler $dd): string => trim($dd->text()));
+        self::assertSame([$testcase->getActiveVersion()->getLabel(), '2', '1'], $tiles);
+        self::assertSelectorTextContains('p.help-text', 'Members of these projects can see and edit this testcase.');
+
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $loose = $this->persistTestcase('Loose');
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/testcases/'.$loose->getUuid());
+        self::assertSame('0', trim($crawler->filter('.stats .stat:nth-child(2) dd')->text()));
+    }
+
+    /** @return list<string> */
+    private function projectTitles(Testcase $testcase): array
+    {
+        $titles = $testcase->getProjects()->map(static fn (Project $project): string => $project->getTitle())->toArray();
+        sort($titles);
+
+        return $titles;
     }
 }

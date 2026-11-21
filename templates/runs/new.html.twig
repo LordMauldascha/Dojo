@@ -6,5 +6,5 @@
 
 {% block content %}
     {{ form(form) }}
-    <p><a href="{{ path('app_runs', {uuid: project.uuid}) }}">Back to runs</a></p>
+    {{ include('_back_link.html.twig', {href: path('app_runs', {uuid: project.uuid}), label: 'Back to runs'}) }}
 {% endblock %}

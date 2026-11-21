@@ -98,6 +98,7 @@ final class SkillController extends AbstractController
         #[MapEntity(expr: self::FIND_SKILL)] Skill $skill,
         Request $request,
         ProjectRepository $projects,
+        SkillRepository $skills,
         EntityManagerInterface $entityManager,
         #[CurrentUser] User $user,
     ): Response {
@@ -123,6 +124,7 @@ final class SkillController extends AbstractController
             'skill' => $skill,
             'form' => $form,
             'projectsForm' => $this->createProjectsForm($skill, $editable),
+            'runCount' => $skills->runCounts([$skill], $user)[(int) $skill->getId()] ?? 0,
             'hiddenProjectCount' => $skill->getProjects()->count() - \count($this->selectedAmong($skill, $editable)),
             'canDelete' => $this->isGranted(SkillVoter::DELETE, $skill),
         ]);

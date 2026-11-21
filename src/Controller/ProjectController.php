@@ -6,10 +6,8 @@ namespace App\Controller;
 
 use App\Entity\Group;
 use App\Entity\Project;
-use App\Entity\Skill;
 use App\Entity\User;
 use App\Form\AddGroupType;
-use App\Form\AddSkillType;
 use App\Form\AddUserType;
 use App\Form\ProjectType;
 use App\Pagination\ListQuery;
@@ -19,7 +17,6 @@ use App\Repository\RunRepository;
 use App\Repository\SkillRepository;
 use App\Repository\TestcaseRepository;
 use App\Routing\Requirements;
-use App\Run\RunAssignmentPruner;
 use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -111,13 +108,12 @@ final class ProjectController extends AbstractController
         return $this->render('projects/show.html.twig', [
             'project' => $project,
             'canManage' => $canManage,
-            'skills' => $skills->findByProject($project),
+            'skillCount' => $skills->countByProject($project),
             'testcaseCount' => $testcases->countByProject($project),
             'runCount' => $runs->countByProject($project),
             'form' => $form,
             'addGroupForm' => $canManage ? $this->createAddGroupForm($project, $projects) : null,
             'addUserForm' => $canManage ? $this->createAddUserForm($project, $projects) : null,
-            'addSkillForm' => $canManage ? $this->createAddSkillForm($project, $skills) : null,
         ]);
     }
 
@@ -199,47 +195,6 @@ final class ProjectController extends AbstractController
         return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
     }
 
-    #[Route('/{uuid:project}/skills', name: 'app_project_skill_add', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
-    public function addSkill(
-        Project $project,
-        Request $request,
-        SkillRepository $skills,
-        EntityManagerInterface $entityManager,
-    ): Response {
-        $form = $this->createAddSkillForm($project, $skills);
-        $form->handleRequest($request);
-
-        $skill = $form->isSubmitted() && $form->isValid() ? $form->get('skill')->getData() : null;
-        if (!$skill instanceof Skill) {
-            $this->addFlash('error', 'The skill could not be added.');
-        } else {
-            $skill->addProject($project);
-            if ($this->flushOrConflict($entityManager)) {
-                $this->addFlash('success', \sprintf('Skill "%s" added.', $skill->getActiveVersion()->getTitle()));
-            }
-        }
-
-        return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
-    }
-
-    #[Route('/{uuid:project}/skills/{skillUuid}/remove', name: 'app_project_skill_remove', requirements: ['uuid' => Requirement::UUID, 'skillUuid' => Requirement::UUID], methods: ['POST'])]
-    #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
-    #[IsCsrfTokenValid(new Expression('"remove-project-skill-" ~ args["project"].getUuid() ~ "-" ~ args["skill"].getUuid()'), methods: 'POST')]
-    public function removeSkill(
-        Project $project,
-        #[MapEntity(expr: 'repository.findActiveByUuid(skillUuid)')] Skill $skill,
-        RunAssignmentPruner $pruner,
-        EntityManagerInterface $entityManager,
-    ): Response {
-        $skill->removeProject($project);
-        if ($this->flushOrConflict($entityManager, static fn () => $pruner->pruneSkill($skill))) {
-            $this->addFlash('success', \sprintf('Skill "%s" removed.', $skill->getActiveVersion()->getTitle()));
-        }
-
-        return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
-    }
-
     #[Route('/{uuid:project}/delete', name: 'app_project_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
     #[IsCsrfTokenValid(new Expression('"delete-project-" ~ args["project"].getUuid()'), methods: 'POST')]
@@ -259,15 +214,6 @@ final class ProjectController extends AbstractController
         return $this->createForm(AddGroupType::class, null, [
             'action' => $this->generateUrl('app_project_group_add', ['uuid' => $project->getUuid()]),
             'choices' => $projects->findAssignableGroups($project),
-        ]);
-    }
-
-    /** @return FormInterface<array<string, mixed>|null> */
-    private function createAddSkillForm(Project $project, SkillRepository $skills): FormInterface
-    {
-        return $this->createForm(AddSkillType::class, null, [
-            'action' => $this->generateUrl('app_project_skill_add', ['uuid' => $project->getUuid()]),
-            'choices' => $skills->findAssignableToProject($project),
         ]);
     }
 
