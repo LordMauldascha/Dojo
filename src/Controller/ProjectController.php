@@ -240,26 +240,11 @@ final class ProjectController extends AbstractController
         return $this->redirectToRoute('app_project_show', ['uuid' => $project->getUuid()]);
     }
 
-    #[Route('/{uuid:project}/delete', name: 'app_project_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/{uuid:project}/delete', name: 'app_project_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(ProjectVoter::MANAGE, subject: 'project')]
     #[IsCsrfTokenValid(new Expression('"delete-project-" ~ args["project"].getUuid()'), methods: 'POST')]
-    public function delete(
-        Project $project,
-        Request $request,
-        SkillRepository $skills,
-        TestcaseRepository $testcases,
-        RunRepository $runs,
-        EntityManagerInterface $entityManager,
-    ): Response {
-        if (!$request->isMethod('POST')) {
-            return $this->render('projects/delete.html.twig', [
-                'project' => $project,
-                'skillCount' => \count($skills->findByProject($project)),
-                'testcaseCount' => $testcases->countByProject($project),
-                'runCount' => $runs->countByProject($project),
-            ]);
-        }
-
+    public function delete(Project $project, EntityManagerInterface $entityManager): Response
+    {
         $title = $project->getTitle();
         $entityManager->remove($project);
         $entityManager->flush();

@@ -198,7 +198,6 @@ final class SkillManagementTest extends AppWebTestCase
             ['GET', '/skills/'.$uuid.'/versions/1'],
             ['POST', '/skills/'.$uuid.'/versions/1/restore'],
             ['POST', '/skills/'.$uuid.'/draft/discard'],
-            ['GET', '/skills/'.$uuid.'/delete'],
             ['POST', '/skills/'.$uuid.'/delete'],
         ] as [$method, $url]) {
             $this->client->request($method, $url);
@@ -230,10 +229,12 @@ final class SkillManagementTest extends AppWebTestCase
         $this->entityManager->flush();
         $this->client->loginUser($admin);
 
-        foreach (['/skills/018f3a52-0000-7000-8000-000000000000', '/skills/not-a-uuid', '/skills/'.$skill->getUuid(), '/skills/'.$skill->getUuid().'/delete'] as $url) {
+        foreach (['/skills/018f3a52-0000-7000-8000-000000000000', '/skills/not-a-uuid', '/skills/'.$skill->getUuid()] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseStatusCodeSame(404, $url);
         }
+        $this->client->request('POST', '/skills/'.$skill->getUuid().'/delete');
+        self::assertResponseStatusCodeSame(404);
 
         static::ensureKernelShutdown();
         $anonymous = static::createClient();
@@ -307,25 +308,26 @@ final class SkillManagementTest extends AppWebTestCase
 
         $this->client->loginUser($colleague);
         $this->client->request('GET', '/skills/'.$mine->getUuid().'/delete');
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(405);
         $this->client->request('POST', '/skills/'.$mine->getUuid().'/delete');
         self::assertResponseStatusCodeSame(403);
-        self::assertSelectorNotExists('a[href$="/delete"]');
+        $this->client->request('GET', '/skills/'.$mine->getUuid());
+        self::assertSelectorNotExists('form[action$="/delete"]');
 
         $this->client->loginUser($creator);
-        $crawler = $this->client->request('GET', '/skills/'.$mine->getUuid().'/delete');
+        $crawler = $this->client->request('GET', '/skills/'.$mine->getUuid());
         self::assertResponseIsSuccessful();
         $this->client->request('POST', '/skills/'.$mine->getUuid().'/delete', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/skills');
         $this->entityManager->clear();
         self::assertTrue($this->findSkill('Mine')->isDeleted());
         self::assertSame(['Admin deletes'], $this->titles($this->client->request('GET', '/skills')));
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
-        $crawler = $this->client->request('GET', '/skills/'.$adminSkill->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $crawler = $this->client->request('GET', '/skills/'.$adminSkill->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/skills');
         self::assertSame([], $this->titles($this->client->request('GET', '/skills')));
     }
@@ -347,7 +349,7 @@ final class SkillManagementTest extends AppWebTestCase
         $this->client->loginUser($colleague);
         $this->client->request('GET', '/skills/'.$skill->getUuid());
         self::assertResponseIsSuccessful();
-        $this->client->request('GET', '/skills/'.$skill->getUuid().'/delete');
+        $this->client->request('POST', '/skills/'.$skill->getUuid().'/delete');
         self::assertResponseStatusCodeSame(403);
     }
 

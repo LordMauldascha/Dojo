@@ -74,6 +74,7 @@ final class GroupController extends AbstractController
         Group $group,
         Request $request,
         GroupRepository $groups,
+        ProjectRepository $projects,
         EntityManagerInterface $entityManager,
     ): Response {
         $form = $this->createForm(GroupType::class, $group);
@@ -89,6 +90,7 @@ final class GroupController extends AbstractController
 
         return $this->render('admin/groups/show.html.twig', [
             'group' => $group,
+            'projects' => $projects->findByGroup($group),
             'form' => $form,
             'addUserForm' => $this->createAddUserForm($group, $groups),
         ]);
@@ -131,21 +133,10 @@ final class GroupController extends AbstractController
         return $this->redirectToRoute('app_admin_group_show', ['uuid' => $group->getUuid()]);
     }
 
-    #[Route('/{uuid:group}/delete', name: 'app_admin_group_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/{uuid:group}/delete', name: 'app_admin_group_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid(new Expression('"delete-group-" ~ args["group"].getUuid()'), methods: 'POST')]
-    public function delete(
-        Group $group,
-        Request $request,
-        ProjectRepository $projects,
-        EntityManagerInterface $entityManager,
-    ): Response {
-        if (!$request->isMethod('POST')) {
-            return $this->render('admin/groups/delete.html.twig', [
-                'group' => $group,
-                'projects' => $projects->findByGroup($group),
-            ]);
-        }
-
+    public function delete(Group $group, EntityManagerInterface $entityManager): Response
+    {
         $title = $group->getTitle();
         $entityManager->remove($group);
         $entityManager->flush();

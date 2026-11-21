@@ -24,7 +24,6 @@ testcases.
 | Overview | `/projects` | Everyone, limited to accessible projects (admins: all) |
 | New project | `/projects/new` | Admins |
 | Project | `/projects/{uuid}` | Everyone with access; admins can change it |
-| Delete | `/projects/{uuid}/delete` | Admins |
 
 **Overview** columns: Title, Description, Users, Groups, Skills, Testcases, Updated, Created. Users, groups, skills and
 testcases are counts; skills and testcases link to the matching overview filtered by this project. Search covers title
@@ -43,7 +42,7 @@ are not shown.
 
 ## Deleting a project
 
-The confirmation page states what happens, then:
+The *Delete* button on the project page opens a confirmation dialog that states what happens, then:
 
 - the project's **runs and their versions are deleted** for good;
 - **skills** are kept and only lose the assignment to this project;

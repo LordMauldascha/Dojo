@@ -227,18 +227,11 @@ final class RunController extends AbstractController
         return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
     }
 
-    #[Route('/runs/{uuid:run}/delete', name: 'app_run_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/runs/{uuid:run}/delete', name: 'app_run_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(RunVoter::DELETE, subject: 'run')]
     #[IsCsrfTokenValid(new Expression('"delete-run-" ~ args["run"].getUuid()'), methods: 'POST')]
-    public function delete(
-        Run $run,
-        Request $request,
-        EntityManagerInterface $entityManager,
-    ): Response {
-        if (!$request->isMethod('POST')) {
-            return $this->render('runs/delete.html.twig', ['run' => $run]);
-        }
-
+    public function delete(Run $run, EntityManagerInterface $entityManager): Response
+    {
         $project = $run->getProject();
         $title = $run->getTitle();
         $entityManager->remove($run);

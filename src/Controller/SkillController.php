@@ -201,19 +201,14 @@ final class SkillController extends AbstractController
         return $this->redirectToRoute('app_skill_show', ['uuid' => $skill->getUuid()]);
     }
 
-    #[Route('/{uuid}/delete', name: 'app_skill_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/{uuid}/delete', name: 'app_skill_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(SkillVoter::DELETE, subject: 'skill')]
     #[IsCsrfTokenValid(new Expression('"delete-skill-" ~ args["skill"].getUuid()'), methods: 'POST')]
     public function delete(
         #[MapEntity(expr: self::FIND_SKILL)] Skill $skill,
-        Request $request,
         RunAssignmentPruner $pruner,
         EntityManagerInterface $entityManager,
     ): Response {
-        if (!$request->isMethod('POST')) {
-            return $this->render('skills/delete.html.twig', ['skill' => $skill]);
-        }
-
         $title = $skill->getActiveVersion()->getTitle();
         $skill->softDelete();
         if ($this->flushOrConflict($entityManager, static fn () => $pruner->pruneSkill($skill))) {

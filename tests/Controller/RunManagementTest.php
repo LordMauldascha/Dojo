@@ -87,7 +87,6 @@ final class RunManagementTest extends AppWebTestCase
             ['POST', '/runs/'.$uuid.'/start'],
             ['GET', '/runs/'.$uuid.'/versions/1'],
             ['GET', '/runs/'.$uuid.'/compare'],
-            ['GET', '/runs/'.$uuid.'/delete'],
             ['POST', '/runs/'.$uuid.'/delete'],
         ] as [$method, $url]) {
             $this->client->request($method, $url);
@@ -122,25 +121,25 @@ final class RunManagementTest extends AppWebTestCase
 
         $this->client->loginUser($colleague);
         $this->client->request('GET', '/runs/'.$mine->getUuid().'/delete');
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(405);
         $this->client->request('POST', '/runs/'.$mine->getUuid().'/delete');
         self::assertResponseStatusCodeSame(403);
         $this->client->request('GET', '/runs/'.$mine->getUuid());
-        self::assertSelectorNotExists('a[href$="/delete"]');
+        self::assertSelectorNotExists('form[action$="/delete"]');
 
         $this->client->loginUser($creator);
-        $crawler = $this->client->request('GET', '/runs/'.$mine->getUuid().'/delete');
+        $crawler = $this->client->request('GET', '/runs/'.$mine->getUuid());
         self::assertResponseIsSuccessful();
         $this->client->request('POST', '/runs/'.$mine->getUuid().'/delete', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/projects/'.$project->getUuid().'/runs');
         $this->entityManager->clear();
         self::assertNull($this->entityManager->getRepository(Run::class)->findOneBy(['title' => 'Mine']));
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
-        $crawler = $this->client->request('GET', '/runs/'.$adminDeletes->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $crawler = $this->client->request('GET', '/runs/'.$adminDeletes->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/projects/'.$project->getUuid().'/runs');
         self::assertSame([], $this->titles($this->client->request('GET', '/projects/'.$project->getUuid().'/runs')));
     }
@@ -376,9 +375,9 @@ final class RunManagementTest extends AppWebTestCase
         self::assertSelectorTextContains('body', 'Runs: 1');
         self::assertSelectorExists('a[href$="/runs"]');
 
-        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/delete');
-        self::assertSelectorTextContains('body', '1 run(s) and their versions are deleted.');
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorTextContains('dialog', '1 run(s) and their versions are deleted.');
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/projects');
 
         $this->entityManager->clear();

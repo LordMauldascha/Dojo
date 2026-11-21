@@ -223,7 +223,6 @@ final class ProjectManagementTest extends AppWebTestCase
             ['POST', \sprintf('/projects/%s/groups/%s/remove', $uuid, $group->getUuid())],
             ['POST', '/projects/'.$uuid.'/users'],
             ['POST', \sprintf('/projects/%s/users/%d/remove', $uuid, $user->getId())],
-            ['GET', '/projects/'.$uuid.'/delete'],
             ['POST', '/projects/'.$uuid.'/delete'],
         ] as [$method, $path]) {
             $this->client->request($method, $path);
@@ -241,7 +240,7 @@ final class ProjectManagementTest extends AppWebTestCase
         $this->client->loginUser($outsider);
         $uuid = (string) $project->getUuid();
 
-        foreach ([['GET', '/projects/'.$uuid], ['GET', '/projects/'.$uuid.'/delete'], ['POST', '/projects/'.$uuid.'/delete']] as [$method, $path]) {
+        foreach ([['GET', '/projects/'.$uuid], ['POST', '/projects/'.$uuid.'/delete']] as [$method, $path]) {
             $this->client->request($method, $path);
             self::assertResponseStatusCodeSame(403, \sprintf('%s %s', $method, $path));
         }
@@ -258,15 +257,18 @@ final class ProjectManagementTest extends AppWebTestCase
         $this->entityManager->flush();
         $path = '/projects/'.$project->getUuid().'/delete';
 
-        $crawler = $this->client->request('GET', $path);
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('body', '1 group(s) and 1 user(s)');
+        self::assertSelectorTextContains('dialog', '1 group(s) and 1 user(s)');
+
+        $this->client->request('GET', $path);
+        self::assertResponseStatusCodeSame(405);
 
         $this->client->request('POST', $path, ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
         self::assertNotNull($this->entityManager->getRepository(Project::class)->findOneBy(['title' => 'Security']));
 
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/projects');
         $this->entityManager->clear();
         self::assertNull($this->entityManager->getRepository(Project::class)->findOneBy(['title' => 'Security']));
@@ -398,9 +400,9 @@ final class ProjectManagementTest extends AppWebTestCase
         $project = $this->persistProject('Security');
         $this->persistSkill('Review', [$project]);
 
-        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/delete');
-        self::assertSelectorTextContains('body', '1 skill(s) lose this project assignment');
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorTextContains('dialog', '1 skill(s) lose this project assignment');
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
 
         self::assertResponseRedirects('/projects');
         $this->entityManager->clear();
@@ -459,9 +461,9 @@ final class ProjectManagementTest extends AppWebTestCase
         $testcase = $this->persistTestcase('Greeting', $project);
         $this->client->loginUser($admin);
 
-        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid().'/delete');
-        self::assertSelectorTextContains('body', '1 testcase(s) lose their project and become admin-only');
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $crawler = $this->client->request('GET', '/projects/'.$project->getUuid());
+        self::assertSelectorTextContains('dialog', '1 testcase(s) lose their project and become admin-only');
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/projects');
 
         $this->entityManager->clear();

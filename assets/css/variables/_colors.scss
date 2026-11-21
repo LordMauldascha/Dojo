@@ -12,6 +12,7 @@
     --color-bg-sunken: #1f160f; // sidebar and input fields
     --color-surface: #382b1e;
     --color-surface-raised: #423425;
+    --color-scrim: color-mix(in srgb, var(--color-bg-sunken) 75%, transparent); // backdrop behind modal dialogs
     --color-selected: var(--color-brand-brown); // current navigation item, 8.5:1 under --color-text
     --color-selection: #6b5126; // text selection, 6.3:1 under --color-text
 

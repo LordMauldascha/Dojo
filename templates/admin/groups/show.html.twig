@@ -41,5 +41,5 @@
     {{ form(addUserForm) }}
 
     <h2>Delete group</h2>
-    <p><a href="{{ path('app_admin_group_delete', {uuid: group.uuid}) }}">Delete</a></p>
+    {{ forms.confirm_post(path('app_admin_group_delete', {uuid: group.uuid}), 'delete-group-' ~ group.uuid, 'Delete', 'Delete group?', projects ? 'The group is removed from these projects, and its members lose the access it granted: ' ~ projects|map(project => project.title)|join(', ') ~ '.' : 'The group is not assigned to any project.') }}
 {% endblock %}

@@ -15,7 +15,7 @@
                     Stored: ••••{{ row.key.lastFour }}
                     (changed on {{ row.key.updatedAt|date }})
                 </p>
-                {{ forms.post(path('app_admin_api_key_delete', {provider: row.provider.value}), 'delete-api-key-' ~ row.provider.value, 'Delete') }}
+                {{ forms.confirm_post(path('app_admin_api_key_delete', {provider: row.provider.value}), 'delete-api-key-' ~ row.provider.value, 'Delete', 'Delete ' ~ row.provider.label ~ '?', 'The stored key is removed. Runs with this provider cannot use it until a new key is saved.') }}
             {% else %}
                 <p>No key stored.</p>
             {% endif %}

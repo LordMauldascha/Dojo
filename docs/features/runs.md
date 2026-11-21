@@ -49,7 +49,6 @@ Runs have no own members. Everything derives from the project.
 | Run | `/runs/{uuid}` | Edit details, configurations, skills, testcases; start; version list |
 | Version | `/runs/{uuid}/versions/{number}` | Read-only snapshot |
 | Compare | `/runs/{uuid}/compare?from=1&to=2` | Differences between two versions |
-| Delete | `/runs/{uuid}/delete` | Confirmation, then hard delete |
 
 The list has the columns Title, Description, Skills, Testcases, Updated, Created and searches title and description
 (see [Overview tables](overview-tables.md)). Skills and testcases are assigned with one checkbox list each.

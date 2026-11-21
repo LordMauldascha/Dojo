@@ -231,7 +231,6 @@ final class TestcaseManagementTest extends AppWebTestCase
             ['GET', '/testcases/'.$uuid.'/versions/1'],
             ['POST', '/testcases/'.$uuid.'/versions/1/restore'],
             ['POST', '/testcases/'.$uuid.'/draft/discard'],
-            ['GET', '/testcases/'.$uuid.'/delete'],
             ['POST', '/testcases/'.$uuid.'/delete'],
         ] as [$method, $url]) {
             $this->client->request($method, $url);
@@ -263,10 +262,12 @@ final class TestcaseManagementTest extends AppWebTestCase
         $this->entityManager->flush();
         $this->client->loginUser($admin);
 
-        foreach (['/testcases/018f3a52-0000-7000-8000-000000000000', '/testcases/not-a-uuid', '/testcases/'.$testcase->getUuid(), '/testcases/'.$testcase->getUuid().'/delete'] as $url) {
+        foreach (['/testcases/018f3a52-0000-7000-8000-000000000000', '/testcases/not-a-uuid', '/testcases/'.$testcase->getUuid()] as $url) {
             $this->client->request('GET', $url);
             self::assertResponseStatusCodeSame(404, $url);
         }
+        $this->client->request('POST', '/testcases/'.$testcase->getUuid().'/delete');
+        self::assertResponseStatusCodeSame(404);
 
         static::ensureKernelShutdown();
         $anonymous = static::createClient();
@@ -325,26 +326,26 @@ final class TestcaseManagementTest extends AppWebTestCase
 
         $this->client->loginUser($colleague);
         $this->client->request('GET', '/testcases/'.$mine->getUuid().'/delete');
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseStatusCodeSame(405);
         $this->client->request('POST', '/testcases/'.$mine->getUuid().'/delete');
         self::assertResponseStatusCodeSame(403);
         $this->client->request('GET', '/testcases/'.$mine->getUuid());
-        self::assertSelectorNotExists('a[href$="/delete"]');
+        self::assertSelectorNotExists('form[action$="/delete"]');
 
         $this->client->loginUser($creator);
-        $crawler = $this->client->request('GET', '/testcases/'.$mine->getUuid().'/delete');
+        $crawler = $this->client->request('GET', '/testcases/'.$mine->getUuid());
         self::assertResponseIsSuccessful();
         $this->client->request('POST', '/testcases/'.$mine->getUuid().'/delete', ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/testcases');
         $this->entityManager->clear();
         self::assertTrue($this->findTestcase('Mine')->isDeleted());
         self::assertSame(['Admin deletes'], $this->titles($this->client->request('GET', '/testcases')));
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
-        $crawler = $this->client->request('GET', '/testcases/'.$adminDeletes->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $crawler = $this->client->request('GET', '/testcases/'.$adminDeletes->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/testcases');
         self::assertSame([], $this->titles($this->client->request('GET', '/testcases')));
     }
@@ -366,7 +367,7 @@ final class TestcaseManagementTest extends AppWebTestCase
         $this->client->loginUser($colleague);
         $this->client->request('GET', '/testcases/'.$testcase->getUuid());
         self::assertResponseIsSuccessful();
-        $this->client->request('GET', '/testcases/'.$testcase->getUuid().'/delete');
+        $this->client->request('POST', '/testcases/'.$testcase->getUuid().'/delete');
         self::assertResponseStatusCodeSame(403);
     }
 

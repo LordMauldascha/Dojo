@@ -1,0 +1,33 @@
+// Confirmation modal (native <dialog>, see docs/Design.md). Never set display on dialog itself: it would override the closed state.
+dialog {
+    width: min(var(--measure), calc(100% - 2 * var(--space-4)));
+    padding: var(--space-5);
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+
+    h2 {
+        margin-top: 0;
+    }
+
+    form,
+    .dialog-actions {
+        display: flex;
+        flex-direction: row-reverse;
+        gap: var(--space-3);
+        justify-content: flex-start;
+        margin-top: var(--space-5);
+    }
+}
+
+// Both rules are needed, otherwise scrolling over the backdrop or inside the dialog scrolls the page behind it.
+dialog:modal {
+    overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background: var(--color-scrim);
+}

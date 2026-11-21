@@ -33,7 +33,6 @@ Also stored: creator, created, updated and deleted time.
 | New skill | `/skills/new` | Create version 1 with title, description, SKILL.md and projects |
 | Skill | `/skills/{uuid}` | Edit and save as draft or final, discard the draft, change projects, version history |
 | Version | `/skills/{uuid}/versions/{number}` | Read-only view of one version |
-| Delete | `/skills/{uuid}/delete` | Confirmation, then soft delete |
 
 The overview searches the title and description of the active version and can be filtered with `?project=<uuid>`
 (for non-admins only projects they can access count). The Projects column lists only projects the viewer can access.

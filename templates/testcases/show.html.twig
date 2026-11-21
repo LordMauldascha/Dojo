@@ -20,7 +20,7 @@
     <h2>Edit</h2>
     {{ form(form) }}
     {% if draft %}
-        {{ forms.post(path('app_testcase_draft_discard', {uuid: testcase.uuid}), 'discard-testcase-draft-' ~ testcase.uuid, 'Discard draft') }}
+        {{ forms.confirm_post(path('app_testcase_draft_discard', {uuid: testcase.uuid}), 'discard-testcase-draft-' ~ testcase.uuid, 'Discard draft', 'Discard draft?', 'The unfinished draft is deleted. The final versions are kept.') }}
     {% endif %}
 
     <h2>Project</h2>
@@ -30,6 +30,6 @@
 
     {% if canDelete %}
         <h2>Delete testcase</h2>
-        <p><a href="{{ path('app_testcase_delete', {uuid: testcase.uuid}) }}">Delete</a></p>
+        {{ forms.confirm_post(path('app_testcase_delete', {uuid: testcase.uuid}), 'delete-testcase-' ~ testcase.uuid, 'Delete', 'Delete testcase?', 'The testcase disappears from all lists. Its version history is kept in the database.') }}
     {% endif %}
 {% endblock %}

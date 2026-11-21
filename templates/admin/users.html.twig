@@ -27,7 +27,7 @@
                         <td>
                             {% if user.userIdentifier != app.user.userIdentifier %}
                                 {{ forms.post(path('app_admin_user_toggle', {id: user.id}), 'toggle-user-' ~ user.id, user.enabled ? 'Disable' : 'Enable') }}
-                                {{ forms.post(path('app_admin_user_delete', {id: user.id}), 'delete-user-' ~ user.id, 'Delete') }}
+                                {{ forms.confirm_post(path('app_admin_user_delete', {id: user.id}), 'delete-user-' ~ user.id, 'Delete', 'Delete user?', 'The user is deleted and loses access to all projects.') }}
                             {% endif %}
                         </td>
                     </tr>

@@ -23,7 +23,7 @@
     <h2>Edit</h2>
     {{ form(form) }}
     {% if draft %}
-        {{ forms.post(path('app_skill_draft_discard', {uuid: skill.uuid}), 'discard-skill-draft-' ~ skill.uuid, 'Discard draft') }}
+        {{ forms.confirm_post(path('app_skill_draft_discard', {uuid: skill.uuid}), 'discard-skill-draft-' ~ skill.uuid, 'Discard draft', 'Discard draft?', 'The unfinished draft is deleted. The final versions are kept.') }}
     {% endif %}
 
     <h2>Projects</h2>
@@ -33,6 +33,6 @@
 
     {% if canDelete %}
         <h2>Delete skill</h2>
-        <p><a href="{{ path('app_skill_delete', {uuid: skill.uuid}) }}">Delete</a></p>
+        {{ forms.confirm_post(path('app_skill_delete', {uuid: skill.uuid}), 'delete-skill-' ~ skill.uuid, 'Delete', 'Delete skill?', 'The skill disappears from all lists and projects. Its version history is kept in the database.') }}
     {% endif %}
 {% endblock %}

@@ -193,19 +193,14 @@ final class TestcaseController extends AbstractController
         return $this->redirectToRoute('app_testcase_show', ['uuid' => $testcase->getUuid()]);
     }
 
-    #[Route('/{uuid}/delete', name: 'app_testcase_delete', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[Route('/{uuid}/delete', name: 'app_testcase_delete', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(TestcaseVoter::DELETE, subject: 'testcase')]
     #[IsCsrfTokenValid(new Expression('"delete-testcase-" ~ args["testcase"].getUuid()'), methods: 'POST')]
     public function delete(
         #[MapEntity(expr: self::FIND_TESTCASE)] Testcase $testcase,
-        Request $request,
         RunAssignmentPruner $pruner,
         EntityManagerInterface $entityManager,
     ): Response {
-        if (!$request->isMethod('POST')) {
-            return $this->render('testcases/delete.html.twig', ['testcase' => $testcase]);
-        }
-
         $title = $testcase->getActiveVersion()->getTitle();
         $testcase->softDelete();
         if ($this->flushOrConflict($entityManager, static fn () => $pruner->pruneTestcase($testcase))) {

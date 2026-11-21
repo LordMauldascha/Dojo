@@ -41,6 +41,8 @@ to projects they have access to.
 ## Conventions
 
 - URLs of groups, projects, skills, testcases and runs contain a random `uuid`, not the database id.
+- Leaving a page with unsaved form changes asks for confirmation (a dialog for in-app links, the browser prompt otherwise); see
+  [Design](Design.md#unsaved-changes).
 - A form is submitted only once per page view: a double click or a second Enter press is ignored. Two people saving the same
   item at the same moment get a message to reload instead of an error page.
 - Dates are shown as `DD.MM.YYYY HH:MM` in the Europe/Vienna time zone.

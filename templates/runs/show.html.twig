@@ -86,6 +86,6 @@
 
     {% if canDelete %}
         <h2>Delete run</h2>
-        <p><a href="{{ path('app_run_delete', {uuid: run.uuid}) }}">Delete</a></p>
+        {{ forms.confirm_post(path('app_run_delete', {uuid: run.uuid}), 'delete-run-' ~ run.uuid, 'Delete', 'Delete run?', 'The run and its ' ~ run.versions|length ~ ' version(s) are deleted for good. Skills and testcases are kept.') }}
     {% endif %}
 {% endblock %}

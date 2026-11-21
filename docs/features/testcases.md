@@ -37,7 +37,6 @@ There is no separate admin-only flag. For an admin-only testcase use no project,
 | New testcase | `/testcases/new` | Create version 1 with all fields and the project |
 | Testcase | `/testcases/{uuid}` | Edit and save as draft or final, discard the draft, change the project, version history |
 | Version | `/testcases/{uuid}/versions/{number}` | Read-only view of one version |
-| Delete | `/testcases/{uuid}/delete` | Confirmation, then soft delete |
 
 The Version column shows the newest version number, for example `3`, with a green dot when it is final and a yellow dot
 when it is a draft (also when an earlier final version exists). The same column exists for skills. Search covers title

@@ -19,13 +19,12 @@ There is no description, icon or color.
 | Overview | `/admin/groups` | Table with search on the title; columns Title, Users, Updated, Created |
 | New group | `/admin/groups/new` | Create a group, then continue on its page |
 | Group | `/admin/groups/{uuid}` | Rename, add members (select of users that are not members yet), remove members |
-| Delete | `/admin/groups/{uuid}/delete` | Confirmation page, then delete |
 
 The overview follows the shared rules in [Overview tables](overview-tables.md).
 
 ## Deleting a group
 
-The confirmation page lists the projects the group will be removed from. After confirming, the group, its memberships
+The *Delete* button on the group page opens a confirmation dialog that lists the projects the group will be removed from. After confirming, the group, its memberships
 and its project assignments are deleted. Users and projects stay. Members lose the project access they only had through
 this group.
 

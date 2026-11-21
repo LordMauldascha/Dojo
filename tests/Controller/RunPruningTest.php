@@ -61,8 +61,8 @@ final class RunPruningTest extends AppWebTestCase
         $this->persistRun($projectB, 'Run B', [$skill]);
         $this->client->loginUser($admin);
 
-        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
 
         self::assertResponseRedirects('/skills');
         self::assertSame(['Other'], $this->skillTitles('Run A'));
@@ -110,8 +110,8 @@ final class RunPruningTest extends AppWebTestCase
         $this->persistRun($project, 'Run A', [], [$testcase, $kept]);
         $this->client->loginUser($admin);
 
-        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $crawler = $this->client->request('GET', '/testcases/'.$testcase->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
 
         self::assertResponseRedirects('/testcases');
         self::assertSame(['Kept'], $this->testcaseTitles('Run A'));
@@ -128,8 +128,8 @@ final class RunPruningTest extends AppWebTestCase
         $this->entityManager->flush();
         $this->client->loginUser($admin);
 
-        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid().'/delete');
-        $this->client->submit($crawler->selectButton('Delete')->form());
+        $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertSame([], $this->skillTitles('Run A'));
 
         $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());

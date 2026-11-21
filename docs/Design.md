@@ -56,6 +56,36 @@ All five overviews (groups, projects, skills, testcases, runs) share `templates/
 - Width: the page content uses the full width next to the sidebar with the padding as margin (`.app-main` has no
   max-width). Tables span it; forms and paragraphs keep their own limits (`--measure`, input `max-width`).
 
+## Confirmation dialog
+
+Every button that deletes something (users, API keys, groups, projects, skills, testcases, runs, drafts) opens a modal first.
+It is a native `<dialog>` opened with Invoker Commands, rendered by the `confirm_post` macro in
+`templates/_forms.html.twig`; the POST form with the CSRF token sits inside the dialog, so nothing is sent before the
+user confirms. Styles: `assets/css/components/_dialog.scss`, backdrop token `--color-scrim`.
+
+- Keep `type="button"` on the Cancel and opener buttons, `autofocus` on Cancel (the safe action), no `role` or `aria-modal`.
+- `closedby="any"` adds click-outside dismissal where supported; Esc always closes.
+- Never set `display` on `dialog` without `[open]`, and keep `overscroll-behavior: contain` on `dialog:modal` and
+  `dialog::backdrop`, otherwise the page scrolls behind the modal.
+- Browsers without Invoker Commands are served by `assets/js/commandButtons.ts` (no dependency).
+- `Remove` buttons (assignments) and `Restore` do not ask.
+
+## Unsaved changes
+
+Leaving a page with edited form fields asks first (`assets/js/unsavedChanges.ts`, the `#unsaved-dialog` in
+`templates/layout.html.twig`, styles shared with the confirmation dialog). It guards every named POST form
+(`form[name][method="post"]`, so all Symfony forms, not the GET search of the lists or the login). A field counts as changed
+when it differs from its HTML default (`defaultValue`, `defaultChecked`, `defaultSelected`); hidden, password and file fields are
+ignored (password managers fill them without an edit).
+
+- A click on an in-app link opens the dialog with *Stay* (focused) and *Discard changes*. The handler runs in the capture
+  phase, so the logout brick only starts after the user chose to discard. Links with a modifier key, `target`, `download`,
+  a hash on the same page or another origin are not guarded.
+- Reload, closing the tab, back, external links and the submit of another form get the browser's own prompt (`beforeunload`;
+  its text cannot be changed).
+- Submitting a form never warns about its own fields, but about changes in another form on the same page.
+- Pages without `layout.html.twig` (login) have no dialog and no named forms, so nothing changes there.
+
 ## Logout brick
 
 The Logout link in the sidebar turns into a brick on hover and breaks when clicked (`a.logout`,

@@ -114,15 +114,18 @@ final class GroupManagementTest extends AppWebTestCase
         $this->entityManager->flush();
         $path = '/admin/groups/'.$group->getUuid().'/delete';
 
-        $crawler = $this->client->request('GET', $path);
+        $crawler = $this->client->request('GET', '/admin/groups/'.$group->getUuid());
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('body', 'not assigned to any project');
+        self::assertSelectorTextContains('dialog', 'not assigned to any project');
+
+        $this->client->request('GET', $path);
+        self::assertResponseStatusCodeSame(405);
 
         $this->client->request('POST', $path, ['_token' => 'invalid']);
         self::assertResponseStatusCodeSame(403);
         self::assertNotNull($this->entityManager->getRepository(Group::class)->findOneBy(['title' => 'Entwicklung']));
 
-        $this->client->submit($crawler->selectButton('Delete permanently')->form());
+        $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertResponseRedirects('/admin/groups');
         $this->entityManager->clear();
         self::assertNull($this->entityManager->getRepository(Group::class)->findOneBy(['title' => 'Entwicklung']));
@@ -144,11 +147,11 @@ final class GroupManagementTest extends AppWebTestCase
         }
         $this->entityManager->flush();
 
-        $this->client->request('GET', '/admin/groups/'.$group->getUuid().'/delete');
+        $this->client->request('GET', '/admin/groups/'.$group->getUuid());
 
-        self::assertSelectorTextContains('ul', 'Data protection');
-        self::assertSelectorTextContains('ul', 'Security');
-        self::assertSelectorTextNotContains('body', 'not assigned to any project');
+        self::assertSelectorTextContains('dialog', 'Data protection');
+        self::assertSelectorTextContains('dialog', 'Security');
+        self::assertSelectorTextNotContains('dialog', 'not assigned to any project');
     }
 
     public function testDeletingAGroupMemberUserKeepsTheGroup(): void
@@ -180,7 +183,6 @@ final class GroupManagementTest extends AppWebTestCase
             ['POST', '/admin/groups/'.$uuid],
             ['POST', '/admin/groups/'.$uuid.'/users'],
             ['POST', \sprintf('/admin/groups/%s/users/%d/remove', $uuid, $member->getId())],
-            ['GET', '/admin/groups/'.$uuid.'/delete'],
             ['POST', '/admin/groups/'.$uuid.'/delete'],
         ] as [$method, $path]) {
             $this->client->request($method, $path);
