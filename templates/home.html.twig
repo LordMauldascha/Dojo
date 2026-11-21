@@ -1,32 +1,109 @@
 {% extends 'layout.html.twig' %}
 
+{% import '_list/macros.html.twig' as list %}
+
 {% block title %}Overview{% endblock %}
 
 {% block heading %}Overview{% endblock %}
 
 {% block content %}
-    <h2>Provider</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Provider</th>
-                <th>Status</th>
-                <th>Last changed</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
+    <h2>My projects</h2>
+    {% if projects %}
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ row.provider.label }}</td>
-                    <td>{{ row.key ? 'set' : 'not set' }}</td>
-                    <td>{{ row.key ? row.key.updatedAt|date : '–' }}</td>
+                    <th>Project</th>
+                    <th>Skills</th>
+                    <th>Testcases</th>
+                    <th>Runs</th>
+                    <th>Last run</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for row in projects %}
+                    {% set project = row[0] %}
+                    <tr>
+                        <td><a href="{{ path('app_project_show', {uuid: project.uuid}) }}">{{ project.title }}</a></td>
+                        <td><a href="{{ path('app_skills', {project: project.uuid}) }}">{{ row.skillCount }}</a></td>
+                        <td><a href="{{ path('app_testcases', {project: project.uuid}) }}">{{ row.testcaseCount }}</a></td>
+                        <td><a href="{{ path('app_runs', {uuid: project.uuid}) }}">{{ row.runCount }}</a></td>
+                        <td>{{ row.lastRun ? row.lastRun|date : '–' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p><a href="{{ path('app_projects') }}">All projects</a></p>
+    {% else %}
+        <p>No projects yet.</p>
+    {% endif %}
 
-    {% if userCount is not null %}
-        <h2>Users</h2>
-        <p>Existing users: {{ userCount }}</p>
+    <h2>Recent runs</h2>
+    {% if runVersions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Run</th>
+                    <th>Project</th>
+                    <th>Version</th>
+                    <th>Started</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for version in runVersions %}
+                    <tr>
+                        <td><a href="{{ path('app_run_version', {uuid: version.run.uuid, number: version.number}) }}">{{ version.run.title }}</a></td>
+                        <td><a href="{{ path('app_project_show', {uuid: version.run.project.uuid}) }}">{{ version.run.project.title }}</a></td>
+                        <td>{{ version.number }}</td>
+                        <td>{{ version.createdAt|date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No run has been started yet.</p>
+    {% endif %}
+
+    <h2>Open drafts</h2>
+    {% if skillDrafts or testcaseDrafts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Title</th>
+                    <th>Draft</th>
+                    <th>Saved</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for draft in skillDrafts %}
+                    <tr>
+                        <td>Skill</td>
+                        <td><a href="{{ path('app_skill_show', {uuid: draft.skill.uuid}) }}">{{ draft.title }}</a></td>
+                        <td>{{ list.version_status(draft.number, draft.number) }}</td>
+                        <td>{{ draft.savedAt|date }}</td>
+                    </tr>
+                {% endfor %}
+                {% for draft in testcaseDrafts %}
+                    <tr>
+                        <td>Testcase</td>
+                        <td><a href="{{ path('app_testcase_show', {uuid: draft.testcase.uuid}) }}">{{ draft.title }}</a></td>
+                        <td>{{ list.version_status(draft.number, draft.number) }}</td>
+                        <td>{{ draft.savedAt|date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No open drafts.</p>
+    {% endif %}
+
+    {% if admin is not null %}
+        <h2>Administration</h2>
+        <p>
+            <a href="{{ path('app_admin_api_keys') }}">Provider keys</a>:
+            {{ admin.providerCount - admin.missing|length }} of {{ admin.providerCount }} set{% if admin.missing %}, missing: {{ admin.missing|map(provider => provider.displayName)|join(', ') }}{% endif %}
+        </p>
+        <p><a href="{{ path('app_admin_users') }}">Users</a>: {{ admin.userCount }}</p>
+        <p><a href="{{ path('app_admin_groups') }}">Groups</a>: {{ admin.groupCount }}</p>
     {% endif %}
 {% endblock %}

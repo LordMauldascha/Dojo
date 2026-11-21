@@ -79,6 +79,25 @@ final class SkillRepository extends ServiceEntityRepository
             ->setParameter('accessUser', $user);
     }
 
+    /** @return list<SkillVersion> open drafts of visible skills, newest first, with the skill loaded */
+    public function findRecentDrafts(User $viewer, int $limit): array
+    {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder()
+            ->select('d', 's')
+            ->from(SkillVersion::class, 'd')
+            ->join('d.skill', 's')
+            ->where('d.draft = true')
+            ->orderBy('d.savedAt', 'DESC')
+            ->addOrderBy('d.id', 'DESC')
+            ->setMaxResults($limit);
+        $this->applyAccessFilter($queryBuilder, 's', $viewer);
+
+        /** @var list<SkillVersion> $drafts */
+        $drafts = $queryBuilder->getQuery()->getResult();
+
+        return $drafts;
+    }
+
     public function isAccessibleBy(Skill $skill, User $user): bool
     {
         $queryBuilder = $this->createQueryBuilder('s')->select('COUNT(s.id)')->where('s = :skill')->setParameter('skill', $skill);

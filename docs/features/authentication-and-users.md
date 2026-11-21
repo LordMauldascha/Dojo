@@ -38,5 +38,4 @@ Page: `/admin/users`.
 
 ## Home page
 
-`/` is the overview after login. It lists, per provider, whether an API key is stored and when it last changed
-(see [API keys](api-keys.md)). Admins also see the number of users.
+`/` is the overview after login, see [Overview](overview.md).

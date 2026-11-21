@@ -6,6 +6,8 @@ namespace App\Repository;
 
 use App\Entity\Group;
 use App\Entity\Project;
+use App\Entity\Run;
+use App\Entity\RunVersion;
 use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Entity\User;
@@ -39,9 +41,8 @@ final class ProjectRepository extends ServiceEntityRepository
     {
         $queryBuilder = $this->createQueryBuilder('p')
             ->addSelect('SIZE(p.users) AS userCount')
-            ->addSelect('SIZE(p.groups) AS groupCount')
-            ->addSelect('(SELECT COUNT(sk.id) FROM '.Skill::class.' sk JOIN sk.projects skp WHERE skp = p AND sk.deletedAt IS NULL) AS skillCount')
-            ->addSelect('(SELECT COUNT(tc.id) FROM '.Testcase::class.' tc WHERE tc.project = p AND tc.deletedAt IS NULL) AS testcaseCount');
+            ->addSelect('SIZE(p.groups) AS groupCount');
+        $this->selectContentCounts($queryBuilder);
         $this->applyAccessFilter($queryBuilder, 'p', $viewer);
 
         ListQueryApplier::search($queryBuilder, $query, ['p.title', 'p.description']);
@@ -49,6 +50,31 @@ final class ProjectRepository extends ServiceEntityRepository
         ListQueryApplier::sort($queryBuilder, $query, self::SORT_FIELDS, 'p.id');
 
         return Page::fromQueryBuilder($queryBuilder, $query->page, $perPage);
+    }
+
+    /**
+     * Rows of the form [0 => Project, 'skillCount', 'testcaseCount', 'runCount' => int|string, 'lastRun' => ?\DateTimeImmutable].
+     *
+     * @return list<array<int|string, mixed>>
+     */
+    public function findOverview(User $viewer, int $limit): array
+    {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->addSelect('(SELECT COUNT(r.id) FROM '.Run::class.' r WHERE r.project = p) AS runCount')
+            ->addSelect('(SELECT MAX(rv.createdAt) FROM '.RunVersion::class.' rv JOIN rv.run rr WHERE rr.project = p) AS lastRun')
+            ->orderBy('p.title', 'ASC')
+            ->addOrderBy('p.id', 'ASC')
+            ->setMaxResults($limit);
+        $this->selectContentCounts($queryBuilder);
+        $this->applyAccessFilter($queryBuilder, 'p', $viewer);
+
+        /** @var list<array<int|string, mixed>> $rows */
+        $rows = $queryBuilder->getQuery()->getResult();
+        foreach ($rows as &$row) {
+            $row['lastRun'] = \is_string($row['lastRun']) ? new \DateTimeImmutable($row['lastRun']) : null;
+        }
+
+        return $rows;
     }
 
     /** Limits a query to the projects the user may see: all for admins, else direct or via a group. */
@@ -145,5 +171,12 @@ final class ProjectRepository extends ServiceEntityRepository
             ->getResult();
 
         return $users;
+    }
+
+    private function selectContentCounts(QueryBuilder $queryBuilder): void
+    {
+        $queryBuilder
+            ->addSelect('(SELECT COUNT(sk.id) FROM '.Skill::class.' sk JOIN sk.projects skp WHERE skp = p AND sk.deletedAt IS NULL) AS skillCount')
+            ->addSelect('(SELECT COUNT(tc.id) FROM '.Testcase::class.' tc WHERE tc.project = p AND tc.deletedAt IS NULL) AS testcaseCount');
     }
 }

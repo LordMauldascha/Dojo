@@ -8,6 +8,7 @@ The whole interface is in English. Each feature has its own page in [features/](
 
 | Feature | What it covers |
 | --- | --- |
+| [Overview](features/overview.md) | Start page after login: own projects, recent runs, open drafts, admin summary |
 | [Authentication and users](features/authentication-and-users.md) | Login, roles, user management, own account and password |
 | [API keys](features/api-keys.md) | Provider credentials, stored encrypted, managed by admins |
 | [Groups](features/groups.md) | Named sets of users that are assigned to projects |

@@ -72,6 +72,25 @@ final class TestcaseRepository extends ServiceEntityRepository
             ->setParameter('accessUser', $user);
     }
 
+    /** @return list<TestcaseVersion> open drafts of visible testcases, newest first, with the testcase loaded */
+    public function findRecentDrafts(User $viewer, int $limit): array
+    {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder()
+            ->select('d', 't')
+            ->from(TestcaseVersion::class, 'd')
+            ->join('d.testcase', 't')
+            ->where('d.draft = true')
+            ->orderBy('d.savedAt', 'DESC')
+            ->addOrderBy('d.id', 'DESC')
+            ->setMaxResults($limit);
+        $this->applyAccessFilter($queryBuilder, 't', $viewer);
+
+        /** @var list<TestcaseVersion> $drafts */
+        $drafts = $queryBuilder->getQuery()->getResult();
+
+        return $drafts;
+    }
+
     public function isAccessibleBy(Testcase $testcase, User $user): bool
     {
         $queryBuilder = $this->createQueryBuilder('t')->select('COUNT(t.id)')->where('t = :testcase')->setParameter('testcase', $testcase);

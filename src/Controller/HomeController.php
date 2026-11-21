@@ -6,6 +6,11 @@ namespace App\Controller;
 
 use App\Ai\Provider;
 use App\Entity\User;
+use App\Repository\GroupRepository;
+use App\Repository\ProjectRepository;
+use App\Repository\RunRepository;
+use App\Repository\SkillRepository;
+use App\Repository\TestcaseRepository;
 use App\Security\ApiKeyStore;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,14 +22,37 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class HomeController extends AbstractController
 {
+    private const PROJECT_LIMIT = 10;
+    private const RECENT_LIMIT = 5;
+
     #[Route('/', name: 'app_home', methods: ['GET'])]
-    public function __invoke(ApiKeyStore $store, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
-    {
-        $stored = $store->findAll();
+    public function __invoke(
+        ProjectRepository $projects,
+        RunRepository $runs,
+        SkillRepository $skills,
+        TestcaseRepository $testcases,
+        GroupRepository $groups,
+        ApiKeyStore $store,
+        EntityManagerInterface $entityManager,
+        #[CurrentUser] User $user,
+    ): Response {
+        $admin = null;
+        if ($user->isAdmin()) {
+            $stored = $store->findAll();
+            $admin = [
+                'providerCount' => \count(Provider::cases()),
+                'missing' => array_values(array_filter(Provider::cases(), static fn (Provider $provider): bool => !isset($stored[$provider->value]))),
+                'userCount' => $entityManager->getRepository(User::class)->count([]),
+                'groupCount' => $groups->count([]),
+            ];
+        }
 
         return $this->render('home.html.twig', [
-            'rows' => array_map(static fn (Provider $provider): array => ['provider' => $provider, 'key' => $stored[$provider->value] ?? null], Provider::cases()),
-            'userCount' => $user->isAdmin() ? $entityManager->getRepository(User::class)->count([]) : null,
+            'projects' => $projects->findOverview($user, self::PROJECT_LIMIT),
+            'runVersions' => $runs->findRecentVersions($user, self::RECENT_LIMIT),
+            'skillDrafts' => $skills->findRecentDrafts($user, self::RECENT_LIMIT),
+            'testcaseDrafts' => $testcases->findRecentDrafts($user, self::RECENT_LIMIT),
+            'admin' => $admin,
         ]);
     }
 }

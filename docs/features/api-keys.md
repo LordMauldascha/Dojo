@@ -21,7 +21,7 @@ The list is defined in `App\Ai\Provider`. Providers and their models are global 
 - Saving a key for a provider replaces the existing one (at least 16 characters). Deleting removes it.
 - A stored key is never shown again. The page only shows `••••` plus the last four characters and the time of the last
   change.
-- The home page shows per provider whether a key is set.
+- The [overview](overview.md) shows admins how many providers have a key and which ones are missing.
 
 ## Storage
 

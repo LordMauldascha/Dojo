@@ -6,6 +6,8 @@ namespace App\Repository;
 
 use App\Entity\Project;
 use App\Entity\Run;
+use App\Entity\RunVersion;
+use App\Entity\User;
 use App\Pagination\ListQuery;
 use App\Pagination\ListQueryApplier;
 use App\Pagination\Page;
@@ -23,7 +25,7 @@ final class RunRepository extends ServiceEntityRepository
         'createdAt' => 'r.createdAt',
     ];
 
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private readonly ProjectRepository $projects)
     {
         parent::__construct($registry, Run::class);
     }
@@ -52,5 +54,24 @@ final class RunRepository extends ServiceEntityRepository
             ->setParameter('project', $project)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /** @return list<RunVersion> newest first, with run and project loaded */
+    public function findRecentVersions(User $viewer, int $limit): array
+    {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder()
+            ->select('rv', 'r', 'p')
+            ->from(RunVersion::class, 'rv')
+            ->join('rv.run', 'r')
+            ->join('r.project', 'p')
+            ->orderBy('rv.createdAt', 'DESC')
+            ->addOrderBy('rv.id', 'DESC')
+            ->setMaxResults($limit);
+        $this->projects->applyAccessFilter($queryBuilder, 'p', $viewer);
+
+        /** @var list<RunVersion> $versions */
+        $versions = $queryBuilder->getQuery()->getResult();
+
+        return $versions;
     }
 }
