@@ -27,7 +27,7 @@
                         <td><a href="{{ path('app_testcase_show', {uuid: testcase.uuid}) }}">{{ testcase.activeVersion.title }}</a></td>
                         <td>{{ list.excerpt(testcase.activeVersion.description) }}</td>
                         <td>{{ testcase.project ? testcase.project.title : '–' }}</td>
-                        <td>{{ testcase.activeVersion.label }}{{ testcase.id in draftIds ? ' (draft pending)' }}</td>
+                        <td>{{ list.version_status(testcase.activeVersion.number, draftNumbers[testcase.id] ?? null) }}</td>
                         <td>{{ testcase.updatedAt|date }}</td>
                         <td>{{ testcase.createdAt|date }}</td>
                     </tr>

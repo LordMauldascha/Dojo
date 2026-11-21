@@ -55,7 +55,7 @@ final class TestcaseController extends AbstractController
 
         return $this->render('testcases/index.html.twig', [
             'page' => $page,
-            'draftIds' => $testcases->draftIds($page->items),
+            'draftNumbers' => $testcases->draftNumbers($page->items),
             'query' => $query,
             'projectChoices' => $projects->findAccessibleBy($viewer),
         ]);

@@ -39,8 +39,9 @@ There is no separate admin-only flag. For an admin-only testcase use no project,
 | Version | `/testcases/{uuid}/versions/{number}` | Read-only view of one version |
 | Delete | `/testcases/{uuid}/delete` | Confirmation, then soft delete |
 
-The Version column shows the active version, for example `3`, or `3 (draft pending)` when a newer draft exists. Search
-covers title and description of the active version. See [Overview tables](overview-tables.md).
+The Version column shows the newest version number, for example `3`, with a green dot when it is final and a yellow dot
+when it is a draft (also when an earlier final version exists). The same column exists for skills. Search covers title
+and description of the active version. See [Overview tables](overview-tables.md).
 
 ## Effects on runs and projects
 

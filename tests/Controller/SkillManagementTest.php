@@ -365,7 +365,11 @@ final class SkillManagementTest extends AppWebTestCase
         self::assertSame(['Gamma_x'], $this->titles($this->client->request('GET', '/skills', ['q' => 'a_x'])));
         self::assertSame([], $this->titles($this->client->request('GET', '/skills', ['q' => 'draft'])));
         self::assertSame([], $this->titles($this->client->request('GET', '/skills', ['q' => '%'])));
-        self::assertSame(['Gamma_x', 'Beta', 'Alpha'], $this->titles($this->client->request('GET', '/skills', ['sort' => 'title', 'dir' => 'desc'])));
+
+        $crawler = $this->client->request('GET', '/skills', ['sort' => 'title', 'dir' => 'desc']);
+        self::assertSame(['Gamma_x', 'Beta', 'Alpha'], $this->titles($crawler));
+        self::assertSame(['2', '1', '1'], $crawler->filter('tbody tr td:nth-child(4)')->each(static fn (Crawler $cell): string => trim($cell->text())));
+        self::assertSame(['Draft', 'Final', 'Final'], $crawler->filter('tbody tr td:nth-child(4) .status-dot')->each(static fn (Crawler $dot): ?string => $dot->attr('aria-label')));
     }
 
     public function testListShowsOnlyAccessibleProjectTitlesAndFiltersByProject(): void

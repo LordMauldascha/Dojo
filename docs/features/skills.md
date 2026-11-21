@@ -29,7 +29,7 @@ Also stored: creator, created, updated and deleted time.
 
 | Page | URL | Purpose |
 | --- | --- | --- |
-| Overview | `/skills` | Search, sort, project filter; columns Title, Description, Projects, Runs, Updated, Created |
+| Overview | `/skills` | Search, sort, project filter; columns Title, Description, Projects, Version, Runs, Updated, Created |
 | New skill | `/skills/new` | Create version 1 with title, description, SKILL.md and projects |
 | Skill | `/skills/{uuid}` | Edit and save as draft or final, discard the draft, change projects, version history |
 | Version | `/skills/{uuid}/versions/{number}` | Read-only view of one version |

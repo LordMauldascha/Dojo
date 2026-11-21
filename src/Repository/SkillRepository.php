@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Project;
 use App\Entity\Run;
 use App\Entity\Skill;
+use App\Entity\SkillVersion;
 use App\Entity\User;
 use App\Pagination\ListQuery;
 use App\Pagination\ListQueryApplier;
@@ -121,6 +122,37 @@ final class SkillRepository extends ServiceEntityRepository
             ->getResult();
 
         return $skills;
+    }
+
+    /**
+     * Draft version number per skill id, only for skills that have a draft, without loading their versions.
+     *
+     * @param list<mixed> $skills
+     *
+     * @return array<int, int>
+     */
+    public function draftNumbers(array $skills): array
+    {
+        if ([] === $skills) {
+            return [];
+        }
+
+        /** @var list<array{skillId: int|string, number: int}> $rows */
+        $rows = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(v.skill) AS skillId', 'v.number AS number')
+            ->from(SkillVersion::class, 'v')
+            ->where('v.draft = true')
+            ->andWhere('v.skill IN (:skills)')
+            ->setParameter('skills', $skills)
+            ->getQuery()
+            ->getArrayResult();
+
+        $numbers = [];
+        foreach ($rows as $row) {
+            $numbers[(int) $row['skillId']] = $row['number'];
+        }
+
+        return $numbers;
     }
 
     /**

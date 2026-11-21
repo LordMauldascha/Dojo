@@ -45,7 +45,7 @@ Binding color palette, set by the user:
 
 This palette replaced the earlier navy, blue and red palette. Red is no brand color and appears only for errors and destructive actions.
 
-The earlier project rule "no icons and no colors anywhere" applies to tables only. Elsewhere in the interface, color and icons are allowed.
+The earlier project rule "no icons and no colors anywhere" applies to tables only, with three exceptions: the sort arrow (text color), the accent color on link hover and the version status dot (green final, yellow draft). Elsewhere in the interface, color and icons are allowed.
 
 ## Evidence on Hand
 
@@ -57,4 +57,4 @@ Feature documentation in `docs/Features.md` and `docs/features/`, project plans 
 2. Runs are evidence: a started run is an immutable snapshot, never edited afterwards.
 3. Access follows the project: what someone sees and may do derives from project membership, never from the interface alone.
 4. No personal data in prompts or free text: synthetic data only.
-5. Tables stay plain and scannable: no icons or colors inside them.
+5. Tables stay plain and scannable: no icons or colors inside them, except the sort arrow, the link hover accent and the version status dot.

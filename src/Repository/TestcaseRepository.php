@@ -99,29 +99,34 @@ final class TestcaseRepository extends ServiceEntityRepository
     }
 
     /**
-     * Ids of the given testcases that have a draft, without loading their versions.
+     * Draft version number per testcase id, only for testcases that have a draft, without loading their versions.
      *
      * @param list<mixed> $testcases
      *
-     * @return list<int>
+     * @return array<int, int>
      */
-    public function draftIds(array $testcases): array
+    public function draftNumbers(array $testcases): array
     {
         if ([] === $testcases) {
             return [];
         }
 
-        /** @var list<int|string> $ids */
-        $ids = $this->getEntityManager()->createQueryBuilder()
-            ->select('IDENTITY(v.testcase)')
+        /** @var list<array{testcaseId: int|string, number: int}> $rows */
+        $rows = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(v.testcase) AS testcaseId', 'v.number AS number')
             ->from(TestcaseVersion::class, 'v')
             ->where('v.draft = true')
             ->andWhere('v.testcase IN (:testcases)')
             ->setParameter('testcases', $testcases)
             ->getQuery()
-            ->getSingleColumnResult();
+            ->getArrayResult();
 
-        return array_map(intval(...), $ids);
+        $numbers = [];
+        foreach ($rows as $row) {
+            $numbers[(int) $row['testcaseId']] = $row['number'];
+        }
+
+        return $numbers;
     }
 
     public function countByProject(Project $project): int

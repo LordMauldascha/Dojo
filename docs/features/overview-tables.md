@@ -29,7 +29,7 @@ Search is case-insensitive and matches anywhere in the text. `%` and `_` are sea
 
 ## Sorting
 
-A click on a column header sorts by it; another click reverses the direction. Lists start sorted by title, so the first click on *Title* already reverses it. Sorting resets to page 1 and keeps search,
+A click on a column header sorts by it; another click reverses the direction. Lists start sorted by title, so the first click on *Title* already reverses it. The sorted column is shown in bold with an arrow (up = ascending, down = descending). Sorting resets to page 1 and keeps search,
 page size and project filter.
 
 ## Per list

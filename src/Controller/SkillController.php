@@ -59,6 +59,7 @@ final class SkillController extends AbstractController
         return $this->render('skills/index.html.twig', [
             'page' => $page,
             'runCounts' => $skills->runCounts($page->items, $viewer),
+            'draftNumbers' => $skills->draftNumbers($page->items),
             'query' => $query,
             'projectChoices' => $accessible,
             'visibleProjectIds' => array_map(static fn (Project $project): ?int => $project->getId(), $accessible),

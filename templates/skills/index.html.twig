@@ -16,6 +16,7 @@
                     {{ list.sort_header('app_skills', {}, query, page, 'title', 'Title') }}
                     <th>Description</th>
                     <th>Projects</th>
+                    <th>Version</th>
                     <th>Runs</th>
                     {{ list.sort_header('app_skills', {}, query, page, 'updatedAt', 'Updated') }}
                     {{ list.sort_header('app_skills', {}, query, page, 'createdAt', 'Created') }}
@@ -33,6 +34,7 @@
                         <td><a href="{{ path('app_skill_show', {uuid: skill.uuid}) }}">{{ skill.activeVersion.title }}</a></td>
                         <td>{{ list.excerpt(skill.activeVersion.description) }}</td>
                         <td>{{ titles|join(', ') }}</td>
+                        <td>{{ list.version_status(skill.activeVersion.number, draftNumbers[skill.id] ?? null) }}</td>
                         <td>{{ runCounts[skill.id] ?? 0 }}</td>
                         <td>{{ skill.updatedAt|date }}</td>
                         <td>{{ skill.createdAt|date }}</td>

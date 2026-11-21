@@ -1,3 +1,5 @@
+@use '../variables' as *;
+
 // The logout link turns into a brick on hover and breaks when it is clicked (assets/js/smashLogout.ts adds
 // .is-smashing). The two halves are the link's ::before and ::after, cut along one jagged crack.
 .app-nav a.logout {
@@ -129,5 +131,18 @@
     .app-nav a.logout::before,
     .app-nav a.logout::after {
         transition: none;
+    }
+}
+
+// The falling halves reach beyond the sidebar and, on small screens, the navigation. Both scroll (overflow: auto), so on
+// systems with classic scrollbars (Windows) the falling bits would make scrollbars flash up. While the brick breaks,
+// clip instead. The desktop navigation is not clipped: it ends at the link, the halves must fall to the sidebar's edge.
+.app-sidebar:has(.logout.is-smashing) {
+    overflow: clip;
+}
+
+@media not all and (min-width: $breakpoint-md) {
+    .app-nav:has(.logout.is-smashing) {
+        overflow: clip;
     }
 }

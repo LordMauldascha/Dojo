@@ -35,7 +35,11 @@ no hex values, pixel sizes or durations outside `variables/`. Breakpoints are th
   pure CSS from the `--color-wood-*` tokens: straight grain, one knot, bevelled edges, a gold nail head. Playfulness is
   welcome here and in small touches (buttons press down 1px), but it stays out of tables, forms and data. No images.
 - Spacing: 4px grid, `--space-1` to `--space-8`.
-- Tables carry no colors and no icons.
+- Tables carry no colors and no icons. Three exceptions: the sort arrow, the accent color on link hover and the version
+  status dot (`.status-dot--final` in `--color-success`, `.status-dot--draft` in `--color-highlight`, with `aria-label`).
+- Table anatomy (`_tables.scss`): cell padding 10px / 14px. The sorted column header is semibold with a small CSS triangle
+  in the text color (up = ascending, down = descending), driven by `aria-sort` on the `th`. Links in cells are semibold with
+  a 2px underline (3px and `--color-accent` on hover).
 
 ## Overviews
 
@@ -59,7 +63,9 @@ The Logout link in the sidebar turns into a brick on hover and breaks when click
 two halves are the link's `::before` and `::after`, cut along one crack. A click adds `.is-smashing`, the halves fall,
 and the logout URL is followed when the animation ends (with a 1.2 s fallback). Without script, with reduced motion or
 with a modified click (Ctrl, Cmd, middle button) the link just works. Brick red is a one-off for this link, not a brand
-color. Keep the `<span>` label inside the link; its own animation is ignored by the script.
+color. Keep the `<span>` label inside the link; its own animation is ignored by the script. While the brick
+breaks, the sidebar (and the mobile navigation) switch to `overflow: clip`, so the falling halves never make scrollbars
+flash up on systems with classic scrollbars (Windows).
 
 ## Login animation (tatami)
 

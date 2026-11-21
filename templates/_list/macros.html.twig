@@ -7,6 +7,12 @@
     </th>
 {% endmacro %}
 
+{# Newest version number with a status dot: yellow when the newest version is a draft, green when it is final. #}
+{% macro version_status(activeNumber, draftNumber) %}
+    {% set isDraft = null != draftNumber %}
+    <span class="status-dot status-dot--{{ isDraft ? 'draft' : 'final' }}" role="img" aria-label="{{ isDraft ? 'Draft' : 'Final' }}"></span>{{ draftNumber ?? activeNumber }}
+{% endmacro %}
+
 {% macro pagination(route, routeParams, query, page) %}
     {% set base = {q: query.q ?: null, project: query.project ?: null, sort: query.sort, dir: 'asc' == query.dir ? null : query.dir, perPage: page.perPage} %}
     <nav aria-label="Pagination">

@@ -404,11 +404,11 @@ final class RunManagementTest extends AppWebTestCase
 
         $this->client->loginUser($user);
         $crawler = $this->client->request('GET', '/skills');
-        self::assertSame('2', trim($crawler->filter('tbody tr:first-child td:nth-child(4)')->text()));
+        self::assertSame('2', trim($crawler->filter('tbody tr:first-child td:nth-child(5)')->text()));
 
         $this->client->loginUser($this->persistUser('root', UserRole::Admin));
         $crawler = $this->client->request('GET', '/skills');
-        self::assertSame('3', trim($crawler->filter('tbody tr:first-child td:nth-child(4)')->text()));
+        self::assertSame('3', trim($crawler->filter('tbody tr:first-child td:nth-child(5)')->text()));
     }
 
     public function testRemovingAConfigurationTwiceFromAStalePageRemovesNothingElse(): void

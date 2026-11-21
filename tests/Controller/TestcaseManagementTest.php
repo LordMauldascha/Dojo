@@ -388,7 +388,8 @@ final class TestcaseManagementTest extends AppWebTestCase
         $crawler = $this->client->request('GET', '/testcases', ['sort' => 'title', 'dir' => 'desc']);
         self::assertSame(['Gamma_x', 'Beta', 'Alpha'], $this->titles($crawler));
         $versions = $crawler->filter('tbody tr td:nth-child(4)')->each(static fn (Crawler $cell): string => trim($cell->text()));
-        self::assertSame(['1 (draft pending)', '1', '1'], $versions);
+        self::assertSame(['2', '1', '1'], $versions);
+        self::assertSame(['Draft', 'Final', 'Final'], $crawler->filter('tbody tr td:nth-child(4) .status-dot')->each(static fn (Crawler $dot): ?string => $dot->attr('aria-label')));
     }
 
     public function testListShowsTheProjectAndFiltersByAccessibleProject(): void
