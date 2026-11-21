@@ -88,7 +88,7 @@ final class UserManagementTest extends AppWebTestCase
         ]));
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorExists('dialog#password-dialog[data-show-on-load]');
+        self::assertStringContainsString('"showOnLoad":true', (string) $this->client->getResponse()->getContent());
         self::assertSelectorTextContains('dialog#password-dialog', 'The current password is wrong.');
         $this->entityManager->clear();
         $stored = $this->entityManager->getRepository(User::class)->findOneBy(['username' => 'erin']);
@@ -104,7 +104,7 @@ final class UserManagementTest extends AppWebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('dialog#password-dialog form[name="change_password"]');
-        self::assertSelectorNotExists('dialog#password-dialog[data-show-on-load]');
+        self::assertStringContainsString('"showOnLoad":false', (string) $this->client->getResponse()->getContent());
     }
 
     public function testAdminCanCreateAdminWhoGetsAdminAccess(): void
