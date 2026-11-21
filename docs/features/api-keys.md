@@ -2,26 +2,34 @@
 
 Credentials for the LLM providers. Admins manage them at `/admin/api-keys`; nobody else has access.
 
-## Providers
+## Providers and credentials
 
-One credential exists per provider:
+A **provider** is what a run uses; a **credential** is what an admin stores. Both are defined in code (`App\Ai\Provider`,
+`App\Ai\Credential`) and are global, available in every project.
 
-| Provider | Credential |
-| --- | --- |
-| OpenAI | API key |
-| Google Gemini | API key |
-| DeepSeek | API key |
-| Anthropic | API key |
-| Claude (OAuth) | OAuth token of the Claude Code CLI |
+| Provider | Credentials | Models |
+| --- | --- | --- |
+| OpenAI | API key | `gpt-*` |
+| Google Gemini | API key | `gemini-*` |
+| DeepSeek | API key | `deepseek-*` |
+| Claude Code | Anthropic API key or Claude OAuth token | `opus`, `sonnet`, `haiku` |
 
-The list is defined in `App\Ai\Provider`. Providers and their models are global and available in every project.
+Claude Code (`symfony/ai-claude-code-platform`) runs the Claude Code CLI. It needs one of the two credentials; if both are
+set, the API key wins. There is no separate Anthropic provider: `symfony/ai-anthropic-platform` is not installed, the
+Anthropic API key is a credential of Claude Code.
+
+## Page
+
+`/admin/api-keys` shows one card per provider. Each credential has a status (`••••` plus the last four characters and the
+time of the last change, or *Not set*) and the buttons *Set key* / *Replace key* (opens a dialog with the key field; an
+invalid key reopens it with the error) and *Delete*. A provider with at least one stored credential gets a green dot.
 
 ## Handling
 
-- Saving a key for a provider replaces the existing one (at least 16 characters). Deleting removes it.
+- Saving a key for a credential replaces the existing one (at least 16 characters). Deleting removes it.
 - A stored key is never shown again. The page only shows `••••` plus the last four characters and the time of the last
   change.
-- The [overview](overview.md) shows admins how many providers have a key and which ones are missing.
+- The [overview](overview.md) shows admins how many providers have a credential and which ones are missing.
 
 ## Storage
 

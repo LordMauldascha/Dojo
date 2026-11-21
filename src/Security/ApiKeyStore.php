@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Ai\Credential;
 use App\Ai\Provider;
 use App\Entity\ProviderApiKey;
 use App\Repository\ProviderApiKeyRepository;
@@ -18,30 +19,42 @@ final readonly class ApiKeyStore
     ) {
     }
 
-    /** @return array<string, ProviderApiKey> keyed by provider value */
+    /** @return array<string, ProviderApiKey> keyed by credential value */
     public function findAll(): array
     {
-        $byProvider = [];
+        $byCredential = [];
         foreach ($this->keys->findAll() as $key) {
-            $byProvider[$key->getProvider()->value] = $key;
+            $byCredential[$key->getCredential()->value] = $key;
         }
 
-        return $byProvider;
+        return $byCredential;
     }
 
-    public function has(Provider $provider): bool
+    public function has(Credential $credential): bool
     {
-        return null !== $this->keys->findByProvider($provider);
+        return null !== $this->keys->findByCredential($credential);
     }
 
-    public function save(Provider $provider, string $plainKey): void
+    /** True if at least one credential of the provider is stored. */
+    public function hasProvider(Provider $provider): bool
+    {
+        foreach ($provider->credentials() as $credential) {
+            if ($this->has($credential)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function save(Credential $credential, string $plainKey): void
     {
         $encrypted = $this->encryptor->encrypt($plainKey);
         $lastFour = mb_substr($plainKey, -4);
-        $existing = $this->keys->findByProvider($provider);
+        $existing = $this->keys->findByCredential($credential);
 
         if (null === $existing) {
-            $this->entityManager->persist(new ProviderApiKey($provider, $encrypted, $lastFour));
+            $this->entityManager->persist(new ProviderApiKey($credential, $encrypted, $lastFour));
         } else {
             $existing->replaceKey($encrypted, $lastFour);
         }
@@ -49,10 +62,10 @@ final readonly class ApiKeyStore
         $this->entityManager->flush();
     }
 
-    /** Returns false if there was no key for the provider. */
-    public function delete(Provider $provider): bool
+    /** Returns false if there was no such credential. */
+    public function delete(Credential $credential): bool
     {
-        $key = $this->keys->findByProvider($provider);
+        $key = $this->keys->findByCredential($credential);
         if (null === $key) {
             return false;
         }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Ai\Provider;
+use App\Ai\Credential;
 use App\Repository\ProviderApiKeyRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -22,8 +22,8 @@ class ProviderApiKey
     private \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        #[ORM\Column(length: 32, unique: true, enumType: Provider::class)]
-        private Provider $provider,
+        #[ORM\Column(name: 'provider', length: 32, unique: true, enumType: Credential::class)]
+        private Credential $credential,
         #[ORM\Column(type: Types::TEXT)]
         private string $encryptedKey,
         #[ORM\Column(length: 4)]
@@ -32,9 +32,9 @@ class ProviderApiKey
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function getProvider(): Provider
+    public function getCredential(): Credential
     {
-        return $this->provider;
+        return $this->credential;
     }
 
     public function getEncryptedKey(): string

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Ai\Provider;
+use App\Ai\Credential;
 use App\Entity\ProviderApiKey;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -17,8 +17,8 @@ final class ProviderApiKeyRepository extends ServiceEntityRepository
         parent::__construct($registry, ProviderApiKey::class);
     }
 
-    public function findByProvider(Provider $provider): ?ProviderApiKey
+    public function findByCredential(Credential $credential): ?ProviderApiKey
     {
-        return $this->findOneBy(['provider' => $provider]);
+        return $this->findOneBy(['credential' => $credential]);
     }
 }

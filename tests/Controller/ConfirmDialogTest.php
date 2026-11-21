@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Ai\Provider;
+use App\Ai\Credential;
 use App\Entity\ProviderApiKey;
 use App\Security\UserRole;
 use App\Tests\Support\AppWebTestCase;
@@ -23,7 +23,7 @@ final class ConfirmDialogTest extends AppWebTestCase
     {
         $admin = $this->persistUser('root', UserRole::Admin);
         $this->persistUser('alice');
-        $this->entityManager->persist(new ProviderApiKey(Provider::OpenAi, 'ciphertext', '1234'));
+        $this->entityManager->persist(new ProviderApiKey(Credential::OpenAi, 'ciphertext', '1234'));
         $this->entityManager->flush();
         $group = $this->persistGroup('Team');
         $project = $this->persistProject('Security');
@@ -49,7 +49,7 @@ final class ConfirmDialogTest extends AppWebTestCase
 
             self::assertResponseIsSuccessful($path);
             self::assertCount($count, $crawler->filter('button[command="show-modal"][commandfor^="confirm-"]'), $path);
-            self::assertCount($count, $crawler->filter('dialog[aria-labelledby]:not(#unsaved-dialog):not(#user-dialog)'), $path);
+            self::assertCount($count, $crawler->filter('dialog[aria-labelledby]:not(#unsaved-dialog):not(#user-dialog):not([id^="key-dialog-"])'), $path);
             self::assertCount($count, $crawler->filter('dialog:not(#unsaved-dialog) form[method="post"] input[name="_token"]'), $path);
             self::assertCount($count, $crawler->filter('dialog:not(#unsaved-dialog) button[command="close"][autofocus]'), $path);
             $targets = $crawler->filter('button[command="show-modal"]')->each(static fn (Crawler $button): ?string => $button->attr('commandfor'));

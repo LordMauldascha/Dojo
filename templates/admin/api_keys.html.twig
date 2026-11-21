@@ -7,19 +7,54 @@
 {% block heading %}API Keys{% endblock %}
 
 {% block content %}
-    {% for row in rows %}
-        <section>
-            <h2>{{ row.provider.label }}</h2>
-            {% if row.key %}
-                <p>
-                    Stored: ••••{{ row.key.lastFour }}
-                    (changed on {{ row.key.updatedAt|date }})
-                </p>
-                {{ forms.confirm_post(path('app_admin_api_key_delete', {provider: row.provider.value}), 'delete-api-key-' ~ row.provider.value, 'Delete', 'Delete ' ~ row.provider.label ~ '?', 'The stored key is removed. Runs with this provider cannot use it until a new key is saved.') }}
-            {% else %}
-                <p>No key stored.</p>
-            {% endif %}
-            {{ form(row.form) }}
-        </section>
-    {% endfor %}
+    <p class="help-text">Keys are stored encrypted and never shown again. A run can use a provider once one of its credentials is set.</p>
+
+    <div class="provider-grid">
+        {% for card in cards %}
+            <section class="provider-card">
+                <h2>
+                    <span class="status-dot status-dot--{{ card.configured ? 'final' : 'off' }}" role="img" aria-label="{{ card.configured ? 'Configured' : 'No key' }}"></span>{{ card.provider.displayName }}
+                </h2>
+                {% if 1 < card.credentials|length %}
+                    <p class="help-text">Use one of the two. If both are set, the API key wins. Anthropic has no provider of its own: its key is used by Claude Code.</p>
+                {% endif %}
+
+                {% for row in card.credentials %}
+                    {% set credential = row.credential %}
+                    {% set dialogId = 'key-dialog-' ~ credential.value %}
+                    <div class="credential">
+                        <div class="credential-head">
+                            <strong>{{ credential.label }}</strong>
+                            <code>{{ credential.envVar }}</code>
+                        </div>
+                        <p class="credential-status">
+                            {% if row.key %}
+                                ••••{{ row.key.lastFour }}, changed {{ row.key.updatedAt|date }}
+                            {% else %}
+                                Not set
+                            {% endif %}
+                        </p>
+                        <div class="credential-actions">
+                            <button type="button" command="show-modal" commandfor="{{ dialogId }}">{{ row.key ? 'Replace key' : 'Set key' }}</button>
+                            {% if row.key %}
+                                {{ forms.confirm_post(path('app_admin_api_key_delete', {credential: credential.value}), 'delete-api-key-' ~ credential.value, 'Delete', 'Delete ' ~ credential.label ~ '?', 'The stored key is removed. Runs with this provider cannot use it until a new key is saved.') }}
+                            {% endif %}
+                        </div>
+
+                        <dialog id="{{ prepare_component('dialog', {id: dialogId, showOnLoad: row.form.vars.submitted}) }}" aria-labelledby="{{ dialogId }}-title" closedby="any">
+                            <h2 id="{{ dialogId }}-title">{{ row.key ? 'Replace' : 'Set' }} {{ credential.label }}</h2>
+                            {{ form_start(row.form) }}
+                                {{ form_errors(row.form) }}
+                                {{ form_row(row.form.apiKey) }}
+                                <div class="dialog-actions">
+                                    <button type="button" command="close" commandfor="{{ dialogId }}">Cancel</button>
+                                    {{ form_widget(row.form.save) }}
+                                </div>
+                            {{ form_end(row.form) }}
+                        </dialog>
+                    </div>
+                {% endfor %}
+            </section>
+        {% endfor %}
+    </div>
 {% endblock %}

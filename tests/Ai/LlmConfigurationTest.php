@@ -24,7 +24,7 @@ final class LlmConfigurationTest extends TestCase
     public function testArrayRoundTripKeepsAllFields(): void
     {
         foreach ([Effort::XHigh, null] as $effort) {
-            $configuration = new LlmConfiguration(Provider::Anthropic, 'claude-opus-5-5', $effort);
+            $configuration = new LlmConfiguration(Provider::ClaudeCode, 'opus', $effort);
 
             self::assertEquals($configuration, LlmConfiguration::fromArray($configuration->toArray()));
         }
@@ -40,7 +40,7 @@ final class LlmConfigurationTest extends TestCase
     public function testLabelIsHumanReadable(): void
     {
         self::assertSame('OpenAI / gpt-4.1 / no effort', (new LlmConfiguration(Provider::OpenAi, 'gpt-4.1'))->label());
-        self::assertSame('Claude (OAuth) / opus / effort max', (new LlmConfiguration(Provider::ClaudeOAuth, 'opus', Effort::Max))->label());
+        self::assertSame('Claude Code / opus / effort max', (new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::Max))->label());
     }
 
     public function testChoiceValueIsParsedBackAndUnknownValuesAreRefused(): void

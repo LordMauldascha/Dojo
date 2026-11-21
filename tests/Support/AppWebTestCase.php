@@ -110,7 +110,7 @@ abstract class AppWebTestCase extends WebTestCase
         $run->setSkills($skills);
         $run->setTestcases($testcases);
         if ($configured) {
-            $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+            $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         }
         $this->entityManager->persist($run);
         $this->entityManager->flush();

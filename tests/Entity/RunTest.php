@@ -31,7 +31,7 @@ final class RunTest extends PhpUnitTestCase
         self::assertTrue($run->addConfiguration($gpt));
         self::assertFalse($run->addConfiguration($gpt));
         self::assertTrue($run->addConfiguration(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4')));
-        self::assertTrue($run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus')));
+        self::assertTrue($run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus')));
         $before = $this->configurationKeys($run);
         self::assertCount(3, $before);
 
@@ -39,7 +39,7 @@ final class RunTest extends PhpUnitTestCase
         self::assertFalse($run->removeConfiguration('openai:gpt-5.4:-'));
         self::assertFalse($run->removeConfiguration('does:not:exist'));
         $after = $this->configurationKeys($run);
-        self::assertSame(['openai:gpt-5.4:high', 'claude_oauth:opus:-'], $after);
+        self::assertSame(['openai:gpt-5.4:high', 'claude_code:opus:-'], $after);
     }
 
     public function testUnknownModelOfAProviderIsRejected(): void
@@ -52,7 +52,7 @@ final class RunTest extends PhpUnitTestCase
     public function testStartIsRefusedWithoutTestcaseOrConfiguration(): void
     {
         $run = $this->newRun();
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         try {
             $run->start();
             self::fail('start without testcase must fail');
@@ -81,7 +81,7 @@ final class RunTest extends PhpUnitTestCase
         $run = $this->newRun();
         $run->setTitle('Nightly');
         $run->setDescription('All reviews');
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus', Effort::High));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::High));
         $run->setSkills([$skill]);
         $run->setTestcases([$testcase]);
 
@@ -93,7 +93,7 @@ final class RunTest extends PhpUnitTestCase
         self::assertSame($first, $run->findVersion(1));
         self::assertSame('Nightly', $first->getTitle());
         self::assertSame('All reviews', $first->getDescription());
-        self::assertSame(['claude_oauth:opus:high'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $first->getConfigurations()));
+        self::assertSame(['claude_code:opus:high'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $first->getConfigurations()));
         self::assertSame('2', $this->only($first->getSkillVersions())->getLabel());
         self::assertSame('1', $this->only($first->getTestcaseVersions())->getLabel());
     }
@@ -103,20 +103,20 @@ final class RunTest extends PhpUnitTestCase
         $skill = $this->skill('Review', 'skill v1');
         $run = $this->newRun();
         $run->setTitle('Nightly');
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         $run->setSkills([$skill]);
         $run->setTestcases([$this->makeTestcase('T', 'p', 'o', $this->project)]);
         $first = $run->start();
 
         $run->setTitle('Renamed');
-        $run->removeConfiguration('claude_oauth:opus:-');
+        $run->removeConfiguration('claude_code:opus:-');
         $run->addConfiguration(new LlmConfiguration(Provider::Gemini, 'gemini-2.5-pro'));
         $run->setSkills([]);
         $skill->saveFinal('Review', null, 'skill v2');
         $second = $run->start();
 
         self::assertSame('Nightly', $first->getTitle());
-        self::assertSame(['claude_oauth:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $first->getConfigurations()));
+        self::assertSame(['claude_code:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $first->getConfigurations()));
         self::assertSame('1', $this->only($first->getSkillVersions())->getLabel());
         self::assertSame('skill v1', $this->only($first->getSkillVersions())->getContent());
         self::assertCount(0, $second->getSkillVersions());
@@ -147,7 +147,7 @@ final class RunTest extends PhpUnitTestCase
         $deletedTestcase->softDelete();
         $foreignTestcase = $this->makeTestcase('Foreign case', 'p', 'o', new Project());
         $run = $this->newRun();
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         $run->setSkills([$kept, $deleted, $foreign]);
         $run->setTestcases([$testcase, $deletedTestcase, $foreignTestcase]);
 
@@ -162,7 +162,7 @@ final class RunTest extends PhpUnitTestCase
         $deleted = $this->makeTestcase('Deleted case', 'p', 'o', $this->project);
         $deleted->softDelete();
         $run = $this->newRun();
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         $run->setTestcases([$deleted]);
 
         $this->expectException(\LogicException::class);

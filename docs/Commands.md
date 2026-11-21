@@ -38,15 +38,15 @@ Copies API keys set in the environment (e.g. `.env.local`) into the database, en
 bin/console app:api-keys:import-env
 ```
 
-| Provider | Environment variable |
+| Credential | Environment variable |
 | --- | --- |
-| OpenAI | `OPENAI_API_KEY` |
-| Google Gemini | `GEMINI_API_KEY` |
-| DeepSeek | `DEEPSEEK_API_KEY` |
-| Anthropic | `ANTHROPIC_API_KEY` |
-| Claude OAuth | `CLAUDE_CODE_OAUTH_TOKEN` |
+| OpenAI API key | `OPENAI_API_KEY` |
+| Google Gemini API key | `GEMINI_API_KEY` |
+| DeepSeek API key | `DEEPSEEK_API_KEY` |
+| Anthropic API key (Claude Code) | `ANTHROPIC_API_KEY` |
+| Claude OAuth token (Claude Code) | `CLAUDE_CODE_OAUTH_TOKEN` |
 
-Per provider: an empty variable is skipped, and a key already stored in the database is kept, not overwritten.
+Per credential: an empty variable is skipped, and a key already stored in the database is kept, not overwritten.
 To replace a stored key, use the API key management at `/admin/api-keys`.
 
 ## `app:ask-claude`

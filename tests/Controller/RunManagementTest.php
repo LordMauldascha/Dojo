@@ -82,7 +82,7 @@ final class RunManagementTest extends AppWebTestCase
             ['GET', '/runs/'.$uuid],
             ['POST', '/runs/'.$uuid],
             ['POST', '/runs/'.$uuid.'/configurations'],
-            ['POST', '/runs/'.$uuid.'/configurations/claude_oauth:opus:-/remove'],
+            ['POST', '/runs/'.$uuid.'/configurations/claude_code:opus:-/remove'],
             ['POST', '/runs/'.$uuid.'/skills'],
             ['POST', '/runs/'.$uuid.'/testcases'],
             ['POST', '/runs/'.$uuid.'/start'],
@@ -254,7 +254,7 @@ final class RunManagementTest extends AppWebTestCase
         self::assertCount(0, $this->findRun('Nightly')->getVersions());
 
         $run = $this->findRun('Nightly');
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus', Effort::Low));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::Low));
         $run->setSkills([$this->reload($skill)]);
         $this->entityManager->flush();
 
@@ -292,7 +292,7 @@ final class RunManagementTest extends AppWebTestCase
         self::assertSelectorTextContains('h1', 'Nightly – version 1');
         self::assertSelectorTextContains('body', 'Review (version 1)');
         self::assertSelectorTextContains('body', 'Greeting (version 1)');
-        self::assertSelectorTextContains('body', 'Claude (OAuth) / opus / no effort');
+        self::assertSelectorTextContains('body', 'Claude Code / opus / no effort');
 
         $this->client->request('GET', '/runs/'.$run->getUuid().'/compare');
         self::assertResponseIsSuccessful();
@@ -417,7 +417,7 @@ final class RunManagementTest extends AppWebTestCase
         $project = $this->persistProject('Security', [$user]);
         $run = $this->persistRun($project, creator: $user);
         $run->addConfiguration(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4', Effort::High));
-        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         $this->entityManager->flush();
         $this->client->loginUser($user);
 
@@ -430,7 +430,7 @@ final class RunManagementTest extends AppWebTestCase
 
         self::assertSelectorTextContains('body', 'There is no such configuration.');
         $this->entityManager->clear();
-        self::assertSame(['claude_oauth:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $this->findRun('Nightly')->getConfigurations()));
+        self::assertSame(['claude_code:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $this->findRun('Nightly')->getConfigurations()));
     }
 
     public function testTheRunDescriptionRemindsAboutPersonalData(): void

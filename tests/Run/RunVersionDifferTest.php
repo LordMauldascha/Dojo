@@ -27,7 +27,7 @@ final class RunVersionDifferTest extends PhpUnitTestCase
         $this->run = new Run($this->project);
         $this->run->setTitle('Nightly');
         $this->run->setDescription('All reviews');
-        $this->run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus', Effort::High));
+        $this->run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::High));
         $this->run->setTestcases([$this->testcase]);
     }
 
@@ -57,15 +57,15 @@ final class RunVersionDifferTest extends PhpUnitTestCase
     public function testAddedAndRemovedConfigurationsAreReported(): void
     {
         $first = $this->run->start();
-        $this->run->removeConfiguration('claude_oauth:opus:high');
+        $this->run->removeConfiguration('claude_code:opus:high');
         $this->run->addConfiguration(new LlmConfiguration(Provider::Gemini, 'gemini-2.5-pro'));
-        $this->run->addConfiguration(new LlmConfiguration(Provider::ClaudeOAuth, 'opus'));
+        $this->run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
         $second = $this->run->start();
 
         $diff = (new RunVersionDiffer())->diff($first, $second);
 
-        self::assertSame(['gemini:gemini-2.5-pro:-', 'claude_oauth:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $diff->configurationsAdded));
-        self::assertSame(['claude_oauth:opus:high'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $diff->configurationsRemoved));
+        self::assertSame(['gemini:gemini-2.5-pro:-', 'claude_code:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $diff->configurationsAdded));
+        self::assertSame(['claude_code:opus:high'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $diff->configurationsRemoved));
     }
 
     public function testSkillsAddedRemovedAndChangedAreReported(): void

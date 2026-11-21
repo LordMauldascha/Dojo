@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Ai\Credential;
 use App\Ai\Provider;
 use App\Form\ApiKeyType;
 use App\Security\ApiKeyStore;
@@ -24,36 +25,45 @@ final class ApiKeyController extends AbstractController
     {
         $stored = $store->findAll();
 
-        $rows = [];
+        $cards = [];
         $status = Response::HTTP_OK;
         foreach (Provider::cases() as $provider) {
-            $form = $formFactory->createNamed('key_'.$provider->value, ApiKeyType::class);
-            $form->handleRequest($request);
+            $credentials = [];
+            foreach ($provider->credentials() as $credential) {
+                $form = $formFactory->createNamed('key_'.$credential->value, ApiKeyType::class);
+                $form->handleRequest($request);
 
-            if ($form->isSubmitted() && $form->isValid()) {
-                /** @var array{apiKey: string} $data */
-                $data = $form->getData();
-                $store->save($provider, $data['apiKey']);
-                $this->addFlash('success', \sprintf('%s saved.', $provider->label()));
+                if ($form->isSubmitted() && $form->isValid()) {
+                    /** @var array{apiKey: string} $data */
+                    $data = $form->getData();
+                    $store->save($credential, $data['apiKey']);
+                    $this->addFlash('success', \sprintf('%s saved.', $credential->label()));
 
-                return $this->redirectToRoute('app_admin_api_keys');
+                    return $this->redirectToRoute('app_admin_api_keys');
+                }
+                if ($form->isSubmitted()) {
+                    $status = Response::HTTP_UNPROCESSABLE_ENTITY;
+                }
+
+                $credentials[] = ['credential' => $credential, 'key' => $stored[$credential->value] ?? null, 'form' => $form->createView()];
             }
-            if ($form->isSubmitted()) {
-                $status = Response::HTTP_UNPROCESSABLE_ENTITY;
-            }
 
-            $rows[] = ['provider' => $provider, 'key' => $stored[$provider->value] ?? null, 'form' => $form->createView()];
+            $cards[] = [
+                'provider' => $provider,
+                'credentials' => $credentials,
+                'configured' => array_any($credentials, static fn (array $row): bool => null !== $row['key']),
+            ];
         }
 
-        return $this->render('admin/api_keys.html.twig', ['rows' => $rows], new Response(status: $status));
+        return $this->render('admin/api_keys.html.twig', ['cards' => $cards], new Response(status: $status));
     }
 
-    #[Route('/admin/api-keys/{provider}/delete', name: 'app_admin_api_key_delete', methods: ['POST'])]
-    #[IsCsrfTokenValid(new Expression('"delete-api-key-" ~ args["provider"].value'), methods: 'POST')]
-    public function delete(Provider $provider, ApiKeyStore $store): Response
+    #[Route('/admin/api-keys/{credential}/delete', name: 'app_admin_api_key_delete', methods: ['POST'])]
+    #[IsCsrfTokenValid(new Expression('"delete-api-key-" ~ args["credential"].value'), methods: 'POST')]
+    public function delete(Credential $credential, ApiKeyStore $store): Response
     {
-        if ($store->delete($provider)) {
-            $this->addFlash('success', \sprintf('%s deleted.', $provider->label()));
+        if ($store->delete($credential)) {
+            $this->addFlash('success', \sprintf('%s deleted.', $credential->label()));
         }
 
         return $this->redirectToRoute('app_admin_api_keys');

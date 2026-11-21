@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Ai\Provider;
+use App\Ai\Credential;
 use App\Security\ApiKeyStore;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,16 +20,16 @@ final class ImportEnvApiKeysCommand extends Command
 
     public function __invoke(SymfonyStyle $io): int
     {
-        foreach (Provider::cases() as $provider) {
-            $value = $_SERVER[$provider->envVar()] ?? null;
+        foreach (Credential::cases() as $credential) {
+            $value = $_SERVER[$credential->envVar()] ?? null;
 
             if (!\is_string($value) || '' === $value) {
-                $io->writeln(\sprintf('%s: %s not set, skipped', $provider->label(), $provider->envVar()));
-            } elseif ($this->store->has($provider)) {
-                $io->writeln(\sprintf('%s: already in database, kept', $provider->label()));
+                $io->writeln(\sprintf('%s: %s not set, skipped', $credential->label(), $credential->envVar()));
+            } elseif ($this->store->has($credential)) {
+                $io->writeln(\sprintf('%s: already in database, kept', $credential->label()));
             } else {
-                $this->store->save($provider, $value);
-                $io->writeln(\sprintf('%s: imported from %s', $provider->label(), $provider->envVar()));
+                $this->store->save($credential, $value);
+                $io->writeln(\sprintf('%s: imported from %s', $credential->label(), $credential->envVar()));
             }
         }
 

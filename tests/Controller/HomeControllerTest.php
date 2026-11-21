@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Ai\Provider;
+use App\Ai\Credential;
 use App\Entity\ProviderApiKey;
 use App\Security\UserRole;
 use App\Tests\Support\AppWebTestCase;
@@ -26,7 +26,7 @@ final class HomeControllerTest extends AppWebTestCase
 
     public function testAdminSeesAdministrationBlockAndAllProjects(): void
     {
-        $this->entityManager->persist(new ProviderApiKey(Provider::OpenAi, 'ciphertext', '1234'));
+        $this->entityManager->persist(new ProviderApiKey(Credential::OpenAi, 'ciphertext', '1234'));
         $this->entityManager->flush();
         $admin = $this->persistUser('root', UserRole::Admin);
         $this->persistGroup('Team');
@@ -37,7 +37,7 @@ final class HomeControllerTest extends AppWebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Foreign');
-        self::assertSelectorTextContains('body', 'Provider keys: 1 of 5 set, missing: Google Gemini');
+        self::assertSelectorTextContains('body', 'Provider keys: 1 of 4 set, missing: Google Gemini, DeepSeek, Claude Code');
         self::assertSelectorTextNotContains('body', 'missing: OpenAI');
         self::assertSelectorTextContains('body', 'Users: 1');
         self::assertSelectorTextContains('body', 'Groups: 1');

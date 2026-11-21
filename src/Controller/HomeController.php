@@ -38,10 +38,9 @@ final class HomeController extends AbstractController
     ): Response {
         $admin = null;
         if ($user->isAdmin()) {
-            $stored = $store->findAll();
             $admin = [
                 'providerCount' => \count(Provider::cases()),
-                'missing' => array_values(array_filter(Provider::cases(), static fn (Provider $provider): bool => !isset($stored[$provider->value]))),
+                'missing' => array_values(array_filter(Provider::cases(), static fn (Provider $provider): bool => !$store->hasProvider($provider))),
                 'userCount' => $entityManager->getRepository(User::class)->count([]),
                 'groupCount' => $groups->count([]),
             ];
