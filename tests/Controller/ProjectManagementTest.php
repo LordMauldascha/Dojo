@@ -136,7 +136,10 @@ final class ProjectManagementTest extends AppWebTestCase
 
         foreach ([$direct, $viaGroup] as $user) {
             $this->client->loginUser($user);
-            self::assertSame(['Security'], $this->titles($this->client->request('GET', '/projects')));
+            $crawler = $this->client->request('GET', '/projects');
+            self::assertSame(['Security'], $this->titles($crawler));
+            self::assertSame($path.'/runs', $crawler->filter('tbody tr td:last-child a.button')->attr('href'));
+            self::assertSame('Runs', trim($crawler->filter('tbody tr td:last-child a.button')->text()));
             $this->client->request('GET', $path);
             self::assertResponseIsSuccessful();
         }

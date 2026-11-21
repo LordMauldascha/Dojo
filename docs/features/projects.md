@@ -27,7 +27,8 @@ testcases.
 
 **Overview** columns: Title, Description, Users, Groups, Skills, Testcases, Updated, Created. Users, groups, skills and
 testcases are counts; skills and testcases link to the matching overview filtered by this project. Search covers title
-and description. See [Overview tables](overview-tables.md).
+and description. The last column has a *Runs* button that opens the runs of that project. See
+[Overview tables](overview-tables.md).
 
 **Detail page, admins**: stat tiles at the top (runs first, with a "New run" button, then skills and testcases; each count
 links to the matching list); edit title and description; add and remove groups and users, shown side by side (stacked on

@@ -109,7 +109,8 @@ td {
         margin: 0 var(--space-2) 0 0;
     }
 
-    button {
+    button,
+    .button {
         min-height: 2rem;
         padding: 0 var(--space-3);
     }

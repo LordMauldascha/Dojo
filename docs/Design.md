@@ -37,7 +37,7 @@ no hex values, pixel sizes or durations outside `variables/`. Breakpoints are th
 - Spacing: 4px grid, `--space-1` to `--space-8`.
 - Tables carry no colors and no icons. Three exceptions: the sort arrow, the accent color on link hover and the version
   status dot (`.status-dot--final` in `--color-success`, `.status-dot--draft` in `--color-highlight`, with `aria-label`).
-- Table anatomy (`_tables.scss`): cell padding 10px / 14px. The sorted column header is semibold with a small CSS triangle
+- Table anatomy (`_tables.scss`): cell padding 10px / 14px. `button` and `a.button` in a cell use the compact height (2rem). The sorted column header is semibold with a small CSS triangle
   in the text color (up = ascending, down = descending), driven by `aria-sort` on the `th`. Links in cells are semibold with
   a 2px underline (3px and `--color-accent` on hover).
 

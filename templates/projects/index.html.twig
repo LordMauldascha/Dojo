@@ -21,6 +21,7 @@
                     {{ list.sort_header('app_projects', {}, query, page, 'testcases', 'Testcases') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'updatedAt', 'Updated') }}
                     {{ list.sort_header('app_projects', {}, query, page, 'createdAt', 'Created') }}
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -35,6 +36,7 @@
                         <td><a href="{{ path('app_testcases', {project: project.uuid}) }}">{{ row.testcaseCount }}</a></td>
                         <td>{{ project.updatedAt|date }}</td>
                         <td>{{ project.createdAt|date }}</td>
+                        <td><a class="button" href="{{ path('app_runs', {uuid: project.uuid}) }}">Runs</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
