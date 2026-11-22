@@ -90,8 +90,8 @@ Search terms leave the application and go to Hugging Face. Do not use personal d
 ## Demo data
 
 `src/DataFixtures/DemoFixtures.php` (group `demo`, package `doctrine/doctrine-fixtures-bundle`, installed with `--dev`
-only) creates the demo state: the users `admin` (admin) and `user`, the groups `Development`, `Projektmanagement` and
-`Texting` (`user` is in all three, `admin` in none), six projects with their skills and testcases, and eight runs. The runs
+only) creates the demo state: the users `admin` (admin) and `user`, the groups `Development`, `Project Management` and
+`Copywriting` (`user` is in all three, `admin` in none), six projects with their skills and testcases, and eight runs. The runs
 have no LLM configuration and were never started.
 
 ```bash

@@ -47,7 +47,7 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
         $manager->persist($user);
 
         $groups = [];
-        foreach (['Development', 'Projektmanagement', 'Texting'] as $title) {
+        foreach (['Development', 'Project Management', 'Copywriting'] as $title) {
             $group = new Group();
             $group->setTitle($title);
             $group->addUser($user);
@@ -121,12 +121,12 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
     private static function projects(): array
     {
         return [
-            ['title' => 'Webshop Relaunch', 'group' => 'Development', 'description' => 'Shopware-Relaunch eines fiktiven Möbelhändlers: Code-Qualität, API-Dokumentation und Commit-Konventionen.'],
-            ['title' => 'API Migration', 'group' => 'Development', 'description' => 'Umstellung einer Legacy-REST-Schnittstelle auf Symfony mit API Platform: Review, Tests und Migrationsnotizen.'],
-            ['title' => 'Sprint Planung', 'group' => 'Projektmanagement', 'description' => 'Planung, Schätzung und Statusberichte für Scrum-Teams in Kundenprojekten.'],
-            ['title' => 'Kundenkommunikation', 'group' => 'Projektmanagement', 'description' => 'Angebote, Statusmails und Eskalationen sachlich und kundengerecht formulieren.'],
-            ['title' => 'Website Content', 'group' => 'Texting', 'description' => 'Webtexte, Meta-Descriptions und Produktbeschreibungen für Unternehmenswebsites.'],
-            ['title' => 'Newsletter und Social Media', 'group' => 'Texting', 'description' => 'Kurztexte für Newsletter, LinkedIn und Instagram in konsistentem Tonfall.'],
+            ['title' => 'Webshop Relaunch', 'group' => 'Development', 'description' => 'Shopware relaunch for a fictional furniture retailer: code quality, API documentation and commit conventions.'],
+            ['title' => 'API Migration', 'group' => 'Development', 'description' => 'Moving a legacy REST interface to Symfony with API Platform: review, tests and migration notes.'],
+            ['title' => 'Sprint Planning', 'group' => 'Project Management', 'description' => 'Planning, estimation and status reports for Scrum teams in client projects.'],
+            ['title' => 'Customer Communication', 'group' => 'Project Management', 'description' => 'Proposals, status emails and escalations, worded factually and tailored to the customer.'],
+            ['title' => 'Website Content', 'group' => 'Copywriting', 'description' => 'Web copy, meta descriptions and product descriptions for corporate websites.'],
+            ['title' => 'Newsletter and Social Media', 'group' => 'Copywriting', 'description' => 'Short texts for newsletters, LinkedIn and Instagram in a consistent tone.'],
         ];
     }
 
@@ -136,222 +136,222 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
         return [
             [
                 'title' => 'PHP Code Review',
-                'description' => 'Strukturiertes Review von Symfony-Code nach Schweregrad.',
+                'description' => 'Structured review of Symfony code, sorted by severity.',
                 'projects' => ['Webshop Relaunch', 'API Migration'],
                 'content' => <<<'TEXT'
-                    Du bist ein erfahrener Symfony-Entwickler und reviewst PHP-Code.
+                    You are an experienced Symfony developer reviewing PHP code.
 
-                    Vorgehen:
-                    1. Lies den Code vollständig, bevor du urteilst.
-                    2. Nenne Befunde nach Schweregrad sortiert: Kritisch, Wichtig, Hinweis.
-                    3. Pro Befund: Zeile oder Methode, das Problem in einem Satz, ein konkreter Fix.
-                    4. Prüfe zuerst Sicherheit (Injection, fehlende Autorisierung, Secrets), dann Korrektheit, dann Stil.
+                    Procedure:
+                    1. Read the whole code before you judge it.
+                    2. List findings sorted by severity: Critical, Important, Note.
+                    3. Per finding: line or method, the problem in one sentence, a concrete fix.
+                    4. Check security first (injection, missing authorization, secrets), then correctness, then style.
 
-                    Regeln:
-                    - Erfinde keine Probleme. Ist der Code in Ordnung, sage das in einem Satz.
-                    - Keine Stilkommentare, die ein Code-Fixer automatisch behebt.
-                    - Antworte auf Deutsch, Code und Bezeichner bleiben englisch.
+                    Rules:
+                    - Do not invent problems. If the code is fine, say so in one sentence.
+                    - No style comments that a code fixer resolves automatically.
+                    - Answer in English, code and identifiers stay as they are.
                     TEXT,
             ],
             [
                 'title' => 'Commit Message Writer',
-                'description' => 'Erzeugt kurze englische Commit-Messages aus einem Diff.',
+                'description' => 'Creates short English commit messages from a diff.',
                 'projects' => ['Webshop Relaunch'],
                 'content' => <<<'TEXT'
-                    Schreibe aus dem gegebenen Diff eine Commit-Message.
+                    Write a commit message from the given diff.
 
                     Format:
-                    - Erste Zeile: Imperativ, englisch, maximal 60 Zeichen, kein Punkt am Ende.
-                    - Leerzeile, dann optional ein kurzer Absatz, der erklärt, was die Änderung bewirkt und warum.
+                    - First line: imperative, English, at most 60 characters, no period at the end.
+                    - Blank line, then optionally a short paragraph explaining what the change does and why.
 
-                    Regeln:
-                    - Beschreibe die Wirkung, nicht die Dateinamen.
-                    - Keine Erwähnung von Tools, KI oder Autoren.
-                    - Mehrere unabhängige Änderungen: weise darauf hin, dass der Commit geteilt werden sollte.
+                    Rules:
+                    - Describe the effect, not the file names.
+                    - Do not mention tools, AI or authors.
+                    - Several independent changes: point out that the commit should be split.
                     TEXT,
             ],
             [
                 'title' => 'API Endpoint Documentation',
-                'description' => 'Dokumentiert REST-Endpunkte knapp und einheitlich.',
+                'description' => 'Documents REST endpoints briefly and consistently.',
                 'projects' => ['API Migration'],
                 'content' => <<<'TEXT'
-                    Erstelle aus Route, Controller und DTO eine Endpunkt-Dokumentation in Markdown.
+                    Create endpoint documentation in Markdown from the route, controller and DTO.
 
-                    Pro Endpunkt:
-                    - Methode und Pfad
-                    - Zweck in einem Satz
-                    - Parameter und Request-Body als Tabelle (Name, Typ, Pflicht, Beschreibung)
-                    - Antwort-Statuscodes mit je einem Beispiel
-                    - Hinweise zu Authentifizierung und Fehlerfällen
+                    Per endpoint:
+                    - Method and path
+                    - Purpose in one sentence
+                    - Parameters and request body as a table (name, type, required, description)
+                    - Response status codes with one example each
+                    - Notes on authentication and error cases
 
-                    Regeln:
-                    - Nur dokumentieren, was im Code steht. Fehlt eine Information, schreibe "nicht ersichtlich".
-                    - Keine Beispiele mit echten Personendaten, nur synthetische Werte.
+                    Rules:
+                    - Document only what is in the code. If information is missing, write "not apparent".
+                    - No examples with real personal data, only synthetic values.
                     TEXT,
             ],
             [
                 'title' => 'Migration Checklist',
-                'description' => 'Leitet aus Alt- und Neu-Schnittstelle eine Migrations-Checkliste ab.',
+                'description' => 'Derives a migration checklist from the old and the new interface.',
                 'projects' => ['API Migration'],
                 'content' => <<<'TEXT'
-                    Vergleiche die alte und die neue Schnittstelle und erstelle eine Migrations-Checkliste.
+                    Compare the old and the new interface and create a migration checklist.
 
-                    Gliederung:
-                    1. Breaking Changes (Pfade, Felder, Statuscodes, Authentifizierung)
-                    2. Daten, die migriert oder transformiert werden müssen
-                    3. Reihenfolge der Umstellung inklusive Rollback-Schritt
-                    4. Tests, die vor dem Umschalten grün sein müssen
+                    Structure:
+                    1. Breaking changes (paths, fields, status codes, authentication)
+                    2. Data that has to be migrated or transformed
+                    3. Order of the switchover, including a rollback step
+                    4. Tests that must be green before switching
 
-                    Regeln:
-                    - Jeder Punkt ist eine prüfbare Aufgabe, formuliert als Imperativ.
-                    - Unklare Punkte als Rückfrage kennzeichnen, nicht raten.
+                    Rules:
+                    - Every item is a verifiable task, written as an imperative.
+                    - Mark unclear items as an open question, do not guess.
                     TEXT,
             ],
             [
                 'title' => 'User Story Refinement',
-                'description' => 'Schärft grobe Anforderungen zu User Stories mit Akzeptanzkriterien.',
-                'projects' => ['Sprint Planung'],
+                'description' => 'Sharpens rough requirements into user stories with acceptance criteria.',
+                'projects' => ['Sprint Planning'],
                 'content' => <<<'TEXT'
-                    Forme die gegebene Anforderung zu einer User Story.
+                    Turn the given requirement into a user story.
 
                     Format:
-                    - Als [Rolle] möchte ich [Ziel], damit [Nutzen].
-                    - Akzeptanzkriterien als Given/When/Then, maximal sechs.
-                    - Offene Fragen an den Kunden, falls die Anforderung Lücken hat.
-                    - Grobe Einordnung: S, M oder L, mit einem Satz Begründung.
+                    - As a [role], I want [goal], so that [benefit].
+                    - Acceptance criteria as Given/When/Then, at most six.
+                    - Open questions for the customer if the requirement has gaps.
+                    - Rough sizing: S, M or L, with one sentence of reasoning.
 
-                    Regeln:
-                    - Keine technische Lösung vorgeben.
-                    - Eine Story pro Ziel; ist die Anforderung zu groß, schlage eine Aufteilung vor.
+                    Rules:
+                    - Do not prescribe a technical solution.
+                    - One story per goal; if the requirement is too big, suggest a split.
                     TEXT,
             ],
             [
                 'title' => 'Sprint Status Report',
-                'description' => 'Fasst Sprint-Daten zu einem kurzen Statusbericht zusammen.',
-                'projects' => ['Sprint Planung', 'Kundenkommunikation'],
+                'description' => 'Condenses sprint data into a short status report.',
+                'projects' => ['Sprint Planning', 'Customer Communication'],
                 'content' => <<<'TEXT'
-                    Erstelle aus den gelieferten Ticket-Daten einen Sprint-Statusbericht.
+                    Create a sprint status report from the supplied ticket data.
 
-                    Aufbau:
-                    1. Ampelstatus (grün, gelb, rot) mit einem Satz Begründung
-                    2. Erledigt: höchstens fünf Punkte
-                    3. In Arbeit und Risiken: je mit Verantwortlicher Rolle, nicht mit Namen
-                    4. Nächste Schritte mit Datum im Format TT.MM.JJJJ
+                    Structure:
+                    1. Traffic light status (green, yellow, red) with one sentence of reasoning
+                    2. Done: at most five items
+                    3. In progress and risks: each with the responsible role, not with names
+                    4. Next steps with a date in the format YYYY-MM-DD
 
-                    Regeln:
-                    - Zahlen exakt aus den Daten übernehmen, nichts schätzen.
-                    - Maximal 150 Wörter.
-                    - Sachlicher Ton, keine Beschönigung bei Verzug.
+                    Rules:
+                    - Take numbers exactly from the data, do not estimate anything.
+                    - At most 150 words.
+                    - Factual tone, no sugar-coating of delays.
                     TEXT,
             ],
             [
-                'title' => 'Kundenmail Professionell',
-                'description' => 'Formuliert Kundenmails klar, höflich und handlungsorientiert.',
-                'projects' => ['Kundenkommunikation'],
+                'title' => 'Professional Customer Email',
+                'description' => 'Words customer emails clearly, politely and action-oriented.',
+                'projects' => ['Customer Communication'],
                 'content' => <<<'TEXT'
-                    Schreibe eine Mail an einen Kunden auf Deutsch (Sie-Form).
+                    Write an email to a customer in English, in a formal register.
 
-                    Aufbau:
-                    - Betreff mit dem Kernpunkt
-                    - Erster Satz: Anlass oder Ergebnis
-                    - Hauptteil: maximal drei kurze Absätze
-                    - Klare Bitte oder nächster Schritt mit Datum (TT.MM.JJJJ)
-                    - Grußformel
+                    Structure:
+                    - Subject line with the key point
+                    - First sentence: occasion or result
+                    - Main part: at most three short paragraphs
+                    - A clear request or next step with a date (YYYY-MM-DD)
+                    - Closing
 
-                    Regeln:
-                    - Sachlich und wertschätzend, keine Floskeln.
-                    - Verzögerungen und Fehler offen benennen, mit Lösungsvorschlag.
-                    - Keine internen Details, keine Schuldzuweisungen.
+                    Rules:
+                    - Factual and appreciative, no empty phrases.
+                    - Name delays and mistakes openly, with a proposed solution.
+                    - No internal details, no blaming.
                     TEXT,
             ],
             [
-                'title' => 'Eskalation Deeskalieren',
-                'description' => 'Antwortet auf verärgerte Kundenanfragen ruhig und lösungsorientiert.',
-                'projects' => ['Kundenkommunikation'],
+                'title' => 'De-escalate Complaints',
+                'description' => 'Replies to angry customer messages calmly and with a focus on solutions.',
+                'projects' => ['Customer Communication'],
                 'content' => <<<'TEXT'
-                    Beantworte eine verärgerte oder eskalierende Kundennachricht auf Deutsch.
+                    Answer an angry or escalating customer message in English.
 
-                    Vorgehen:
-                    1. Anliegen in einem Satz neutral zusammenfassen und anerkennen.
-                    2. Sachstand benennen, ohne Rechtfertigung.
-                    3. Konkrete Maßnahme mit Termin vorschlagen.
-                    4. Gesprächsangebot machen (Telefon oder Call).
+                    Procedure:
+                    1. Summarize the concern neutrally in one sentence and acknowledge it.
+                    2. State the current situation, without justifying.
+                    3. Propose a concrete measure with a deadline.
+                    4. Offer a conversation (phone or call).
 
-                    Regeln:
-                    - Kein Sarkasmus, keine Gegenvorwürfe, keine Versprechen, die das Team nicht halten kann.
-                    - Kann die Frage nicht beantwortet werden, nenne offen, was noch geklärt wird und bis wann.
+                    Rules:
+                    - No sarcasm, no counter-accusations, no promises the team cannot keep.
+                    - If the question cannot be answered, say openly what is still being clarified and by when.
                     TEXT,
             ],
             [
                 'title' => 'SEO Meta Description',
-                'description' => 'Schreibt Meta-Titel und Meta-Descriptions in der richtigen Länge.',
+                'description' => 'Writes meta titles and meta descriptions at the right length.',
                 'projects' => ['Website Content'],
                 'content' => <<<'TEXT'
-                    Erstelle zu einer Seite einen Meta-Titel und eine Meta-Description auf Deutsch.
+                    Create a meta title and a meta description in English for a page.
 
-                    Vorgaben:
-                    - Titel: maximal 60 Zeichen, Hauptkeyword möglichst früh.
-                    - Description: 140 bis 155 Zeichen, mit einem klaren Nutzen und einer Handlungsaufforderung.
-                    - Keyword natürlich einbauen, keine Wiederholungen.
+                    Requirements:
+                    - Title: at most 60 characters, main keyword as early as possible.
+                    - Description: 140 to 155 characters, with a clear benefit and a call to action.
+                    - Work the keyword in naturally, no repetitions.
 
-                    Regeln:
-                    - Nur Aussagen, die der Seiteninhalt belegt.
-                    - Zeichenanzahl am Ende in Klammern angeben.
-                    - Keine Anführungszeichen und keine Emojis.
+                    Rules:
+                    - Only statements that the page content supports.
+                    - State the character count in brackets at the end.
+                    - No quotation marks and no emojis.
                     TEXT,
             ],
             [
-                'title' => 'Produktbeschreibung Webshop',
-                'description' => 'Schreibt verkaufsstarke, faktentreue Produkttexte.',
+                'title' => 'Webshop Product Description',
+                'description' => 'Writes persuasive, factual product texts.',
                 'projects' => ['Website Content'],
                 'content' => <<<'TEXT'
-                    Schreibe aus den Produktdaten eine Produktbeschreibung auf Deutsch.
+                    Write a product description in English from the product data.
 
-                    Aufbau:
-                    - Einleitung in zwei Sätzen mit dem Hauptnutzen
-                    - Drei bis fünf Merkmale als Stichpunkte, jeweils mit Nutzen für die Kundin oder den Kunden
-                    - Technische Daten als kurze Liste (Maße in cm, Gewicht in kg)
+                    Structure:
+                    - Introduction in two sentences with the main benefit
+                    - Three to five features as bullet points, each with the benefit for the customer
+                    - Technical data as a short list (dimensions in cm, weight in kg)
 
-                    Regeln:
-                    - Nur Fakten aus den Produktdaten, nichts hinzuerfinden.
-                    - Keine Superlative ohne Beleg, keine Floskeln wie "hochwertig" ohne Begründung.
-                    - Maximal 120 Wörter.
+                    Rules:
+                    - Only facts from the product data, do not invent anything.
+                    - No superlatives without proof, no empty phrases like "high-quality" without a reason.
+                    - At most 120 words.
                     TEXT,
             ],
             [
                 'title' => 'LinkedIn Post Writer',
-                'description' => 'Schreibt LinkedIn-Posts für eine Digitalagentur.',
-                'projects' => ['Newsletter und Social Media'],
+                'description' => 'Writes LinkedIn posts for a digital agency.',
+                'projects' => ['Newsletter and Social Media'],
                 'content' => <<<'TEXT'
-                    Schreibe einen LinkedIn-Post auf Deutsch aus dem gegebenen Thema.
+                    Write a LinkedIn post in English from the given topic.
 
-                    Aufbau:
-                    - Erste Zeile als Hook, höchstens 12 Wörter
-                    - Drei bis fünf kurze Absätze, ein Gedanke pro Absatz
-                    - Schluss mit einer Frage oder einem Hinweis
-                    - Höchstens drei Hashtags am Ende
+                    Structure:
+                    - First line as a hook, at most 12 words
+                    - Three to five short paragraphs, one thought per paragraph
+                    - End with a question or a pointer
+                    - At most three hashtags at the end
 
-                    Regeln:
-                    - Persönlicher, sachlicher Ton, keine Buzzwords.
-                    - Keine Kundennamen ohne Freigabe, keine erfundenen Zahlen.
-                    - Maximal 1.200 Zeichen.
+                    Rules:
+                    - Personal, factual tone, no buzzwords.
+                    - No customer names without approval, no invented numbers.
+                    - At most 1,200 characters.
                     TEXT,
             ],
             [
-                'title' => 'Newsletter Betreffzeilen',
-                'description' => 'Liefert Betreffzeilen-Varianten für A/B-Tests.',
-                'projects' => ['Newsletter und Social Media'],
+                'title' => 'Newsletter Subject Lines',
+                'description' => 'Delivers subject line variants for A/B tests.',
+                'projects' => ['Newsletter and Social Media'],
                 'content' => <<<'TEXT'
-                    Erzeuge zu einem Newsletter-Thema fünf Betreffzeilen auf Deutsch für einen A/B-Test.
+                    Create five subject lines in English for a newsletter topic, for an A/B test.
 
-                    Vorgaben:
-                    - Jede Zeile höchstens 50 Zeichen.
-                    - Fünf unterschiedliche Ansätze: Nutzen, Frage, Zahl, Neugier, Dringlichkeit.
-                    - Dazu je ein Preheader mit höchstens 90 Zeichen.
+                    Requirements:
+                    - Each line at most 50 characters.
+                    - Five different approaches: benefit, question, number, curiosity, urgency.
+                    - Plus a preheader for each, at most 90 characters.
 
-                    Regeln:
-                    - Kein Clickbait, kein Großbuchstaben-Geschrei, höchstens ein Ausrufezeichen insgesamt.
-                    - Die Zeile muss halten, was der Inhalt verspricht.
+                    Rules:
+                    - No clickbait, no shouting in capital letters, at most one exclamation mark in total.
+                    - The line must deliver what the content promises.
                     TEXT,
             ],
         ];
@@ -362,11 +362,11 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
     {
         return [
             [
-                'title' => 'SQL Injection im Repository',
-                'description' => 'Prüft, ob das Review eine offensichtliche SQL-Injection findet.',
+                'title' => 'SQL Injection in Repository',
+                'description' => 'Checks whether the review finds an obvious SQL injection.',
                 'projects' => ['Webshop Relaunch', 'API Migration'],
                 'prompt' => <<<'TEXT'
-                    Reviewe diese Methode:
+                    Review this method:
 
                     public function findByName(string $name): array
                     {
@@ -374,14 +374,14 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
                         return $this->connection->executeQuery($sql)->fetchAllAssociative();
                     }
                     TEXT,
-                'outputCriteria' => 'Die Antwort benennt die SQL-Injection als kritischen Befund. Sie schlägt Prepared Statements bzw. Parameter-Binding oder den QueryBuilder als Fix vor und zeigt eine korrigierte Variante. Sie erfindet keine weiteren Probleme.',
+                'outputCriteria' => 'The answer names the SQL injection as a critical finding. It suggests prepared statements or parameter binding or the QueryBuilder as the fix and shows a corrected version. It does not invent further problems.',
             ],
             [
-                'title' => 'Sauberer Code ohne Befund',
-                'description' => 'Prüft, dass das Review bei korrektem Code nichts erfindet.',
+                'title' => 'Clean Code Without Findings',
+                'description' => 'Checks that the review invents nothing for correct code.',
                 'projects' => ['Webshop Relaunch'],
                 'prompt' => <<<'TEXT'
-                    Reviewe diese Klasse:
+                    Review this class:
 
                     final readonly class PriceCalculator
                     {
@@ -393,11 +393,11 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
                         }
                     }
                     TEXT,
-                'outputCriteria' => 'Die Antwort stellt fest, dass kein kritischer oder wichtiger Befund vorliegt. Höchstens ein kurzer Hinweis (z. B. zu einem Test oder zur Rundung). Sie behauptet keine Fehler, die nicht existieren.',
+                'outputCriteria' => 'The answer states that there is no critical or important finding. At most one short note (e.g. about a test or about rounding). It does not claim errors that do not exist.',
             ],
             [
-                'title' => 'Commit für Warenkorb-Fix',
-                'description' => 'Eine einzelne Änderung soll eine kurze englische Message ergeben.',
+                'title' => 'Commit for Cart Fix',
+                'description' => 'A single change should result in a short English message.',
                 'projects' => ['Webshop Relaunch'],
                 'prompt' => <<<'TEXT'
                     Diff:
@@ -408,14 +408,14 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
                     -    return array_sum(array_map(fn ($i) => $i->price, $cart->items()));
                     +    return array_sum(array_map(fn ($i) => $i->price * $i->quantity, $cart->items()));
                     TEXT,
-                'outputCriteria' => 'Die erste Zeile ist englisch, im Imperativ, höchstens 60 Zeichen und ohne Punkt. Sie beschreibt, dass die Menge bei der Warenkorbsumme berücksichtigt wird. Keine Erwähnung von KI oder Tools.',
+                'outputCriteria' => 'The first line is in English, imperative, at most 60 characters and has no period. It describes that the quantity is taken into account in the cart total. No mention of AI or tools.',
             ],
             [
-                'title' => 'Endpunkt GET Produkt',
-                'description' => 'Dokumentation eines einfachen Lese-Endpunkts.',
+                'title' => 'GET Product Endpoint',
+                'description' => 'Documentation of a simple read endpoint.',
                 'projects' => ['API Migration'],
                 'prompt' => <<<'TEXT'
-                    Dokumentiere diesen Endpunkt:
+                    Document this endpoint:
 
                     #[Route('/api/products/{id}', methods: ['GET'])]
                     #[IsGranted('ROLE_USER')]
@@ -425,87 +425,87 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
                         return $this->json(new ProductDto($product->getSku(), $product->getName(), $product->getPriceCents()));
                     }
                     TEXT,
-                'outputCriteria' => 'Die Doku nennt GET /api/products/{id}, die Authentifizierung (ROLE_USER), die Felder sku, name und priceCents sowie die Statuscodes 200 und 404 (und 403/401 für fehlende Rechte). Angaben, die nicht im Code stehen, sind als nicht ersichtlich markiert. Beispielwerte sind synthetisch.',
+                'outputCriteria' => 'The documentation names GET /api/products/{id}, the authentication (ROLE_USER), the fields sku, name and priceCents and the status codes 200 and 404 (and 403/401 for missing permissions). Information that is not in the code is marked as not apparent. Example values are synthetic.',
             ],
             [
-                'title' => 'Migration Feldumbenennung',
-                'description' => 'Breaking Change durch umbenannte Felder und neues Auth-Verfahren.',
+                'title' => 'Migration Field Renaming',
+                'description' => 'Breaking change through renamed fields and a new authentication method.',
                 'projects' => ['API Migration'],
                 'prompt' => <<<'TEXT'
-                    Alt: GET /v1/orders liefert {"order_id", "total", "state"} und nutzt einen statischen API-Key im Header X-Api-Key.
-                    Neu: GET /api/orders liefert {"id", "totalCents", "status"} und nutzt Bearer-Token (JWT). "total" war ein Dezimalbetrag in Euro, "totalCents" ist eine ganze Zahl in Cent. Die Status-Werte "open" und "done" heißen jetzt "OPEN" und "COMPLETED".
+                    Old: GET /v1/orders returns {"order_id", "total", "state"} and uses a static API key in the header X-Api-Key.
+                    New: GET /api/orders returns {"id", "totalCents", "status"} and uses a bearer token (JWT). "total" was a decimal amount in euros, "totalCents" is an integer in cents. The status values "open" and "done" are now called "OPEN" and "COMPLETED".
                     TEXT,
-                'outputCriteria' => 'Die Checkliste nennt alle fünf Breaking Changes: Pfad, Feldnamen, Betrag (Euro zu Cent), Statuswerte und das Auth-Verfahren. Sie enthält einen Rollback-Schritt und mindestens einen Test vor dem Umschalten. Jeder Punkt ist prüfbar formuliert.',
+                'outputCriteria' => 'The checklist names all five breaking changes: path, field names, amount (euros to cents), status values and the authentication method. It contains a rollback step and at least one test before the switchover. Every item is worded so that it can be verified.',
             ],
             [
-                'title' => 'Fehlende Angaben erkennen',
-                'description' => 'Skill soll unklare Punkte als Rückfrage kennzeichnen, nicht raten.',
+                'title' => 'Detect Missing Information',
+                'description' => 'The skill should mark unclear points as an open question, not guess.',
                 'projects' => ['API Migration'],
-                'prompt' => 'Wir stellen die Bestell-API um. Die neue Version liefert zusätzlich ein Feld "channel". Was in der alten Version dafür galt, wissen wir nicht. Erstelle die Migrations-Checkliste.',
-                'outputCriteria' => 'Die Antwort markiert das Feld "channel" und die unbekannte Altlogik ausdrücklich als offene Rückfrage. Sie erfindet keine Datenherkunft oder Transformationsregel.',
+                'prompt' => 'We are migrating the order API. The new version additionally returns a field "channel". We do not know what applied to it in the old version. Create the migration checklist.',
+                'outputCriteria' => 'The answer explicitly marks the field "channel" and the unknown legacy logic as an open question. It does not invent a data source or a transformation rule.',
             ],
             [
-                'title' => 'Vage Anforderung Newsletter-Anmeldung',
-                'description' => 'Aus einer groben Anforderung entsteht eine Story mit Akzeptanzkriterien.',
-                'projects' => ['Sprint Planung'],
-                'prompt' => 'Anforderung vom Kunden: "Besucher sollen sich auf der Website für unseren Newsletter anmelden können."',
-                'outputCriteria' => 'Die Antwort enthält eine Story im Format Als/möchte ich/damit, höchstens sechs Akzeptanzkriterien im Given/When/Then-Format und offene Fragen (z. B. Double-Opt-In, Einwilligungstext, Zielsystem). Sie gibt keine technische Lösung vor und enthält eine S/M/L-Einordnung.',
+                'title' => 'Vague Requirement Newsletter Signup',
+                'description' => 'A rough requirement becomes a story with acceptance criteria.',
+                'projects' => ['Sprint Planning'],
+                'prompt' => 'Requirement from the customer: "Visitors should be able to sign up for our newsletter on the website."',
+                'outputCriteria' => 'The answer contains a story in the As a/I want/so that format, at most six acceptance criteria in Given/When/Then format and open questions (e.g. double opt-in, consent text, target system). It does not prescribe a technical solution and contains an S/M/L sizing.',
             ],
             [
-                'title' => 'Statusbericht mit Verzug',
-                'description' => 'Der Bericht muss Verzug offen benennen und Zahlen exakt übernehmen.',
-                'projects' => ['Sprint Planung', 'Kundenkommunikation'],
-                'prompt' => 'Sprint 14, Laufzeit 03.11.2026 bis 14.11.2026. Geplant: 21 Story Points, erledigt: 13. Erledigt: Login-Seite, Produktliste, Warenkorb-Grundfunktion. Offen: Checkout (Rolle Backend, blockiert durch fehlende Zugangsdaten des Zahlungsanbieters), Bestellbestätigung (Rolle Frontend, nicht begonnen). Nächster Sprint startet am 17.11.2026.',
-                'outputCriteria' => 'Ampelstatus ist gelb oder rot mit Begründung (13 von 21 Story Points). Die Blockade durch die fehlenden Zugangsdaten ist als Risiko genannt. Verantwortliche sind nur als Rolle genannt. Das Datum 17.11.2026 steht im Format TT.MM.JJJJ. Höchstens 150 Wörter, keine erfundenen Zahlen.',
+                'title' => 'Status Report With Delay',
+                'description' => 'The report must name the delay openly and take numbers over exactly.',
+                'projects' => ['Sprint Planning', 'Customer Communication'],
+                'prompt' => 'Sprint 14, duration 2026-11-03 to 2026-11-14. Planned: 21 story points, done: 13. Done: login page, product list, basic cart function. Open: checkout (role backend, blocked by missing credentials from the payment provider), order confirmation (role frontend, not started). The next sprint starts on 2026-11-17.',
+                'outputCriteria' => 'The traffic light status is yellow or red with reasoning (13 of 21 story points). The blocker caused by the missing credentials is named as a risk. Responsible people are named only as a role. The date 2026-11-17 is in the format YYYY-MM-DD. At most 150 words, no invented numbers.',
             ],
             [
-                'title' => 'Verzögerung ankündigen',
-                'description' => 'Offene und lösungsorientierte Mail zu einem verschobenen Livegang.',
-                'projects' => ['Kundenkommunikation'],
-                'prompt' => 'Der Livegang des Kundenshops verschiebt sich vom 01.12.2026 auf den 15.12.2026, weil die Anbindung des Zahlungsanbieters später als geplant freigegeben wurde. Schreibe die Mail an die Projektleitung des Kunden.',
-                'outputCriteria' => 'Die Mail ist in Sie-Form, nennt beide Daten im Format TT.MM.JJJJ und den Grund sachlich. Sie schiebt dem Kunden oder Anbieter keine Schuld zu, bietet einen nächsten Schritt oder ein Gespräch an und hat höchstens drei Absätze im Hauptteil.',
+                'title' => 'Announce Delay',
+                'description' => 'Open and solution-oriented email about a postponed go-live.',
+                'projects' => ['Customer Communication'],
+                'prompt' => 'The go-live of the customer shop moves from 2026-12-01 to 2026-12-15 because the payment provider connection was released later than planned. Write the email to the customer\'s project lead.',
+                'outputCriteria' => 'The email is in a formal register, names both dates in the format YYYY-MM-DD and the reason factually. It does not blame the customer or the provider, offers a next step or a conversation and has at most three paragraphs in the main part.',
             ],
             [
-                'title' => 'Verärgerter Kunde wegen Ausfall',
-                'description' => 'Ruhige Antwort auf eine scharfe Beschwerde nach einem Ausfall.',
-                'projects' => ['Kundenkommunikation'],
-                'prompt' => 'Kundennachricht: "Unser Shop war gestern drei Stunden offline und niemand hat uns informiert. Das ist inakzeptabel! Ich erwarte bis morgen eine Erklärung, sonst überlegen wir uns, den Vertrag zu kündigen." Bekannt: Ursache war ein fehlgeschlagenes Update des Hostings, behoben um 14:20 Uhr, Ursachenanalyse läuft.',
-                'outputCriteria' => 'Die Antwort erkennt das Anliegen an, ohne sich zu rechtfertigen oder zu streiten. Sie nennt den Sachstand (Ausfall behoben, Analyse läuft), sagt zu, bis wann die Erklärung kommt, und bietet ein Telefonat an. Sie verspricht keine Entschädigung und gibt keine Schuldzuweisung.',
+                'title' => 'Angry Customer After Outage',
+                'description' => 'Calm reply to a sharp complaint after an outage.',
+                'projects' => ['Customer Communication'],
+                'prompt' => 'Customer message: "Our shop was offline for three hours yesterday and nobody told us. This is unacceptable! I expect an explanation by tomorrow, otherwise we will consider terminating the contract." Known: the cause was a failed hosting update, fixed at 14:20, root cause analysis in progress.',
+                'outputCriteria' => 'The answer acknowledges the concern without justifying itself or arguing. It states the current situation (outage fixed, analysis in progress), commits to a deadline for the explanation and offers a phone call. It promises no compensation and blames no one.',
             ],
             [
-                'title' => 'Meta Description Leistungsseite',
-                'description' => 'Längenvorgaben und Handlungsaufforderung einhalten.',
+                'title' => 'Meta Description Service Page',
+                'description' => 'Keep to the length requirements and include a call to action.',
                 'projects' => ['Website Content'],
-                'prompt' => 'Seite: "Webentwicklung mit Symfony". Inhalt: Die Agentur entwickelt individuelle Webanwendungen und Websites auf Basis von Symfony und Sulu, von der Konzeption bis zum Betrieb. Hauptkeyword: Symfony Entwicklung.',
-                'outputCriteria' => 'Titel höchstens 60 Zeichen, Description zwischen 140 und 155 Zeichen. Das Keyword steht früh im Titel, die Description enthält eine Handlungsaufforderung. Zeichenanzahl ist angegeben und stimmt. Keine Anführungszeichen, keine Emojis, keine Aussagen, die nicht im Inhalt stehen.',
+                'prompt' => 'Page: "Web Development with Symfony". Content: The agency develops custom web applications and websites based on Symfony and Sulu, from concept to operation. Main keyword: Symfony development.',
+                'outputCriteria' => 'Title at most 60 characters, description between 140 and 155 characters. The keyword appears early in the title, the description contains a call to action. The character count is stated and correct. No quotation marks, no emojis, no statements that are not in the content.',
             ],
             [
-                'title' => 'Produkttext Esstisch',
-                'description' => 'Faktentreue Beschreibung ohne erfundene Eigenschaften.',
+                'title' => 'Product Text Dining Table',
+                'description' => 'Factual description without invented properties.',
                 'projects' => ['Website Content'],
-                'prompt' => 'Produktdaten: Esstisch "Nordic", Eiche massiv, geölt. Maße 180 x 90 x 75 cm, Gewicht 42 kg. Ausziehbar nicht möglich. Montage: Tischbeine werden angeschraubt, Werkzeug liegt bei. Seitenhinweis: Nicht für den Außenbereich geeignet.',
-                'outputCriteria' => 'Der Text hat maximal 120 Wörter, enthält Maße in cm und Gewicht in kg und verwendet nur die gegebenen Fakten. Er nennt weder Ausziehfunktion noch Outdoor-Eignung als Vorteil und erfindet keine Zertifikate oder Garantien.',
+                'prompt' => 'Product data: dining table "Nordic", solid oak, oiled. Dimensions 180 x 90 x 75 cm, weight 42 kg. Not extendable. Assembly: the table legs are screwed on, tools are included. Note: not suitable for outdoor use.',
+                'outputCriteria' => 'The text has at most 120 words, contains dimensions in cm and weight in kg and uses only the given facts. It names neither an extension function nor outdoor suitability as an advantage and invents no certificates or warranties.',
             ],
             [
-                'title' => 'Produkttext mit fehlenden Daten',
-                'description' => 'Skill soll bei dünnen Daten nichts erfinden.',
+                'title' => 'Product Text With Missing Data',
+                'description' => 'The skill should invent nothing when the data is thin.',
                 'projects' => ['Website Content'],
-                'prompt' => 'Produktdaten: Sessel "Luna", Stoffbezug grau. Mehr Informationen liegen nicht vor.',
-                'outputCriteria' => 'Der Text bleibt kurz und nennt nur Modellname und grauen Stoffbezug. Er erfindet keine Maße, Materialien, Gewichte oder Komfort-Versprechen. Idealerweise weist er darauf hin, dass Angaben fehlen.',
+                'prompt' => 'Product data: armchair "Luna", grey fabric cover. No further information is available.',
+                'outputCriteria' => 'The text stays short and names only the model name and the grey fabric cover. It invents no dimensions, materials, weights or comfort promises. Ideally it points out that information is missing.',
             ],
             [
                 'title' => 'LinkedIn Post Relaunch',
-                'description' => 'Ein Post zu einem abgeschlossenen Projekt ohne Kundennamen.',
-                'projects' => ['Newsletter und Social Media'],
-                'prompt' => 'Thema: Wir haben den Relaunch einer Website für einen Händler aus der Möbelbranche abgeschlossen. Wichtigste Erkenntnis: Frühe Inhalte-Planung hat den Zeitplan gerettet. Kunde möchte nicht genannt werden.',
-                'outputCriteria' => 'Die erste Zeile ist ein Hook mit höchstens 12 Wörtern. Der Post hat drei bis fünf kurze Absätze, endet mit Frage oder Hinweis, enthält höchstens drei Hashtags und höchstens 1.200 Zeichen. Der Kunde wird nicht genannt, es werden keine Zahlen erfunden.',
+                'description' => 'A post about a finished project without customer names.',
+                'projects' => ['Newsletter and Social Media'],
+                'prompt' => 'Topic: We have completed the relaunch of a website for a furniture retailer. Key insight: early content planning saved the schedule. The customer does not want to be named.',
+                'outputCriteria' => 'The first line is a hook with at most 12 words. The post has three to five short paragraphs, ends with a question or a pointer, contains at most three hashtags and at most 1,200 characters. The customer is not named, no numbers are invented.',
             ],
             [
-                'title' => 'Betreffzeilen Winteraktion',
-                'description' => 'Fünf Varianten mit Längenlimits und fünf unterschiedlichen Ansätzen.',
-                'projects' => ['Newsletter und Social Media'],
-                'prompt' => 'Newsletter-Thema: Winteraktion im Webshop, 15 Prozent auf alle Wohnaccessoires bis 31.12.2026.',
-                'outputCriteria' => 'Genau fünf Betreffzeilen mit höchstens 50 Zeichen, jede mit Preheader bis 90 Zeichen. Die Ansätze unterscheiden sich (Nutzen, Frage, Zahl, Neugier, Dringlichkeit). Höchstens ein Ausrufezeichen insgesamt, kein Großbuchstaben-Geschrei. Die 15 Prozent und das Datum sind korrekt, wo sie vorkommen.',
+                'title' => 'Subject Lines Winter Sale',
+                'description' => 'Five variants with length limits and five different approaches.',
+                'projects' => ['Newsletter and Social Media'],
+                'prompt' => 'Newsletter topic: winter sale in the webshop, 15 percent off all home accessories until 2026-12-31.',
+                'outputCriteria' => 'Exactly five subject lines with at most 50 characters, each with a preheader of up to 90 characters. The approaches differ (benefit, question, number, curiosity, urgency). At most one exclamation mark in total, no shouting in capital letters. The 15 percent and the date are correct wherever they appear.',
             ],
         ];
     }
@@ -516,59 +516,59 @@ final class DemoFixtures implements ORMFixtureInterface, FixtureGroupInterface
         return [
             [
                 'title' => 'Code Review: Claude vs. OpenAI',
-                'description' => 'Vergleicht zwei Modelle beim PHP-Review auf einen echten Befund und einen sauberen Fall.',
+                'description' => 'Compares two models in PHP review on a real finding and a clean case.',
                 'project' => 'Webshop Relaunch',
                 'skills' => ['PHP Code Review'],
-                'testcases' => ['SQL Injection im Repository', 'Sauberer Code ohne Befund'],
+                'testcases' => ['SQL Injection in Repository', 'Clean Code Without Findings'],
             ],
             [
-                'title' => 'Commit Messages mit kleinen Modellen',
-                'description' => 'Reichen günstige Modelle für kurze Commit-Messages?',
+                'title' => 'Commit Messages With Small Models',
+                'description' => 'Are cheap models enough for short commit messages?',
                 'project' => 'Webshop Relaunch',
                 'skills' => ['Commit Message Writer'],
-                'testcases' => ['Commit für Warenkorb-Fix'],
+                'testcases' => ['Commit for Cart Fix'],
             ],
             [
-                'title' => 'Doku und Migrations-Checkliste',
-                'description' => 'Prüft beide Skills über drei Testcases, auch mit unvollständigen Angaben.',
+                'title' => 'Docs and Migration Checklist',
+                'description' => 'Tests both skills across three testcases, including incomplete information.',
                 'project' => 'API Migration',
                 'skills' => ['API Endpoint Documentation', 'Migration Checklist'],
-                'testcases' => ['Endpunkt GET Produkt', 'Migration Feldumbenennung', 'Fehlende Angaben erkennen'],
+                'testcases' => ['GET Product Endpoint', 'Migration Field Renaming', 'Detect Missing Information'],
             ],
             [
-                'title' => 'Review Basislinie ohne Skill',
-                'description' => 'Referenz ohne Skill, um den Nutzen des Review-Skills zu messen.',
+                'title' => 'Review Baseline Without Skill',
+                'description' => 'Reference without a skill, to measure the benefit of the review skill.',
                 'project' => 'API Migration',
                 'skills' => [],
-                'testcases' => ['SQL Injection im Repository'],
+                'testcases' => ['SQL Injection in Repository'],
             ],
             [
-                'title' => 'Stories und Statusbericht',
-                'description' => 'User-Story-Refinement und Sprint-Bericht auf zwei Modellen.',
-                'project' => 'Sprint Planung',
+                'title' => 'Stories and Status Report',
+                'description' => 'User story refinement and sprint report on two models.',
+                'project' => 'Sprint Planning',
                 'skills' => ['User Story Refinement', 'Sprint Status Report'],
-                'testcases' => ['Vage Anforderung Newsletter-Anmeldung', 'Statusbericht mit Verzug'],
+                'testcases' => ['Vague Requirement Newsletter Signup', 'Status Report With Delay'],
             ],
             [
-                'title' => 'Tonalität Kundenmails',
-                'description' => 'Sachlicher Ton bei Verzug und Beschwerde, Opus gegen Sonnet.',
-                'project' => 'Kundenkommunikation',
-                'skills' => ['Kundenmail Professionell', 'Eskalation Deeskalieren'],
-                'testcases' => ['Verzögerung ankündigen', 'Verärgerter Kunde wegen Ausfall'],
+                'title' => 'Tone of Customer Emails',
+                'description' => 'Factual tone for delays and complaints, Opus against Sonnet.',
+                'project' => 'Customer Communication',
+                'skills' => ['Professional Customer Email', 'De-escalate Complaints'],
+                'testcases' => ['Announce Delay', 'Angry Customer After Outage'],
             ],
             [
-                'title' => 'SEO und Produkttexte',
-                'description' => 'Längenvorgaben und Faktentreue über drei Modelle.',
+                'title' => 'SEO and Product Texts',
+                'description' => 'Length requirements and factual accuracy across three models.',
                 'project' => 'Website Content',
-                'skills' => ['SEO Meta Description', 'Produktbeschreibung Webshop'],
-                'testcases' => ['Meta Description Leistungsseite', 'Produkttext Esstisch', 'Produkttext mit fehlenden Daten'],
+                'skills' => ['SEO Meta Description', 'Webshop Product Description'],
+                'testcases' => ['Meta Description Service Page', 'Product Text Dining Table', 'Product Text With Missing Data'],
             ],
             [
-                'title' => 'LinkedIn und Betreffzeilen',
-                'description' => 'Kurztexte mit harten Längenlimits auf zwei günstigen Modellen.',
-                'project' => 'Newsletter und Social Media',
-                'skills' => ['LinkedIn Post Writer', 'Newsletter Betreffzeilen'],
-                'testcases' => ['LinkedIn Post Relaunch', 'Betreffzeilen Winteraktion'],
+                'title' => 'LinkedIn and Subject Lines',
+                'description' => 'Short texts with hard length limits on two cheap models.',
+                'project' => 'Newsletter and Social Media',
+                'skills' => ['LinkedIn Post Writer', 'Newsletter Subject Lines'],
+                'testcases' => ['LinkedIn Post Relaunch', 'Subject Lines Winter Sale'],
             ],
         ];
     }

@@ -69,7 +69,7 @@ final class DemoFixturesTest extends KernelTestCase
             $titles[] = $group->getTitle();
         }
         sort($titles);
-        self::assertSame(['Development', 'Projektmanagement', 'Texting'], $titles);
+        self::assertSame(['Copywriting', 'Development', 'Project Management'], $titles);
     }
 
     public function testEveryProjectBelongsToExactlyOneGroup(): void
