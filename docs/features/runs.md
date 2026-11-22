@@ -52,7 +52,7 @@ Runs have no own members. Everything derives from the project.
 | --- | --- | --- |
 | Runs of a project | `/projects/{uuid}/runs` | Table of that project's runs; reached from the project page |
 | New run | `/projects/{uuid}/runs/new` | Title and description, then continue on the run page |
-| Run | `/runs/{uuid}` | Tiles at the top (versions with the status of the latest version — `running`, `judging`, `finished`, `finished with errors` or `not executed`, linking to it — and the Start button, configurations, skills, testcases; a hint says what is missing to start), version list with the share of met criteria per version (met criteria of all judged cells divided by all their criteria, `–` until a cell is judged), edit details and configurations, skills and testcases side by side |
+| Run | `/runs/{uuid}` | Tiles at the top (versions with the status of the latest version — `running`, `judging`, `finished`, `finished with errors` or `not executed`, linking to it — and the Start button, configurations, skills, testcases; a hint says what is missing to start), version list with the share of met criteria per version (met criteria of all judged cells divided by all their criteria, `–` until a cell is judged) and the average duration, input tokens and output tokens per version (columns `Avg. …`, mean over the cells that have the value, `–` if none has it), edit details and configurations, skills and testcases side by side |
 | Version | `/runs/{uuid}/versions/{number}` | The snapshot and its results: progress and the result matrix |
 | Progress | `/runs/{uuid}/versions/{number}/progress` | JSON for the live update of the version page (`status`, `done`, `total`, `html`); same access as the version page |
 | Run status | `/runs/{uuid}/status` | JSON for the live update of the run page: status of the latest version, `done`, `total` and the re-rendered tiles with Start button, hints and version list (`html`); polled every 3 seconds while the latest version runs; same access as the run page |
@@ -160,7 +160,9 @@ results of its cells; they are deleted with it.
 ### Version page
 
 The version page shows `done / total` and a matrix with the testcases as rows and the LLM configurations as columns.
-Each cell shows the score (for example `80 %`), its status or `failed – <error code>`; a cell with output opens (native
+Each cell shows the score (for example `80 %`), its status or `failed – <error code>`; once the model answered, a line
+below shows the duration and token usage of the model call (for example `12.3 s · 1,234 in / 567 out`, `–` for a count the
+provider did not report; the judge call is not included). A cell with output opens (native
 `<details>`) to the model's answer and the criteria list with *met* / *not met* and the judge's reason per criterion.
 While the version is running the page asks the progress endpoint every 3 seconds and swaps in the new matrix (open
 cells, focus and scroll position stay); it stops when the version is no longer running. After three failed requests in a

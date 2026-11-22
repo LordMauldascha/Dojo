@@ -20,6 +20,13 @@
         vertical-align: top;
     }
 
+    .cell-usage {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        white-space: nowrap;
+    }
+
     summary {
         cursor: pointer;
         font-weight: var(--font-weight-semibold);

@@ -54,6 +54,9 @@
                 <th>Version</th>
                 <th>Created</th>
                 <th>Criteria met</th>
+                <th>Avg. duration</th>
+                <th>Avg. input tokens</th>
+                <th>Avg. output tokens</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -63,6 +66,9 @@
                     <td>{{ version.number }}</td>
                     <td>{{ version.createdAt|date }}</td>
                     <td data-criteria-score>{{ version.criteriaScore is null ? '–' : version.criteriaScore ~ ' %' }}</td>
+                    <td data-avg-duration>{{ version.averageDurationMs is null ? '–' : (version.averageDurationMs / 1000)|number_format(1) ~ ' s' }}</td>
+                    <td data-avg-input-tokens>{{ version.averageInputTokens is null ? '–' : version.averageInputTokens|number_format }}</td>
+                    <td data-avg-output-tokens>{{ version.averageOutputTokens is null ? '–' : version.averageOutputTokens|number_format }}</td>
                     <td><a href="{{ path('app_run_version', {uuid: run.uuid, number: version.number}) }}">View</a></td>
                 </tr>
             {% endfor %}

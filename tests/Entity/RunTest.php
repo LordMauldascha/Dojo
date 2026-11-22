@@ -240,6 +240,31 @@ final class RunTest extends PhpUnitTestCase
         self::assertSame(75, $version->getCriteriaScore(), 'a failed cell has no criteria');
     }
 
+    public function testAveragesCountOnlyResultsThatHaveTheValue(): void
+    {
+        $run = $this->newRun();
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
+        $run->setTestcases([$this->makeTestcase('A', 'p', 'o', $this->project), $this->makeTestcase('B', 'p', 'o', $this->project), $this->makeTestcase('C', 'p', 'o', $this->project)]);
+        $version = $this->start($run);
+        /** @var list<RunResult> $results */
+        $results = array_values($version->getResults()->toArray());
+
+        self::assertNull($version->getAverageDurationMs());
+        self::assertNull($version->getAverageInputTokens());
+        self::assertNull($version->getAverageOutputTokens());
+
+        $results[0]->markRunning();
+        $results[0]->markJudging('a', 100, 10, 1000);
+        $results[1]->markRunning();
+        $results[1]->markJudging('b', null, 15, 2000);
+        $results[2]->markRunning();
+        $results[2]->markFailed('timeout', RunResultStatus::Running);
+
+        self::assertSame(1500.0, $version->getAverageDurationMs(), 'the failed cell has no duration');
+        self::assertSame(100.0, $version->getAverageInputTokens());
+        self::assertSame(12.5, $version->getAverageOutputTokens());
+    }
+
     public function testExistingVersionsDoNotChangeWhenTheRunOrItsSkillsChangeLater(): void
     {
         $skill = $this->skill('Review', 'skill v1');

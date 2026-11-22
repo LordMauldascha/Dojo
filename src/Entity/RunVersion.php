@@ -158,6 +158,33 @@ class RunVersion
         return (int) round(100 * \count(array_filter($criteria, static fn (array $criterion): bool => $criterion['met'])) / \count($criteria));
     }
 
+    public function getAverageDurationMs(): ?float
+    {
+        return $this->average(static fn (RunResult $result): ?int => $result->getDurationMs());
+    }
+
+    public function getAverageInputTokens(): ?float
+    {
+        return $this->average(static fn (RunResult $result): ?int => $result->getInputTokens());
+    }
+
+    public function getAverageOutputTokens(): ?float
+    {
+        return $this->average(static fn (RunResult $result): ?int => $result->getOutputTokens());
+    }
+
+    /**
+     * Mean over the results that have the value, null if none has it.
+     *
+     * @param callable(RunResult): ?int $value
+     */
+    private function average(callable $value): ?float
+    {
+        $values = array_filter(array_map($value, array_values($this->results->toArray())), static fn (?int $v): bool => null !== $v);
+
+        return [] === $values ? null : array_sum($values) / \count($values);
+    }
+
     /** Display status: a running version is "judging" once no cell waits for or calls the tested model any more. */
     public function getStatusLabel(): string
     {

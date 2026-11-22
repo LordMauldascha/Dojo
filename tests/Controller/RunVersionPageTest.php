@@ -34,6 +34,9 @@ final class RunVersionPageTest extends AppWebTestCase
 
         $firstRow = $matrix->filter('tbody tr')->eq(1)->filter('td');
         self::assertSame('80 %', trim($firstRow->eq(0)->filter('summary')->text()));
+        self::assertSame('0.3 s · 10 in / 20 out', trim($firstRow->eq(0)->filter('.cell-usage')->text()));
+        self::assertSame('0.0 s · – in / – out', trim($matrix->filter('tbody tr')->eq(0)->filter('td')->eq(1)->filter('.cell-usage')->text()), 'missing token counts show a dash');
+        self::assertCount(0, $firstRow->eq(1)->filter('.cell-usage'), 'a cell that failed before answering has no usage');
         self::assertSame('failed – timeout', trim($firstRow->eq(1)->text()));
         self::assertSame('skipped – no API key', trim($firstRow->eq(2)->text()));
         self::assertSame('running', trim($matrix->filter('tbody tr')->eq(0)->filter('td')->eq(0)->text()));
@@ -174,7 +177,7 @@ final class RunVersionPageTest extends AppWebTestCase
 
         self::assertResponseIsSuccessful();
         $cell = $crawler->filter('table.result-matrix tbody tr')->eq(0)->filter('td')->eq(1);
-        self::assertSame('–', trim($cell->text()));
+        self::assertSame('– 0.0 s · – in / – out', trim($cell->text()), 'score dash, then the usage line');
         self::assertCount(0, $cell->filter('details'));
         self::assertCount(1, $crawler->filter('table.result-matrix details'));
     }

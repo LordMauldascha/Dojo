@@ -602,7 +602,7 @@ final class RunManagementTest extends AppWebTestCase
 
         $this->changeResults($versionId, static function (RunResult $result): void {
             $result->markRunning();
-            $result->markJudging('answer', null, null, 1);
+            $result->markJudging('answer', 1234, null, 1500);
         });
         $this->client->request('GET', '/runs/'.$run->getUuid().'/status');
         self::assertResponseIsSuccessful();
@@ -622,6 +622,9 @@ final class RunManagementTest extends AppWebTestCase
         self::assertStringContainsString('Version 1: finished', $progress['html']);
         self::assertSame(['100 %'], (new Crawler($progress['html']))->filter('#versions + table [data-criteria-score]')->each(static fn (Crawler $td): string => trim($td->text())));
         self::assertSame('Criteria met', trim((new Crawler($progress['html']))->filter('#versions + table thead th')->eq(2)->text()));
+        self::assertSame(['Avg. duration', 'Avg. input tokens', 'Avg. output tokens'], array_slice((new Crawler($progress['html']))->filter('#versions + table thead th')->each(static fn (Crawler $th): string => trim($th->text())), 3, 3));
+        $averages = (new Crawler($progress['html']))->filter('#versions + table tbody td')->each(static fn (Crawler $td): string => trim($td->text()));
+        self::assertSame(['1.5 s', '1,234', '–'], array_slice($averages, 3, 3), 'a missing token count shows a dash');
         self::assertStringContainsString('1 LLM calls and 1 judge calls', $progress['html'], 'the start confirmation is back once the version finished');
 
         $this->client->loginUser($this->persistUser('mallory'));

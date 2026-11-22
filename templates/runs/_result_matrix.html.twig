@@ -54,6 +54,9 @@
                                         {% else %}
                                             {{ label }}
                                         {% endif %}
+                                        {% if null is not same as result.durationMs %}
+                                            <small class="cell-usage">{{ (result.durationMs / 1000)|number_format(1) }} s · {{ null is same as result.inputTokens ? '–' : result.inputTokens|number_format }} in / {{ null is same as result.outputTokens ? '–' : result.outputTokens|number_format }} out</small>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                             {% endfor %}
