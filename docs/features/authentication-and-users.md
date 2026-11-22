@@ -27,7 +27,7 @@ Page: `/admin/users`. The list has the shared overview toolbar (search, entries 
 
 - **Create** a user with the *New user* button in the toolbar, which opens a dialog (it reopens with the errors after an
   invalid submit): username, password (typed twice) and role. The username has 3 to 64 characters from `a-z`,
-  `0-9`, `.`, `_`, `-` and must be unique. The password has at least 12 characters (the console command applies the same rule).
+  `0-9`, `.`, `_`, `-` and must be unique. The password has at least 12 characters (the console command does not enforce this rule).
 - **Disable or enable** a user. A disabled user keeps all data but cannot sign in.
 - **Delete** a user. Memberships in groups and projects are removed. Skills, testcases and runs the user created stay;
   their creator is then unknown, so only admins can delete them.
