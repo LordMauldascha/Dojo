@@ -12,9 +12,9 @@ Users create and maintain LLM skills and testcases, compare models and providers
 
 ## Product Purpose
 
-Dojo is a web platform to create, evaluate, test and optimize LLM skills. People work in projects. A project has members (users and groups) and owns the skills and testcases its members work with. A run combines skills, testcases and LLM configurations (provider, model, optional effort) of one project and is versioned on every start. Success: a team can see which version of a skill performs how, on which model, against which testcases.
+Dojo is a web platform to create, evaluate, test and optimize LLM skills. People work in projects. A project has members (users and groups) and owns the skills and testcases its members work with. A run combines skills, testcases and LLM configurations (provider, model, optional effort) of one project and is versioned on every start. Every start executes: each testcase is sent to each LLM configuration, an LLM judge rates the answer against the testcase's criteria, and the app computes a score per cell. Success: a team can see which version of a skill performs how, on which model, against which testcases.
 
-Current state: calling the LLMs and comparing their output is not built yet; starting a run only creates an immutable version.
+Current state: running the LLMs, judging and comparing run versions are built. A queue worker executes the cells; a result matrix shows score, answer and the judge's reasons per testcase and model, and two versions can be compared. An optional baseline start (without skills) shows the effect of the skills. An MCP server lets AI agents work in Dojo with the rights of the person who approved them.
 
 ## Positioning
 
@@ -27,10 +27,10 @@ Server-rendered Symfony app (Twig, Webpack Encore). Runs locally in Docker (app 
 ## Capabilities and Constraints
 
 - Entities: user, group, project, skill, testcase, run, run version, provider API key. Access derives from project membership and is enforced server-side (voters).
-- Prompts are meant to be sent to LLM providers later: no personal data in skills, testcases, descriptions or any free text. Use synthetic data (GDPR).
+- Prompts are sent to LLM providers when a run starts, and the cost is real: no personal data in skills, testcases, descriptions or any free text. Use synthetic data (GDPR).
 - Provider API keys are stored encrypted and, with the LLM judge model, managed by admins on the LLM Configuration page.
 - Providers, models and effort levels are defined in code, not in the interface.
-- Not built yet: calling the LLMs, comparing their outputs.
+- Not built: a quota per project or user (product decision). The start confirmation shows the number of LLM calls instead.
 
 ## Brand Commitments
 
@@ -49,12 +49,12 @@ The earlier project rule "no icons and no colors anywhere" applies to tables onl
 
 ## Evidence on Hand
 
-Feature documentation in `docs/Features.md` and `docs/features/`, project plans in `Plans/`. No logo, brand guide, user research, testimonials or usage data on hand. Do not fabricate any.
+Feature documentation in `docs/Features.md` and `docs/features/`, project plans in `Plans/`, design rules in `docs/Design.md`. The logo is the gold seal with 道 (`public/favicon.svg`, see `docs/Design.md#tokens`); the README hero is `assets/readme/hero.svg`. No separate brand guide, user research, testimonials or usage data on hand. Do not fabricate any.
 
 ## Product Principles
 
 1. The skill is the unit of work: versions, history and comparison come before generic eval features.
-2. Runs are evidence: a started run is an immutable snapshot, never edited afterwards.
+2. Runs are evidence: a started run is an immutable snapshot of its inputs (skills, testcases, configurations, judge), never edited afterwards. Execution only adds results.
 3. Access follows the project: what someone sees and may do derives from project membership, never from the interface alone.
 4. No personal data in prompts or free text: synthetic data only.
 5. Tables stay plain and scannable: no icons or colors inside them, except the sort arrow, the link hover accent and the version status dot.
