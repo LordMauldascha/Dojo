@@ -12,6 +12,7 @@ Custom console commands of this app (`src/Command/`). Run them with `symfony con
 | `ai:huggingface:model-info` | Show the inference providers of one Hugging Face model (same package) |
 | `league:oauth2-server:generate-keypair` | Create the key pair that signs the OAuth access tokens of the [MCP server](features/mcp.md) (`league/oauth2-server-bundle`) |
 | `league:oauth2-server:clear-expired-tokens` | Delete expired access tokens, refresh tokens and authorization codes (same package; run it from a daily cron job) |
+| `doctrine:fixtures:load --append --group=demo` | Reset the demo data (dev only, from `doctrine/doctrine-fixtures-bundle`), see [Demo data](#demo-data) |
 
 ## `app:user:create`
 
@@ -85,6 +86,24 @@ bin/console ai:huggingface:model-info <model-name>
 ```
 
 Search terms leave the application and go to Hugging Face. Do not use personal data.
+
+## Demo data
+
+`src/DataFixtures/DemoFixtures.php` (group `demo`, package `doctrine/doctrine-fixtures-bundle`, installed with `--dev`
+only) creates the demo state: the users `admin` (admin) and `user`, the groups `Development`, `Projektmanagement` and
+`Texting` (`user` is in all three, `admin` in none), six projects with their skills and testcases, and eight runs. The runs
+have no LLM configuration and were never started.
+
+```bash
+bin/console doctrine:fixtures:load --append --group=demo
+```
+
+- The passwords are `admin` and `user`. Because the bundle is a dev dependency, they cannot be loaded in production.
+- The fixture deletes all groups, projects, skills, testcases and runs and the two users `admin` and `user` first, then
+  recreates them. Other users stay (they lose their group memberships).
+- Always pass `--append`. Without it the bundle purges every table, including the stored API keys, the LLM settings and the
+  OAuth clients of the [MCP server](features/mcp.md).
+- API keys are not part of the demo data: add them with `app:api-keys:import-env` or in the LLM configuration.
 
 ## OAuth keys for the MCP server
 
