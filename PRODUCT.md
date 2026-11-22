@@ -8,7 +8,7 @@ web
 
 ## Users
 
-The MASSIVE ART team (internal only). They create and maintain LLM skills and testcases, compare models and providers, and review run versions. Roles: admins (see and change everything, manage users, groups and provider API keys) and normal users (only what belongs to projects they can access through a group or direct assignment). Whether individual roles (development, PM, consulting) use it differently is not decided.
+Users create and maintain LLM skills and testcases, compare models and providers, and review run versions. Roles: admins (see and change everything, manage users, groups and provider API keys) and normal users (only what belongs to projects they can access through a group or direct assignment). Whether individual roles (development, PM, consulting) use it differently is not decided.
 
 ## Product Purpose
 

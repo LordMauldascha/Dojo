@@ -1,7 +1,21 @@
-# Dojo
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="Dojo: a platform to create, evaluate and test LLM skills. Skills and testcases feed a run, an LLM judge rates the answers, the result is a score per testcase and model.">
+</p>
 
+<p align="center">
 Platform to create, evaluate and test LLM skills. Symfony project with a Webpack Encore frontend, PostgreSQL, a Messenger
 worker for the run cells and an MCP server.
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> ·
+  <a href="#check-that-it-works">Check</a> ·
+  <a href="#how-to-use">How to use</a> ·
+  <a href="#daily-use">Daily use</a> ·
+  <a href="#troubleshooting">Troubleshooting</a> ·
+  <a href="#before-production">Before production</a> ·
+  <a href="#documentation">Documentation</a>
+</p>
 
 ## Installation
 
@@ -16,7 +30,8 @@ Follow the steps in order. At the end the app runs at http://localhost:8000 and 
 | Node.js | Version in `.nvmrc` (24). Runs on the host, only for the frontend build. With nvm: `nvm install && nvm use` |
 | OpenSSL | Used to generate secrets (preinstalled on macOS and Linux) |
 
-Port `8000` on `127.0.0.1` must be free.
+> [!NOTE]
+> Port `8000` on `127.0.0.1` must be free.
 
 ### 2. Clone the repository
 
@@ -52,9 +67,11 @@ ANTHROPIC_API_KEY=
 CLAUDE_CODE_OAUTH_TOKEN=
 ```
 
-Do not put real keys of other people or customers here. Never commit `.env.local`.
+> [!WARNING]
+> Do not put real keys of other people or customers here. Never commit `.env.local`.
 
-Losing `API_KEY_ENCRYPTION_KEY` makes the stored provider keys unreadable; they would have to be entered again.
+> [!CAUTION]
+> Losing `API_KEY_ENCRYPTION_KEY` makes the stored provider keys unreadable; they would have to be entered again.
 
 ### 4. Start the containers
 
@@ -135,8 +152,9 @@ The idea in four lines: a **project** holds everything. In it you write **skills
 **testcases** (a prompt plus criteria). A **run** sends every testcase to every LLM you choose, optionally with the
 skills. An **LLM judge** rates each answer against the criteria. Compare the versions of a run to see whether a skill helps.
 
-Starting a run calls LLM providers and costs money. Never put personal data into skills, testcases or descriptions, use
-synthetic data.
+> [!WARNING]
+> Starting a run calls LLM providers and costs money. Never put personal data into skills, testcases or descriptions, use
+> synthetic data.
 
 After sign-in the **Overview** shows your projects, the latest runs and your open drafts. Admins also see the status of
 the provider keys, users and groups.
@@ -204,9 +222,10 @@ claude mcp add --transport http dojo http://localhost:8000/mcp
 On the first call the browser opens: sign in to Dojo and approve the agent. Approve only connections you started
 yourself. The **My account** page lists connected agents with a **Disconnect** button.
 
-Two things to know: `start_run` calls the LLM providers and costs money, exactly like **Start** in the web interface,
-but without the confirmation dialog (`get_run` shows the number of calls first). Deleting runs and projects is final.
-Tool results go to the LLM provider of your agent, so the rule "no personal data" applies here as well.
+> [!IMPORTANT]
+> Two things to know: `start_run` calls the LLM providers and costs money, exactly like **Start** in the web interface,
+> but without the confirmation dialog (`get_run` shows the number of calls first). Deleting runs and projects is final.
+> Tool results go to the LLM provider of your agent, so the rule "no personal data" applies here as well.
 
 Available tools (all work on what the signed-in person may access; "admin" means admins only):
 
@@ -248,9 +267,10 @@ migrations) and `npm ci && npm run build`.
 
 ## Before production
 
-The setup above is for development only. Read the section "Before production and for runs that call LLM providers" in
-[AGENTS.md](AGENTS.md) first: the `Dockerfile` runs as root with the development `php.ini`, and several secrets and
-host settings are required.
+> [!IMPORTANT]
+> The setup above is for development only. Read the section "Before production and for runs that call LLM providers" in
+> [AGENTS.md](AGENTS.md) first: the `Dockerfile` runs as root with the development `php.ini`, and several secrets and
+> host settings are required.
 
 ## Documentation
 
