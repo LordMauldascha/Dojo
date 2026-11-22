@@ -15,7 +15,7 @@
     <h2>Members</h2>
     {{ include('_members.html.twig', {users: group.users, owner: group, removeRoute: 'app_admin_group_user_remove', removeTokenPrefix: constant('App\\Controller\\GroupController::CSRF_REMOVE_USER'), emptyText: 'No members yet.'}) }}
 
-    {{ form(addUserForm) }}
+    {{ form(addUserForm, {attr: {class: 'form-inline'}}) }}
 
     <h2>Delete group</h2>
     {{ forms.confirm_post(path('app_admin_group_delete', {uuid: group.uuid}), constant('App\\Controller\\GroupController::CSRF_DELETE') ~ group.uuid, 'Delete', 'Delete group?', projects ? 'The group is removed from these projects, and its members lose the access it granted: ' ~ projects|map(project => project.title)|join(', ') ~ '.' : 'The group is not assigned to any project.') }}

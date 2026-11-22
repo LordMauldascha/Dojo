@@ -19,6 +19,6 @@ final class JudgeConfigurationType extends AbstractType
     {
         $builder
             ->add('model', ModelChoiceType::class)
-            ->add('save', SubmitType::class, ['label' => 'Save']);
+            ->add('save', SubmitType::class, ['label' => 'Save', 'attr' => ['class' => 'button-save']]);
     }
 }

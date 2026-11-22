@@ -61,7 +61,8 @@
     --color-highlight-strong: #ffd47a; // hover of filled highlight
 
     // States
-    --color-success: #a9d98f; // 9.8:1
+    --color-success: #a9d98f; // 9.8:1, also the fill of the Save buttons (dark text on it: 9.4:1)
+    --color-success-strong: #bfe6aa; // hover of filled success
     --color-danger: #ff9d8c; // 7.9:1, red is not a brand color; it only marks errors and destructive actions
     --color-info: var(--color-accent);
 

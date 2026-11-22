@@ -50,7 +50,8 @@ All five overviews (groups, projects, skills, testcases, runs) share `templates/
   navigation item, without the knot). Filters on the left, the "New ..." action on the right. A page passes `newPath` and
   `newLabel` to the controls include; no separate "New ..." link above the table.
 - Buttons: `.button` gives a link the look of a `<button>` (New ..., Previous, Next); `.button-primary` is the one gold
-  main action.
+  main action. `button.button-save` (`--color-success`, set in the form types) marks Save actions in forms; *Save as
+  draft* stays gold. `form.form-inline` lays a short select form (add configuration, add group/user) out in one row.
 - Pagination: centered below the table; Previous and Next are `.button` links, rendered as disabled spans
   (`aria-disabled`) when there is no such page, so the line does not jump.
 - Width: the page content uses the full width next to the sidebar with the padding as margin (`.app-main` has no

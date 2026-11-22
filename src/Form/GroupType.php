@@ -18,7 +18,7 @@ final class GroupType extends AbstractType
     {
         $builder
             ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => 100]])
-            ->add('save', SubmitType::class, ['label' => 'Save']);
+            ->add('save', SubmitType::class, ['label' => 'Save', 'attr' => ['class' => 'button-save']]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -20,7 +20,7 @@ final class RunType extends AbstractType
         $builder
             ->add('title', TextType::class, ['label' => 'Title', 'attr' => ['maxlength' => Run::TITLE_MAX]])
             ->add('description', TextareaType::class, ['label' => 'Description', 'required' => false, 'help' => Help::NO_PERSONAL_DATA, 'attr' => ['maxlength' => Run::DESCRIPTION_MAX, 'rows' => 4]])
-            ->add('save', SubmitType::class, ['label' => 'Save']);
+            ->add('save', SubmitType::class, ['label' => 'Save', 'attr' => ['class' => 'button-save']]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

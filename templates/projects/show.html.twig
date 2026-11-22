@@ -57,14 +57,14 @@
                 {% else %}
                     <p>No groups assigned.</p>
                 {% endif %}
-                {{ form(addGroupForm) }}
+                {{ form(addGroupForm, {attr: {class: 'form-inline'}}) }}
             </section>
 
             <section>
                 <h2>Users</h2>
                 <p class="help-text">These users have direct access to this project.</p>
                 {{ include('_members.html.twig', {users: project.users, owner: project, removeRoute: 'app_project_user_remove', removeTokenPrefix: constant('App\\Controller\\ProjectController::CSRF_REMOVE_USER'), emptyText: 'No users assigned.'}) }}
-                {{ form(addUserForm) }}
+                {{ form(addUserForm, {attr: {class: 'form-inline'}}) }}
             </section>
         </div>
 

@@ -35,7 +35,7 @@ abstract class AbstractChecklistType extends AbstractType
                 'expanded' => true,
                 'required' => false,
             ])
-            ->add('save', SubmitType::class, ['label' => $definition['submit']]);
+            ->add('save', SubmitType::class, ['label' => $definition['submit'], 'attr' => ['class' => 'button-save']]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -22,6 +22,6 @@ final class ApiKeyType extends AbstractType
                 'attr' => ['autocomplete' => 'off'],
                 'constraints' => [new Assert\NotBlank(), new Assert\Length(min: 16, max: 512)],
             ])
-            ->add('save', SubmitType::class, ['label' => 'Save']);
+            ->add('save', SubmitType::class, ['label' => 'Save', 'attr' => ['class' => 'button-save']]);
     }
 }
