@@ -129,6 +129,72 @@ look too early). If a service is not, read its log with `docker compose logs <se
 
 Mails sent by the app are caught by Mailpit. Its port is random: `docker compose port mailer 8025`.
 
+## How to use
+
+The idea in four lines: a **project** holds everything. In it you write **skills** (instructions for an LLM) and
+**testcases** (a prompt plus criteria). A **run** sends every testcase to every LLM you choose, optionally with the
+skills. An **LLM judge** rates each answer against the criteria. Compare the versions of a run to see whether a skill helps.
+
+Starting a run calls LLM providers and costs money. Never put personal data into skills, testcases or descriptions, use
+synthetic data.
+
+After sign-in the **Overview** shows your projects, the latest runs and your open drafts. Admins also see the status of
+the provider keys, users and groups.
+
+### Admin: set up (once)
+
+1. **LLM Configuration**: click **Set key** for every provider you want to use and save the API key.
+   Hugging Face has no fixed model list: in its card click **Discover models**, search the Hub and click **Add** next to
+   every model you want to offer in runs.
+2. On the same page choose a model for the **LLM judge** (rates the answers) and for the **AI helper** (drafts skills
+   and testcases), then click **Save**. Without a judge no run can start.
+3. **Users**: click **New user**, enter username, password (at least 12 characters) and role (User or Admin), then
+   **Create user**. A user can be disabled or deleted in the same list.
+4. **Groups** (optional): click **New group**, enter a title, **Save**. Then select users and click **Add**.
+5. **Projects**: click **New project**, enter title and description, **Save**. On the project page add the groups and
+   users who get access with **Add**. Only they and admins can see the project, its skills, testcases and runs.
+
+### Write a skill
+
+1. **Skills** → **New skill**, or **Generate skill**: describe what you want, the AI helper drafts it, you review it.
+2. Enter title, description and instructions. The skill header is built from title and description automatically.
+3. Select at least one project and click **Create skill**.
+
+Editing later: **Save as final** creates a new version that runs use. **Save as draft** keeps your work in progress;
+runs ignore drafts. Old versions are listed at the bottom (**View**, **Restore**).
+
+### Write a testcase
+
+1. **Testcases** → **New testcase**, or **Generate testcase**.
+2. Enter title, description, **Prompt** and **Output criteria**. Write **one criterion per line**: the judge rates every
+   line as met or not met, and the score is the share of met criteria.
+3. Select at least one project and click **Create testcase**.
+
+Versions and drafts work like for skills.
+
+### Run and read results
+
+1. **Projects** → click **Runs** in the row of your project (or open the project and click **New run**).
+2. Click **New run**, enter title and description, **Save**.
+3. On the run page choose provider, model and optional effort, then **Add configuration**. Repeat for more models.
+4. Tick the skills (optional) and click **Save skills**, tick the testcases and click **Save testcases**. Only items
+   assigned to the project are listed.
+5. Click **Start** and confirm. The dialog shows how many LLM calls will be billed. On the first start with skills you
+   can choose **Start with baseline**: it also runs once without skills, so you can see the effect of the skills.
+6. If **Start** is blocked, the run page lists what is missing (for example a testcase, a configuration, a key or the judge).
+7. Every start adds a version to the list on the run page. Click **View** for the results: a table of testcases and
+   models with the score per cell. Open a cell to see the answer and the judge's reasons. **Compare versions** shows
+   what changed between two versions.
+
+Started versions stay `pending` when the worker is not running, see Troubleshooting.
+
+### My account
+
+**My account** shows your projects, groups and numbers, lets you **Change password** and lists the AI agents connected
+through MCP with a **Disconnect** button. How to connect an agent such as Claude Code: [docs/features/mcp.md](docs/features/mcp.md).
+
+More detail on every feature: [docs/Features.md](docs/Features.md).
+
 ## Daily use
 
 ```bash
