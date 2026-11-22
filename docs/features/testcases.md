@@ -43,6 +43,7 @@ There is no separate admin-only flag. For an admin-only testcase use no project,
 | Page | URL | Purpose |
 | --- | --- | --- |
 | Overview | `/testcases` | Search, sort, project filter; columns Title, Description, Projects, Version, Updated, Created (the Projects column lists only projects the viewer can access) |
+| Generate testcase | `/testcases/generate` | Describe a testcase; the AI helper drafts title, description, prompt and output criteria and the create form opens prefilled (see [AI helper](llm-configuration.md#ai-helper)) |
 | New testcase | `/testcases/new` | Create version 1 with all fields and the projects |
 | Testcase | `/testcases/{uuid}` | Tiles (active version, project, runs using it), edit and save as draft or final, discard the draft, change the projects, version history |
 | Version | `/testcases/{uuid}/versions/{number}` | Read-only view of one version |

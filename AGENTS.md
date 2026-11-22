@@ -150,7 +150,7 @@ are not covered by code yet:
   the web profiler has no authentication and shows request data. Do not keep real provider keys in `.env.local` while
   developing, the keys stored in the database are enough. The `worker` service runs with `APP_DEBUG=0`, because Doctrine's
   SQL logging (on with `kernel.debug`) would write outputs and judge reasons to `var/log/dev.log`; keep it that way.
-- **Runs that call an LLM**: every call goes through one gateway service, `App\Ai\LlmGateway`, which passes a fixed option
+- **Runs that call an LLM**: the AI helper (generating skills and testcases, `App\Ai\ContentGenerator`) also calls the gateway, synchronously inside a web request, so a web worker needs the provider reachable and decrypts the key there. Every call goes through one gateway service, `App\Ai\LlmGateway`, which passes a fixed option
   whitelist (`tools: []` for Claude Code plus the effort option of `App\Ai\EffortMapper`) to a platform that
   `App\Ai\KeyedPlatformProvider` builds per call from the key stored in the database (no key is read from the
   environment, one source only). Never forward user-controlled option names. Run the container as a non-root user (the

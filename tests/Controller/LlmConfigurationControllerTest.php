@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Ai\Credential;
 use App\Ai\Provider;
+use App\Entity\AiHelperSetting;
 use App\Entity\JudgeSetting;
 use App\Entity\ProviderApiKey;
 use App\Entity\User;
@@ -30,6 +31,7 @@ final class LlmConfigurationControllerTest extends WebTestCase
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.JudgeSetting::class)->execute();
+        $this->entityManager->createQuery('DELETE FROM '.AiHelperSetting::class)->execute();
         $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
     }
 
@@ -104,6 +106,42 @@ final class LlmConfigurationControllerTest extends WebTestCase
         $crawler = $this->client->followRedirect();
         self::assertSelectorTextContains('body', 'Current: Google Gemini / gemini-3.5-flash.');
         self::assertSame('gemini:gemini-3.5-flash', $crawler->filter('form[name="judge"]')->form()->getValues()['judge[model]']);
+    }
+
+    public function testSavingTheAiHelperStoresItApartFromTheJudge(): void
+    {
+        $this->storeKeys(Credential::Gemini);
+        $this->client->loginUser($this->admin());
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
+
+        $this->client->submit($crawler->filter('form[name="helper"]')->form(['helper[model]' => 'gemini:gemini-3.5-flash']));
+        self::assertResponseRedirects('/admin/llm-configuration');
+
+        $this->entityManager->clear();
+        $stored = $this->entityManager->getRepository(AiHelperSetting::class)->findAll();
+        self::assertCount(1, $stored);
+        self::assertSame('gemini-3.5-flash', $stored[0]->getModel());
+        self::assertCount(0, $this->entityManager->getRepository(JudgeSetting::class)->findAll());
+
+        $crawler = $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'AI helper saved.');
+        self::assertSame('gemini:gemini-3.5-flash', $crawler->filter('form[name="helper"]')->form()->getValues()['helper[model]']);
+        self::assertSame('', $crawler->filter('form[name="judge"]')->form()->getValues()['judge[model]']);
+    }
+
+    public function testAnUnknownAiHelperModelIsRejected(): void
+    {
+        $this->storeKeys(Credential::Gemini);
+        $this->client->loginUser($this->admin());
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
+        $form = $crawler->filter('form[name="helper"]')->form();
+        /** @var array<string, array<string, string>> $values */
+        $values = $form->getPhpValues();
+        $values['helper']['model'] = 'openai:gpt-5.5';
+        $this->client->request('POST', '/admin/llm-configuration', $values);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertCount(0, $this->entityManager->getRepository(AiHelperSetting::class)->findAll());
     }
 
     public function testSavingTheJudgeAgainUpdatesTheSameRow(): void

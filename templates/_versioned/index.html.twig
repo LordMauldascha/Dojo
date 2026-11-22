@@ -10,7 +10,7 @@
 {% block heading %}{{ label|capitalize }}s{% endblock %}
 
 {% block content %}
-    {{ include('_list/controls.html.twig', {route: listRoute, query: query, page: page, projectChoices: projectChoices, newPath: path('app_' ~ label ~ '_new'), newLabel: 'New ' ~ label}) }}
+    {{ include('_list/controls.html.twig', {route: listRoute, query: query, page: page, projectChoices: projectChoices, newPath: path('app_' ~ label ~ '_new'), newLabel: 'New ' ~ label, secondaryPath: path('app_' ~ label ~ '_generate'), secondaryLabel: 'Generate ' ~ label}) }}
 
     {% if page.items %}
         <table>

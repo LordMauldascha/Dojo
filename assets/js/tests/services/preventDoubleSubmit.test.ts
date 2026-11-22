@@ -82,4 +82,19 @@ describe('preventDoubleSubmit', () => {
 
         expect(submit(form).defaultPrevented).toBe(false);
     });
+
+    it('disables the button of a form with a busy label until the page is restored', () => {
+        form.dataset.busyLabel = 'Generating…';
+        const button = form.querySelector('button') as HTMLButtonElement;
+
+        submit(form);
+
+        expect(button.disabled).toBe(true);
+        expect(button.textContent).toBe('Generating…');
+
+        window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+
+        expect(button.disabled).toBe(false);
+        expect(button.textContent).toBe('Save');
+    });
 });

@@ -32,7 +32,7 @@ final class LlmConfigurationController extends AbstractController
             return $this->redirectToRoute('app_admin_llm_configuration');
         }
 
-        return $this->render('admin/llm_configuration.html.twig', ['cards' => $result->cards, 'judge' => $result->judge, 'judgeForm' => $result->judgeForm, 'huggingFaceModels' => $huggingFaceModels->findAllOrdered()], new Response(status: $result->status));
+        return $this->render('admin/llm_configuration.html.twig', ['cards' => $result->cards, 'judge' => $result->judge, 'judgeForm' => $result->judgeForm, 'helper' => $result->helper, 'helperForm' => $result->helperForm, 'huggingFaceModels' => $huggingFaceModels->findAllOrdered()], new Response(status: $result->status));
     }
 
     #[Route('/keys/{credential}/delete', name: 'app_admin_llm_configuration_key_delete', methods: ['POST'])]

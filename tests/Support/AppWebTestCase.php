@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
+use App\Ai\AiHelperSettingStore;
+use App\Ai\ContentGenerator;
 use App\Ai\Credential;
 use App\Ai\JudgeSettingStore;
 use App\Ai\LlmConfiguration;
+use App\Ai\LlmGateway;
+use App\Ai\ModelCatalog;
+use App\Ai\PlatformProvider;
 use App\Ai\Provider;
+use App\Entity\AiHelperSetting;
 use App\Entity\Group;
 use App\Entity\HuggingFaceModel;
 use App\Entity\JudgeSetting;
@@ -20,15 +26,18 @@ use App\Entity\Testcase;
 use App\Entity\User;
 use App\Security\ApiKeyStore;
 use App\Security\UserRole;
+use App\Tests\Ai\ScriptedPlatform;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Events;
+use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Serializer\Encoder\DecoderInterface;
 
 abstract class AppWebTestCase extends WebTestCase
 {
@@ -49,7 +58,7 @@ abstract class AppWebTestCase extends WebTestCase
         foreach (['oauth2_refresh_token', 'oauth2_client'] as $table) {
             $this->entityManager->getConnection()->executeStatement('DELETE FROM '.$table);
         }
-        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class, ProviderApiKey::class, JudgeSetting::class] as $class) {
+        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class, ProviderApiKey::class, JudgeSetting::class, AiHelperSetting::class] as $class) {
             $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
         }
     }
@@ -79,6 +88,30 @@ abstract class AppWebTestCase extends WebTestCase
     }
 
     /** Starts the run as if every provider had a key. */
+    /** Stores a Claude Code key, makes Claude Code opus the AI helper and lets it answer with $answer. */
+    protected function storeHelper(string $answer): ScriptedPlatform
+    {
+        $this->storeKey(Credential::Anthropic);
+        static::getContainer()->get(AiHelperSettingStore::class)->save(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
+        $platform = ScriptedPlatform::answering($answer);
+        // a rebooted kernel would drop the generator set below
+        $this->client->disableReboot();
+        $container = static::getContainer();
+        $provider = new class($platform) implements PlatformProvider {
+            public function __construct(private readonly PlatformInterface $platform)
+            {
+            }
+
+            public function forCredential(Credential $credential): PlatformInterface
+            {
+                return $this->platform;
+            }
+        };
+        $container->set(ContentGenerator::class, new ContentGenerator(new LlmGateway($provider), $container->get(AiHelperSettingStore::class), $container->get(ModelCatalog::class), $container->get(DecoderInterface::class)));
+
+        return $platform;
+    }
+
     protected function startRun(Run $run): RunVersion
     {
         return $run->start(static fn (): bool => true, new LlmConfiguration(Provider::ClaudeCode, 'opus'));

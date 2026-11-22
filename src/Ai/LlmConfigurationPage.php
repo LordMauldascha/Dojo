@@ -10,16 +10,18 @@ use App\Form\JudgeConfigurationType;
 use App\Security\ApiKeyStore;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Builds the forms of the LLM configuration page (judge and one API key form per credential) and handles their submits. */
+/** Builds the forms of the LLM configuration page (judge, AI helper and one API key form per credential) and handles their submits. */
 final readonly class LlmConfigurationPage
 {
     public function __construct(
         private FormFactoryInterface $formFactory,
         private ApiKeyStore $keys,
         private JudgeSettingStore $judgeStore,
+        private AiHelperSettingStore $helperStore,
         private ModelCatalog $catalog,
     ) {
     }
@@ -28,26 +30,18 @@ final readonly class LlmConfigurationPage
     {
         $stored = $this->keys->findAll();
         $judge = $this->judgeStore->get();
+        $helper = $this->helperStore->get();
 
-        $judgeForm = $this->formFactory->createNamed('judge', JudgeConfigurationType::class, ['model' => null === $judge ? null : LlmConfiguration::choiceValue($judge->provider, $judge->model)]);
-        $judgeForm->handleRequest($request);
-
-        $status = Response::HTTP_OK;
-        if ($judgeForm->isSubmitted() && $judgeForm->isValid()) {
-            /** @var array{model: string} $data */
-            $data = $judgeForm->getData();
-            $configuration = $this->catalog->fromChoice($data['model'], null);
-
-            if (null !== $configuration) {
-                return $this->judgeStore->save($configuration)
-                    ? LlmConfigurationPageResult::redirect('success', 'LLM judge saved.')
-                    : LlmConfigurationPageResult::redirect('error', ConflictMessage::TEXT);
-            }
-            $judgeForm->get('model')->addError(new FormError('Unknown model.'));
+        $judgeForm = $this->modelForm($request, 'judge', $judge, $this->judgeStore, 'LLM judge');
+        if ($judgeForm instanceof LlmConfigurationPageResult) {
+            return $judgeForm;
         }
-        if ($judgeForm->isSubmitted()) {
-            $status = Response::HTTP_UNPROCESSABLE_ENTITY;
+        $helperForm = $this->modelForm($request, 'helper', $helper, $this->helperStore, 'AI helper');
+        if ($helperForm instanceof LlmConfigurationPageResult) {
+            return $helperForm;
         }
+
+        $status = $judgeForm->isSubmitted() || $helperForm->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK;
 
         $cards = [];
         foreach (Provider::cases() as $provider) {
@@ -77,6 +71,32 @@ final readonly class LlmConfigurationPage
             ];
         }
 
-        return LlmConfigurationPageResult::render($status, $cards, $judge, $judgeForm->createView());
+        return LlmConfigurationPageResult::render($status, $cards, $judge, $judgeForm->createView(), $helper, $helperForm->createView());
+    }
+
+    /**
+     * The model select of the judge or the AI helper. Returns the redirect result once a valid choice is saved, else the form.
+     *
+     * @return FormInterface<array{model: string|null}>|LlmConfigurationPageResult
+     */
+    private function modelForm(Request $request, string $name, ?LlmConfiguration $current, JudgeSettingStore|AiHelperSettingStore $store, string $label): FormInterface|LlmConfigurationPageResult
+    {
+        $form = $this->formFactory->createNamed($name, JudgeConfigurationType::class, ['model' => null === $current ? null : LlmConfiguration::choiceValue($current->provider, $current->model)]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var array{model: string} $data */
+            $data = $form->getData();
+            $configuration = $this->catalog->fromChoice($data['model'], null);
+
+            if (null !== $configuration) {
+                return $store->save($configuration)
+                    ? LlmConfigurationPageResult::redirect('success', \sprintf('%s saved.', $label))
+                    : LlmConfigurationPageResult::redirect('error', ConflictMessage::TEXT);
+            }
+            $form->get('model')->addError(new FormError('Unknown model.'));
+        }
+
+        return $form;
     }
 }

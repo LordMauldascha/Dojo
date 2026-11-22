@@ -1,4 +1,4 @@
-{# Toolbar of an overview: search, page size and the main action. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter), newPath and newLabel (optional, the "New ..." button), newDialog (optional id of a dialog the button opens instead of linking to newPath). #}
+{# Toolbar of an overview: search, page size and the main action. Expects: route, routeParams (optional), query (ListQuery), page (Page), projectChoices (optional list of Project for a project filter), newPath and newLabel (optional, the "New ..." button), newDialog (optional id of a dialog the button opens instead of linking to newPath), secondaryPath and secondaryLabel (optional, a second button before the "New ..." button). #}
 <div class="toolbar">
     <form method="get" action="{{ path(route, routeParams|default({})) }}">
         <label>Search
@@ -29,9 +29,16 @@
         {% endif %}
         <button type="submit">Apply</button>
     </form>
-    {% if newDialog is defined %}
-        <button type="button" class="button button-primary" command="show-modal" commandfor="{{ newDialog }}">{{ newLabel }}</button>
-    {% elseif newPath is defined %}
-        <a class="button button-primary" href="{{ newPath }}">{{ newLabel }}</a>
+    {% if secondaryPath is defined or newDialog is defined or newPath is defined %}
+        <div class="toolbar-actions">
+            {% if secondaryPath is defined %}
+                <a class="button" href="{{ secondaryPath }}">{{ secondaryLabel }}</a>
+            {% endif %}
+            {% if newDialog is defined %}
+                <button type="button" class="button button-primary" command="show-modal" commandfor="{{ newDialog }}">{{ newLabel }}</button>
+            {% elseif newPath is defined %}
+                <a class="button button-primary" href="{{ newPath }}">{{ newLabel }}</a>
+            {% endif %}
+        </div>
     {% endif %}
 </div>

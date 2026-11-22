@@ -1,6 +1,6 @@
 # LLM configuration
 
-Credentials for the LLM providers, the Hugging Face models admins add, and the model of the LLM judge. Admins manage them at `/admin/llm-configuration`; nobody else has access.
+Credentials for the LLM providers, the Hugging Face models admins add, and the models of the LLM judge and the AI helper. Admins manage them at `/admin/llm-configuration`; nobody else has access.
 
 ## Providers and credentials
 
@@ -82,9 +82,22 @@ for Hugging Face, deleted by an admin). The judge is global, not per project, an
 setting into the run version, which keeps rating with that model even if the setting changes later. How the judge rates
 is described in [Runs](runs.md#execution) and [Testcases](testcases.md).
 
+## AI helper
+
+The AI helper drafts a skill or testcase from a description. It is chosen like the judge: one select, grouped by provider,
+saved to the table `ai_helper_setting` (a single global row, separate from the judge), no effort setting. Until it is set
+(or while its model is no longer offered) generating fails with *No AI helper is set*.
+
+*Generate skill* / *Generate testcase* on the overviews open `/skills/generate` and `/testcases/generate`. The user
+describes the item (max 5000 characters); the request calls the helper through `App\Ai\LlmGateway` and waits for the
+answer (no queue). `App\Ai\ContentGenerator` asks for one JSON object and fills the create form with it. Nothing is
+saved until the user clicks *Create*, and the normal validation runs then. An unusable answer or a failing provider shows a
+generic error on the description field, never the provider's text. The description is sent to the provider: no personal
+data.
+
 ## API keys page section
 
-Below the judge form, `/admin/llm-configuration` shows one card per provider. Each credential has a status (`••••` plus the last four characters and the
+Below the judge and AI helper forms, `/admin/llm-configuration` shows one card per provider. Each credential has a status (`••••` plus the last four characters and the
 time of the last change, or *Not set*) and the buttons *Set key* / *Replace key* (opens a dialog with the key field; an
 invalid key reopens it with the error) and *Delete*. A provider with at least one stored credential gets a green dot.
 
@@ -114,5 +127,6 @@ database. `composer setup` runs it during installation. See [Commands.md](../Com
 
 ## Current limits
 
-The stored keys are used by the queue worker (`messenger:consume`), which decrypts them per call; the web app itself only stores
-them (and sends the Hugging Face token to the Hub for model discovery). A key is checked only when a call uses it: a wrong key shows up as `invalid_api_key` on the cells.
+The stored keys are used by the queue worker (`messenger:consume`), which decrypts them per call, and by the web app for
+generating skills and testcases with the AI helper (decrypted per call, too); the web app also sends the Hugging Face token
+to the Hub for model discovery. A key is checked only when a call uses it: a wrong key shows up as `invalid_api_key` on the cells.

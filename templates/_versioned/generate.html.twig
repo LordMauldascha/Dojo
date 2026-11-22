@@ -1,0 +1,17 @@
+{# Description form of the AI helper for a skill or testcase. Child sets: label ("skill"). #}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Generate {{ label }}{% endblock %}
+
+{% block heading %}Generate {{ label }}{% endblock %}
+
+{% block content %}
+    {{ include('_back_link.html.twig', {href: path('app_' ~ label ~ 's'), label: 'Back to overview'}) }}
+
+    <p class="help-text">Describe the {{ label }}. The AI helper drafts it; you review and edit it before it is created.</p>
+
+    {{ form_start(form, {attr: {'data-busy-label': 'Generating…'}}) }}
+        {{ form_row(form.description) }}
+        {{ form_row(form.generate) }}
+    {{ form_end(form) }}
+{% endblock %}

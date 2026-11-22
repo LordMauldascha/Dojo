@@ -26,6 +26,8 @@ final readonly class LlmConfigurationPageResult
         public array $cards = [],
         public ?LlmConfiguration $judge = null,
         public ?FormView $judgeForm = null,
+        public ?LlmConfiguration $helper = null,
+        public ?FormView $helperForm = null,
     ) {
     }
 
@@ -35,8 +37,8 @@ final readonly class LlmConfigurationPageResult
     }
 
     /** @param list<ProviderCard> $cards */
-    public static function render(int $status, array $cards, ?LlmConfiguration $judge, FormView $judgeForm): self
+    public static function render(int $status, array $cards, ?LlmConfiguration $judge, FormView $judgeForm, ?LlmConfiguration $helper, FormView $helperForm): self
     {
-        return new self(null, $status, $cards, $judge, $judgeForm);
+        return new self(null, $status, $cards, $judge, $judgeForm, $helper, $helperForm);
     }
 }

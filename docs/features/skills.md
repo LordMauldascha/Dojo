@@ -52,6 +52,7 @@ description: Writes conventional commit messages.
 | Page | URL | Purpose |
 | --- | --- | --- |
 | Overview | `/skills` | Search, sort, project filter; columns Title, Description, Projects, Version, Runs, Updated, Created |
+| Generate skill | `/skills/generate` | Describe a skill; the AI helper drafts it and the create form opens prefilled (see [AI helper](llm-configuration.md#ai-helper)) |
 | New skill | `/skills/new` | Create version 1 with title, description, instructions and projects |
 | Skill | `/skills/{uuid}` | Tiles (active version, projects, runs using it), edit and save as draft or final, discard the draft, change projects, version history |
 | Version | `/skills/{uuid}/versions/{number}` | Read-only view of one version |

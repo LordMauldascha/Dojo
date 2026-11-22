@@ -26,12 +26,20 @@
         }
     }
 
-    > .button {
+    // The action buttons sit together on the right.
+    .toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
         margin-left: auto;
 
         @media (max-width: $breakpoint-sm) {
             width: 100%;
             margin-left: 0;
+
+            > .button {
+                flex: 1;
+            }
         }
     }
 }

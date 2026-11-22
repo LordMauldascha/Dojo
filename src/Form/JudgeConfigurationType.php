@@ -9,7 +9,7 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 
 /**
- * Provider and model of the LLM judge as one select grouped by provider (value "provider:model").
+ * Provider and model of the LLM judge or the AI helper as one select grouped by provider (value "provider:model").
  *
  * @extends AbstractType<array{model: string|null}>
  */

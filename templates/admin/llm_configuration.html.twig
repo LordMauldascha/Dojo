@@ -11,6 +11,10 @@
     <p class="help-text">The model that rates run outputs against the output criteria of a testcase. {% if judge %}Current: {{ judge.provider.displayName }} / {{ judge.model }}.{% else %}Not set.{% endif %}</p>
     {{ form(judgeForm) }}
 
+    <h2>AI helper</h2>
+    <p class="help-text">The model that generates skills and testcases from a description. {% if helper %}Current: {{ helper.provider.displayName }} / {{ helper.model }}.{% else %}Not set.{% endif %}</p>
+    {{ form(helperForm) }}
+
     <h2>API keys</h2>
     <p class="help-text">Keys are stored encrypted and never shown again. A run can use a provider once one of its credentials is set.</p>
 

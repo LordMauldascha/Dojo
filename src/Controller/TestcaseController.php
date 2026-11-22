@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Ai\ContentGenerator;
 use App\Entity\Testcase;
 use App\Entity\TestcaseVersion;
 use App\Entity\User;
@@ -55,6 +56,12 @@ final class TestcaseController extends VersionedEntityController
     public function new(Request $request, ProjectRepository $projects, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
     {
         return $this->handleNew($request, $projects, $entityManager, $user);
+    }
+
+    #[Route('/generate', name: 'app_testcase_generate', methods: ['GET', 'POST'])]
+    public function generate(Request $request, ProjectRepository $projects, ContentGenerator $generator, #[CurrentUser] User $user): Response
+    {
+        return $this->handleGenerate($request, $projects, $generator, $user);
     }
 
     #[Route('/{uuid}', name: 'app_testcase_show', requirements: ['uuid' => Requirement::UUID], methods: ['GET', 'POST'])]
@@ -186,6 +193,11 @@ final class TestcaseController extends VersionedEntityController
         $args = [$data->normalizedTitle(), $data->normalizedDescription(), $data->normalizedPrompt(), $data->normalizedOutputCriteria()];
 
         return $asDraft ? $entity->saveDraft(...$args) : $entity->saveFinal(...$args);
+    }
+
+    protected function generateContent(ContentGenerator $generator, string $description): TestcaseData
+    {
+        return $generator->testcase($description);
     }
 
     /**
