@@ -19,6 +19,7 @@
 | Testcases | see, edit, delete all (also without project) | see and edit testcases of their projects, delete own | no access |
 | Runs | everything | see, create, edit, start; delete own | no access |
 | Own account and password | yes | yes | yes |
+| [MCP server](mcp.md) | the same as above, with the admin's rights | the same as above, with the user's rights; no users, groups or LLM configuration | no access |
 
 *Delete own* means the creator, as long as they still have access. If the creator account was deleted, only admins can
 delete the item.
@@ -35,7 +36,12 @@ Skills and testcases without a project are admin only. The way to hide an item f
   for projects exists once, in `ProjectRepository`, and is reused for skills and testcases.
 - Every form and action that changes data is protected by a CSRF token, logout included. A request with a missing or wrong
   token is refused with *403*. Every button that deletes something (users, API keys, groups, projects, skills, testcases, runs, drafts) opens a confirmation dialog first. The `/.../delete` routes accept only `POST`.
-- Changes are limited to 120 requests per minute and user (*429* beyond that); the login has its own throttling.
+- Changes are limited to 120 requests per minute and user (*429* beyond that); the login has its own throttling. Agents on
+  the [MCP server](mcp.md) count with every request.
+- `/mcp` has its own stateless firewall that accepts only OAuth bearer tokens issued by Dojo (scope `mcp`). The token
+  carries the roles of the user who approved the agent, so the same voters and filters apply. `/token`,
+  `/oauth/register` and `/.well-known/*` are public by design; every approval needs a signed-in person on the consent
+  page (CSRF-protected, bound to the session).
 - Wrong current passwords on the change-password form are limited to 5 per 15 minutes and user; the check does not reveal
   whether the password was right once the limit is reached.
 - Responses carry `X-Content-Type-Options`, `Referrer-Policy` and a `Content-Security-Policy` (`default-src 'self'`, scripts and

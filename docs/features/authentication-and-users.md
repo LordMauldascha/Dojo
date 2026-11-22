@@ -47,6 +47,9 @@ Page: `/admin/users`. The list has the shared overview toolbar (search, entries 
   password is required, the new one has at least 12 characters and is typed twice. After an invalid submit the account
   page is shown again (status 422) and the dialog opens by itself with the errors. There is no separate password page. After five wrong current passwords within
   15 minutes the form refuses every further attempt for a while, even with the right password.
+- The section "Connected agents" lists the [MCP agents](mcp.md) the user approved (name and the time until the
+  agent stays connected without a new approval) with a *Disconnect* button (confirmation dialog, `POST
+  /account/agents/{clientId}/revoke`). It revokes only this user's tokens. Without agents it shows the connect command.
 
 ## Home page
 

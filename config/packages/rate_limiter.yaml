@@ -9,9 +9,16 @@ framework:
             policy: sliding_window
             limit: 5
             interval: '15 minutes'
+        # unauthenticated dynamic client registration of MCP agents, keyed by client IP
+        oauth_register:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'
 
 when@test:
     framework:
         rate_limiter:
             write:
+                limit: 1000000
+            oauth_register:
                 limit: 1000000

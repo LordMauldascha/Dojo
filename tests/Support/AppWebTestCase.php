@@ -45,6 +45,10 @@ abstract class AppWebTestCase extends WebTestCase
         $rateLimiterPool = static::getContainer()->get('cache.rate_limiter');
         $rateLimiterPool->clear();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        // refresh tokens only point at access tokens (ON DELETE SET NULL), so they go first; the rest cascades from the client
+        foreach (['oauth2_refresh_token', 'oauth2_client'] as $table) {
+            $this->entityManager->getConnection()->executeStatement('DELETE FROM '.$table);
+        }
         foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class, ProviderApiKey::class, JudgeSetting::class] as $class) {
             $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
         }

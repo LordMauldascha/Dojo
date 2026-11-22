@@ -1,4 +1,5 @@
 {% extends 'layout.html.twig' %}
+{% import '_forms.html.twig' as forms %}
 
 {% block title %}My account{% endblock %}
 
@@ -82,6 +83,30 @@
 
     <h2>My projects</h2>
     {{ include('_projects_table.html.twig') }}
+
+    <h2>Connected agents</h2>
+    {% if agents %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Agent</th>
+                    <th>Connected until</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agent in agents %}
+                    <tr>
+                        <td>{{ agent.name }}</td>
+                        <td>{{ agent.validUntil|date }}</td>
+                        <td>{{ forms.confirm_post(path('app_account_agent_revoke', {clientId: agent.clientId}), constant('App\\Controller\\AccountController::CSRF_REVOKE_AGENT') ~ agent.clientId, 'Disconnect', 'Disconnect agent?', agent.name ~ ' can no longer act as you. It has to be approved again to reconnect.') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No agents connected. Connect one, for example Claude Code: <code>claude mcp add --transport http dojo {{ url('_mcp_endpoint_default') }}</code></p>
+    {% endif %}
 
     <h2>Security</h2>
     <p><button type="button" command="show-modal" commandfor="password-dialog">Change password</button></p>

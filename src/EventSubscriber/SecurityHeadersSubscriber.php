@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\EventSubscriber;
 
+use App\Controller\OAuthController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,6 +75,12 @@ final readonly class SecurityHeadersSubscriber
             }
         }
 
+        // Chrome applies form-action to the redirects after a submit: the consent form ends at the agent's loopback redirect URI
+        $formActions = ["'self'"];
+        if (OAuthController::CONSENT_ROUTE === $request->attributes->get('_route')) {
+            array_push($formActions, 'http://127.0.0.1:*', 'http://localhost:*');
+        }
+
         return implode('; ', [
             "default-src 'self'",
             'script-src '.implode(' ', $scriptSources),
@@ -84,7 +91,7 @@ final readonly class SecurityHeadersSubscriber
             "object-src 'none'",
             "frame-ancestors 'self'",
             "base-uri 'self'",
-            "form-action 'self'",
+            'form-action '.implode(' ', $formActions),
         ]);
     }
 }

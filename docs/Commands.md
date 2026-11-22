@@ -10,6 +10,8 @@ Custom console commands of this app (`src/Command/`). Run them with `symfony con
 | `app:ask-claude` | Send a prompt to the Claude Code platform |
 | `ai:huggingface:model-list` | List Hugging Face Hub models (from `symfony/ai-hugging-face-platform`) |
 | `ai:huggingface:model-info` | Show the inference providers of one Hugging Face model (same package) |
+| `league:oauth2-server:generate-keypair` | Create the key pair that signs the OAuth access tokens of the [MCP server](features/mcp.md) (`league/oauth2-server-bundle`) |
+| `league:oauth2-server:clear-expired-tokens` | Delete expired access tokens, refresh tokens and authorization codes (same package; run it from a daily cron job) |
 
 ## `app:user:create`
 
@@ -83,3 +85,16 @@ bin/console ai:huggingface:model-info <model-name>
 ```
 
 Search terms leave the application and go to Hugging Face. Do not use personal data.
+
+## OAuth keys for the MCP server
+
+The commands `league:oauth2-server:generate-keypair` and `league:oauth2-server:clear-expired-tokens` come from
+`league/oauth2-server-bundle`. After a fresh checkout:
+
+1. Put `OAUTH_PASSPHRASE` and `OAUTH_ENCRYPTION_KEY` into `.env.local` (any long random strings, for example
+   `openssl rand -hex 32`). `.env` only holds empty defaults.
+2. Run `bin/console league:oauth2-server:generate-keypair`. It writes `config/jwt/private.pem` and `public.pem`
+   (git-ignored). Existing keys are kept unless you pass `--overwrite`, which signs out every connected agent.
+
+The test environment has its own throw-away values in `.env.test` and its own files `config/jwt/test-*.pem`
+(`bin/console league:oauth2-server:generate-keypair --env=test`).

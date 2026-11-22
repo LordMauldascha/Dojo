@@ -1,0 +1,20 @@
+mcp:
+    servers:
+        default:
+            # Only our own tools (#[McpTool] in App\Mcp), not MCP services of third-party bundles.
+            registry: 'App\Mcp\'
+            instructions: >-
+                Dojo is a platform to create, evaluate and test LLM skills. People work in projects; a project owns skills
+                and testcases, and a run combines skills, testcases and LLM configurations of one project. Everything is
+                identified by uuids that the list tools return. You act with the rights of the person who connected you.
+                Starting a run calls LLM providers and costs money; deleting cannot be undone. Never put personal data
+                into skills, testcases or descriptions, use synthetic data.
+
+            http:
+                path: /mcp
+                # DNS rebinding protection: hostnames without ports, as a JSON list in MCP_ALLOWED_HOSTS.
+                allowed_hosts: '%env(json:MCP_ALLOWED_HOSTS)%'
+
+            # Enable STDIO for clients such as Claude Desktop via bin/console mcp:server.
+            # transports:
+            #     stdio: true

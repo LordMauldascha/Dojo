@@ -1,0 +1,33 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Approve agent{% endblock %}
+
+{% block heading %}Approve agent{% endblock %}
+
+{% block content %}
+    <p>
+        <strong>{{ client.name }}</strong> wants to use Dojo as <strong>{{ app.user.userIdentifier }}</strong>.
+        It will be able to do everything you can do in Dojo, including starting runs that call LLM providers and deleting
+        your items. It cannot manage users, groups or the LLM configuration.
+    </p>
+
+    <dl class="facts">
+        <div>
+            <dt>Returns to</dt>
+            <dd>
+                {%- for uri in client.redirectUris -%}
+                    {{ uri }}{% if not loop.last %}, {% endif %}
+                {%- endfor -%}
+            </dd>
+        </div>
+    </dl>
+
+    <p>Approve only if you just started this connection yourself from a program on this computer.</p>
+
+    {{ form_start(form) }}
+        <div class="dialog-actions">
+            {{ form_widget(form.deny) }}
+            {{ form_widget(form.approve) }}
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

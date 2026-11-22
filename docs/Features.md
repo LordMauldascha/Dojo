@@ -17,6 +17,7 @@ The whole interface is in English. Each feature has its own page in [features/](
 | [Testcases](features/testcases.md) | Prompt and output criteria (one per line) with version history, assigned to projects |
 | [Runs](features/runs.md) | LLM configurations plus skills and testcases; every start snapshots, executes (LLM calls, judge, score) and shows a result matrix; version compare |
 | [Versioning](features/versioning.md) | Draft and final versions of skills and testcases |
+| [MCP server](features/mcp.md) | An AI agent (for example Claude Code) works in Dojo with the rights of the person who approved it (OAuth in the browser) |
 | [Access control](features/access-control.md) | Who may see and do what, and how it is enforced |
 | [Overview tables](features/overview-tables.md) | Search, sorting and pagination shared by all lists |
 
@@ -54,4 +55,4 @@ to projects they have access to.
   LLMs and the judge. Without the worker a started version stays pending. There is no quota per project or user; the
   start confirmation shows the number of calls.
 
-Console commands (create the first admin, import API keys) are described in [Commands.md](Commands.md).
+Console commands (create the first admin, import API keys, OAuth keys for the MCP server) are described in [Commands.md](Commands.md).

@@ -140,7 +140,12 @@ are not covered by code yet:
   `API_KEY_ENCRYPTION_KEY` and the database password (`POSTGRES_PASSWORD`). Behind a reverse proxy that terminates TLS set
   `TRUSTED_PROXIES` (comma separated) and configure trusted hosts. Do not ship the `Dockerfile` as it is: it uses the
   development `php.ini`, runs as root and bind-mounts the code. Add a production stage (`php.ini-production`, non-root
-  user, `composer install --no-dev --classmap-authoritative`).
+  user, `composer install --no-dev --classmap-authoritative`). The MCP server ([docs/features/mcp.md](docs/features/mcp.md))
+  needs `OAUTH_PASSPHRASE`, `OAUTH_ENCRYPTION_KEY` and the key pair (`bin/console league:oauth2-server:generate-keypair`,
+  files in `config/jwt/`, git-ignored; changing them signs out every agent), `MCP_ALLOWED_HOSTS` (JSON list of the public
+  host names, default only `localhost`), a daily `league:oauth2-server:clear-expired-tokens`, and with several app
+  replicas a shared MCP session store (`mcp.servers.default.session`, store `cache`). Never put real values for the OAuth
+  secrets into the committed `.env`.
 - **Dev stack**: `compose.override.yaml` publishes the app, database and mail catcher on `127.0.0.1` only. Keep it that way;
   the web profiler has no authentication and shows request data. Do not keep real provider keys in `.env.local` while
   developing, the keys stored in the database are enough. The `worker` service runs with `APP_DEBUG=0`, because Doctrine's

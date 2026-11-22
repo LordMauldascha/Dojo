@@ -19,7 +19,7 @@ ci.yml
  │   ├─ Frontend checks   Prettier, type check, assets build
  │   └─ Doctrine migrations   Postgres 16 service, migrate, schema validate (skipped while nothing exists)
  └─ Test (needs Check, parallel)
-     ├─ PHPUnit           builds the assets first
+     ├─ PHPUnit           generates the OAuth test keys, builds the assets first
      └─ Vitest
 ```
 
@@ -54,6 +54,9 @@ The test jobs only start when all three check jobs succeeded.
 - The migration steps are skipped (with a notice) while `src/Entity/` and `migrations/` contain no `*.php` file.
   Without that guard `migrate` fails with "no registered migrations" and `schema:validate` reports a false "not in
   sync". Once an entity or a migration exists, all three steps run. An entity without a migration then fails the job.
+- The OAuth and MCP tests sign tokens with `config/jwt/test-private.pem` and `test-public.pem`. The files are git-ignored,
+  so the `phpunit` job runs `php bin/console league:oauth2-server:generate-keypair --env=test` first (paths and
+  passphrase come from `.env.test`). Locally run the same command once after a fresh checkout.
 - The `phpunit` job has the same `postgres:16-alpine` service and `DATABASE_URL`. It creates `app_test` and runs the
   migrations (`--env=test`) before the tests, because the tests clear and fill the `user` table.
 

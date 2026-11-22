@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ChangePasswordType;
+use App\OAuth\ConnectedAgents;
 use App\Repository\GroupRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\RunRepository;
@@ -14,6 +15,7 @@ use App\Repository\TestcaseRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,12 +24,16 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_USER')]
 final class AccountController extends AbstractController
 {
+    public const CSRF_REVOKE_AGENT = 'revoke-agent-';
+
     public function __construct(
+        private readonly ConnectedAgents $agents,
         private readonly ProjectRepository $projects,
         private readonly GroupRepository $groups,
         private readonly SkillRepository $skills,
@@ -72,6 +78,17 @@ final class AccountController extends AbstractController
         return $this->renderAccount($user, $form);
     }
 
+    /** Unknown clients and clients of other users change nothing, so the answer does not reveal them. */
+    #[Route('/account/agents/{clientId}/revoke', name: 'app_account_agent_revoke', requirements: ['clientId' => '[0-9a-f]{32}'], methods: ['POST'])]
+    #[IsCsrfTokenValid(new Expression('"'.self::CSRF_REVOKE_AGENT.'" ~ args["clientId"]'), methods: 'POST')]
+    public function revokeAgent(string $clientId, #[CurrentUser] User $user): Response
+    {
+        $this->agents->revoke($user, $clientId);
+        $this->addFlash('success', 'Agent disconnected.');
+
+        return $this->redirectToRoute('app_account');
+    }
+
     /** @param FormInterface<array<string, mixed>|null> $form */
     private function renderAccount(User $user, FormInterface $form): Response
     {
@@ -81,6 +98,7 @@ final class AccountController extends AbstractController
             'form' => $form,
             'projects' => $this->projects->findOverview($user, ProjectRepository::OVERVIEW_LIMIT),
             'groups' => $memberships,
+            'agents' => $this->agents->forUser($user),
             'counts' => [
                 'projects' => $this->projects->countAccessibleBy($user),
                 'groups' => \count($memberships),

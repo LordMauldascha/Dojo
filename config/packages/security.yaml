@@ -15,6 +15,17 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
             security: false
+        # Endpoints of the OAuth flow for agents that have no session: discovery, registration, token exchange.
+        oauth_public:
+            pattern: ^/(token$|oauth/register$|\.well-known/)
+            security: false
+        # MCP endpoint: only bearer tokens issued by Dojo's own OAuth server; the token carries the user's roles.
+        mcp:
+            pattern: ^/mcp
+            stateless: true
+            provider: app_users
+            user_checker: App\Security\UserChecker
+            oauth2: true
         main:
             lazy: true
             provider: app_users
@@ -37,6 +48,7 @@ security:
     # Everything except the login is for signed-in users; the controllers add object-level checks with voters.
     access_control:
         - { path: ^/(login|logout)$, roles: PUBLIC_ACCESS }
+        - { path: ^/mcp, roles: ROLE_OAUTH2_MCP }
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/, roles: ROLE_USER }
 
