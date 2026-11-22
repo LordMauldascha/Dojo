@@ -18,6 +18,7 @@ final readonly class ContentGenerator
         - title: at most 60 characters, only letters, digits, spaces and hyphens.
         - description: one or two sentences saying what the skill does and when to use it.
         - content: the instructions in Markdown, without front matter.
+        Write in English, unless the description asks for another language.
         Use synthetic data only, never personal data.
         TXT;
 
@@ -28,6 +29,7 @@ final readonly class ContentGenerator
         - description: one or two sentences.
         - prompt: the input that is sent to the model under test.
         - outputCriteria: one checkable criterion per line, no numbering, no bullets.
+        Write in English, unless the description asks for another language.
         Use synthetic data only, never personal data.
         TXT;
 

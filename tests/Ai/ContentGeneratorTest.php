@@ -19,6 +19,7 @@ use App\Entity\ProviderApiKey;
 use App\Security\ApiKeyStore;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
@@ -67,6 +68,19 @@ final class ContentGeneratorTest extends KernelTestCase
 
         self::assertSame(['Code review', 'Reviews code', '# Steps'], [$data->title, $data->description, $data->content]);
         self::assertSame('opus', $platform->model);
+    }
+
+    public function testBothPromptsDefaultToEnglish(): void
+    {
+        $this->useHelper();
+        $platform = ScriptedPlatform::answering('{"title": "T", "description": "D", "content": "C", "prompt": "P", "outputCriteria": "A"}');
+        $generator = $this->generator($platform);
+
+        foreach ([$generator->skill(...), $generator->testcase(...)] as $generate) {
+            $generate('Beschreibe etwas');
+            self::assertInstanceOf(MessageBag::class, $platform->input);
+            self::assertStringContainsString('Write in English, unless the description asks for another language.', (string) $platform->input->getSystemMessage()?->getContent());
+        }
     }
 
     public function testFencedJsonIsAccepted(): void
