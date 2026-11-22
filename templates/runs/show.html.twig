@@ -11,59 +11,10 @@
 
     {{ include('_back_link.html.twig', {href: path('app_runs', {uuid: run.project.uuid}), label: 'Back to runs of project ' ~ run.project.title}) }}
 
-    <dl class="stats">
-        <div class="stat stat--wide">
-            <dt>Versions</dt>
-            <dd>
-                <a href="#versions">{{ run.versions|length }}</a>
-                {{ forms.post(path('app_run_start', {uuid: run.uuid}), constant('App\\Controller\\RunController::CSRF_START') ~ run.uuid, 'Start', 'button-primary') }}
-            </dd>
-        </div>
-        <div class="stat">
-            <dt>Configurations</dt>
-            <dd>{{ run.configurations|length }}</dd>
-        </div>
-        <div class="stat">
-            <dt>Skills</dt>
-            <dd>{{ run.skills|length }}</dd>
-        </div>
-        <div class="stat">
-            <dt>Testcases</dt>
-            <dd>{{ run.testcases|length }}</dd>
-        </div>
-    </dl>
-    {% if not run.testcases|length and not run.configurations|length %}
-        <p class="help-text">To start, add at least one testcase and one LLM configuration.</p>
-    {% elseif not run.testcases|length %}
-        <p class="help-text">To start, add at least one testcase.</p>
-    {% elseif not run.configurations|length %}
-        <p class="help-text">To start, add at least one LLM configuration.</p>
-    {% endif %}
-
-    {% if run.versions|length %}
-        <h2 id="versions">Versions</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Version</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for version in run.versions|reverse %}
-                    <tr>
-                        <td>{{ version.number }}</td>
-                        <td>{{ version.createdAt|date }}</td>
-                        <td><a href="{{ path('app_run_version', {uuid: run.uuid, number: version.number}) }}">View</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if 1 < run.versions|length %}
-            <p><a href="{{ path('app_run_compare', {uuid: run.uuid}) }}">Compare versions</a></p>
-        {% endif %}
-    {% endif %}
+    {# polled while the latest version runs, so the status, the start button and the hints stay current #}
+    <div id="{{ prepare_component('run-progress') }}" data-progress-url="{{ path('app_run_status', {uuid: run.uuid}) }}" data-status="{{ latest ? latest.status.value : 'not_executed' }}">
+        {{ include('runs/_start_panel.html.twig') }}
+    </div>
 
     <h2>Details</h2>
     {{ form(form) }}
@@ -80,7 +31,15 @@
             <tbody>
                 {% for configuration in run.configurations %}
                     <tr>
-                        <td>{{ configuration.label }}</td>
+                        <td>
+                            {{ configuration.label }}
+                            {% if effortNotes[configuration.key] is not null %}
+                                <small>{{ effortNotes[configuration.key] }}</small>
+                            {% endif %}
+                            {% if configuration.key in unavailableConfigurations %}
+                                <span class="help-text">&#9888; No API key stored</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {{ forms.post(path('app_run_configuration_remove', {uuid: run.uuid, key: configuration.key}), constant('App\\Controller\\RunController::CSRF_REMOVE_CONFIGURATION') ~ run.uuid ~ '-' ~ configuration.key, 'Remove') }}
                         </td>

@@ -4,17 +4,25 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Ai\Credential;
 use App\Ai\Effort;
+use App\Ai\JudgeSettingStore;
 use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
 use App\Entity\HuggingFaceModel;
+use App\Entity\ProviderApiKey;
 use App\Entity\Run;
+use App\Entity\RunResult;
 use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Form\Help;
+use App\Message\ExecuteRunResult;
+use App\Run\RunStarter;
 use App\Security\UserRole;
 use App\Tests\Support\AppWebTestCase;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 final class RunManagementTest extends AppWebTestCase
 {
@@ -181,6 +189,7 @@ final class RunManagementTest extends AppWebTestCase
         $project = $this->persistProject('Security', [$user]);
         $run = $this->persistRun($project, creator: $user);
         $path = '/runs/'.$run->getUuid();
+        $this->storeKey(Credential::OpenAi);
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', $path);
@@ -213,10 +222,49 @@ final class RunManagementTest extends AppWebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testAddingAConfigurationOfAProviderWithoutKeyIsRejected(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user);
+        $this->client->loginUser($user);
+        $path = '/runs/'.$run->getUuid();
+
+        $crawler = $this->client->request('GET', $path);
+        $this->submit($crawler, 'Add configuration', 'run_configuration', ['model' => 'openai:gpt-5.5', 'effort' => '']);
+        self::assertResponseRedirects($path);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'The configuration could not be added.');
+
+        $this->entityManager->clear();
+        self::assertSame([], $this->findRun('Nightly')->getConfigurations());
+    }
+
+    public function testConfigurationWhoseKeyWasRemovedShowsWarning(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user);
+        $this->storeKey(Credential::OpenAi);
+        $this->client->loginUser($user);
+        $path = '/runs/'.$run->getUuid();
+
+        $crawler = $this->client->request('GET', $path);
+        $this->submit($crawler, 'Add configuration', 'run_configuration', ['model' => 'openai:gpt-5.5', 'effort' => '']);
+        $this->client->request('GET', $path);
+        self::assertSelectorTextNotContains('tbody', 'No API key stored');
+
+        $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
+        $this->client->request('GET', $path);
+        self::assertSelectorTextContains('tbody tr', 'OpenAI / gpt-5.5');
+        self::assertSelectorTextContains('tbody tr', 'No API key stored');
+    }
+
     public function testOnlyAddedHuggingFaceModelsAreSelectableAndTheirKeyCanBeRemoved(): void
     {
         $this->entityManager->persist(new HuggingFaceModel('acme/chat-8b'));
         $this->entityManager->flush();
+        $this->storeKey(Credential::HuggingFace);
         $user = $this->persistUser('alice');
         $project = $this->persistProject('Security', [$user]);
         $run = $this->persistRun($project, creator: $user);
@@ -294,6 +342,7 @@ final class RunManagementTest extends AppWebTestCase
         $testcase = $this->persistTestcase('Greeting', $project);
         $run = $this->persistRun($project, creator: $user);
         $path = '/runs/'.$run->getUuid();
+        $this->storeJudge();
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', $path);
@@ -320,6 +369,11 @@ final class RunManagementTest extends AppWebTestCase
         $this->client->submit($crawler->filter('form[action$="/start"]')->form());
         $this->client->followRedirect();
         self::assertSelectorTextContains('body', 'Started as version 1.');
+        $this->entityManager->clear();
+        $version = $this->findRun('Nightly')->findVersion(1);
+        self::assertSame('claude_code:opus:-', $version?->getJudge()?->key());
+        self::assertCount(1, $version->getResults());
+        $this->finishAllResults();
         $crawler = $this->client->request('GET', $path);
         $this->client->submit($crawler->filter('form[action$="/start"]')->form());
         $this->client->followRedirect();
@@ -331,6 +385,287 @@ final class RunManagementTest extends AppWebTestCase
         self::assertCount(2, $this->findRun('Nightly')->getVersions());
     }
 
+    public function testStartIsBlockedWithoutJudge(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('Greeting', $project)], configured: true);
+        $this->storeKey(Credential::Anthropic);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $crawler = $this->client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'No LLM judge is set.');
+        self::assertCount(0, $crawler->filter('p.help-text a'), 'only admins can open it');
+        $this->entityManager->clear();
+        self::assertCount(0, $this->findRun('Nightly')->getVersions());
+
+        $this->client->loginUser($this->persistUser('root', UserRole::Admin));
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSelectorTextContains('p.help-text', 'No LLM judge is set.');
+        self::assertCount(1, $crawler->filter('p.help-text a[href="/admin/llm-configuration"]'));
+    }
+
+    public function testStartIsBlockedWhenJudgeHasNoKey(): void
+    {
+        $admin = $this->persistUser('root', UserRole::Admin);
+        $project = $this->persistProject('Security');
+        $run = $this->persistRun($project, creator: $admin, testcases: [$this->persistTestcase('Greeting', $project)]);
+        $run->addConfiguration(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4'));
+        $this->entityManager->flush();
+        $this->storeJudge();
+        $this->storeKey(Credential::OpenAi);
+        $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class.' k WHERE k.credential = :credential')->setParameter('credential', Credential::Anthropic)->execute();
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $crawler = $this->client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'The LLM judge has no API key.');
+        self::assertCount(1, $crawler->filter('p.help-text a[href="/admin/llm-configuration"]'));
+        $this->entityManager->clear();
+        self::assertCount(0, $this->findRun('Nightly')->getVersions());
+    }
+
+    public function testStartUsesKeyStateAtClickTime(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('Greeting', $project)], configured: true);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'No LLM configuration has an API key.');
+        $this->entityManager->clear();
+        self::assertCount(0, $this->findRun('Nightly')->getVersions());
+    }
+
+    public function testSecondStartIsBlockedWhileAVersionRuns(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('Greeting', $project)], configured: true);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Started as version 1.');
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSelectorTextContains('p.help-text', 'A version of this run is still running.');
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'A version of this run is still running.');
+        $this->entityManager->clear();
+        self::assertCount(1, $this->findRun('Nightly')->getVersions());
+    }
+
+    public function testStaleResultUnblocksTheRun(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('Greeting', $project)], configured: true);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+        $this->startRun($run);
+        $this->entityManager->flush();
+        $this->entityManager->getConnection()->executeStatement(
+            "UPDATE run_result SET status = 'running', status_changed_at = ?",
+            [(new \DateTimeImmutable('-31 minutes'))->format('Y-m-d H:i:s')],
+        );
+        $this->entityManager->clear();
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+
+        self::assertSelectorTextNotContains('body', 'A version of this run is still running.');
+        $this->entityManager->clear();
+        $result = $this->firstResultOfVersionOne();
+        self::assertSame('failed:timeout', $result->getStatus()->value.':'.$result->getError());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Started as version 2.');
+    }
+
+    public function testVersionPageFailsStaleResults(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('Greeting', $project)], configured: true);
+        $this->client->loginUser($user);
+        $this->startRun($run);
+        $this->entityManager->flush();
+        $this->entityManager->getConnection()->executeStatement(
+            "UPDATE run_result SET status = 'judging', status_changed_at = ?",
+            [(new \DateTimeImmutable('-31 minutes'))->format('Y-m-d H:i:s')],
+        );
+        $this->entityManager->clear();
+
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/versions/1');
+
+        self::assertResponseIsSuccessful();
+        $this->entityManager->clear();
+        $result = $this->firstResultOfVersionOne();
+        self::assertSame('failed:timeout', $result->getStatus()->value.':'.$result->getError());
+    }
+
+    public function testStartDispatchesOneMessagePerResult(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('One', $project), $this->persistTestcase('Two', $project)], configured: true);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+
+        $transport = static::getContainer()->get('messenger.transport.async');
+        self::assertInstanceOf(InMemoryTransport::class, $transport);
+        self::assertCount(2, $transport->getSent());
+        foreach ($transport->getSent() as $envelope) {
+            self::assertInstanceOf(ExecuteRunResult::class, $envelope->getMessage());
+        }
+    }
+
+    public function testStartConfirmationShowsCallCounts(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $testcases = [$this->persistTestcase('One', $project), $this->persistTestcase('Two', $project), $this->persistTestcase('Three', $project)];
+        $run = $this->persistRun($project, creator: $user, testcases: $testcases, configured: true);
+        $run->addConfiguration(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4'));
+        $this->entityManager->flush();
+        $this->storeJudge();
+        $this->storeKey(Credential::OpenAi);
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid());
+
+        self::assertSelectorTextContains('dialog', '6 LLM calls and 6 judge calls');
+    }
+
+    public function testVersionsTileShowsTheStatusOfTheLatestVersion(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('One', $project)], configured: true);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSelectorNotExists('.stats .stat--wide [data-version-status]');
+
+        $versionId = static::getContainer()->get(RunStarter::class)->start($run)->getId();
+        $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSelectorTextSame('.stats .stat--wide [data-version-status]', 'Version 1: running');
+
+        // the kernel resets its services between requests, so results are loaded fresh before each change
+        $this->changeResults($versionId, static function (RunResult $result): void {
+            $result->markRunning();
+            $result->markJudging('answer', null, null, 1);
+        });
+        $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSelectorTextSame('.stats .stat--wide [data-version-status]', 'Version 1: judging');
+
+        $this->changeResults($versionId, static fn (RunResult $result): bool => $result->markDone([['criterion' => 'c', 'met' => true, 'reason' => 'r']]));
+        $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSelectorTextSame('.stats .stat--wide [data-version-status]', 'Version 1: finished');
+    }
+
+    public function testStatusEndpointRendersTheStartPanelForLivePolling(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('One', $project)], configured: true);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $panel = $crawler->filter('[data-progress-url$="/runs/'.$run->getUuid().'/status"]');
+        self::assertCount(1, $panel);
+        self::assertSame('not_executed', $panel->attr('data-status'));
+        self::assertCount(1, $panel->filter('.stats'), 'the polled panel holds the tiles');
+
+        $versionId = static::getContainer()->get(RunStarter::class)->start($run)->getId();
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        self::assertSame('running', $crawler->filter('[data-progress-url]')->attr('data-status'));
+
+        $this->changeResults($versionId, static function (RunResult $result): void {
+            $result->markRunning();
+            $result->markJudging('answer', null, null, 1);
+        });
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/status');
+        self::assertResponseIsSuccessful();
+        /** @var array{status: string, done: int, total: int, html: string} $progress */
+        $progress = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('running', $progress['status']);
+        self::assertSame([0, 1], [$progress['done'], $progress['total']]);
+        self::assertStringContainsString('Version 1: judging', $progress['html']);
+        self::assertStringContainsString('A version of this run is still running.', $progress['html']);
+        self::assertSame(['–'], (new Crawler($progress['html']))->filter('#versions + table [data-criteria-score]')->each(static fn (Crawler $td): string => trim($td->text())), 'the versions table is part of the polled panel');
+
+        $this->changeResults($versionId, static fn (RunResult $result): bool => $result->markDone([['criterion' => 'c', 'met' => true, 'reason' => 'r']]));
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/status');
+        /** @var array{status: string, done: int, total: int, html: string} $progress */
+        $progress = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('completed', $progress['status']);
+        self::assertStringContainsString('Version 1: finished', $progress['html']);
+        self::assertSame(['100 %'], (new Crawler($progress['html']))->filter('#versions + table [data-criteria-score]')->each(static fn (Crawler $td): string => trim($td->text())));
+        self::assertSame('Criteria met', trim((new Crawler($progress['html']))->filter('#versions + table thead th')->eq(2)->text()));
+        self::assertStringContainsString('1 LLM calls and 1 judge calls', $progress['html'], 'the start confirmation is back once the version finished');
+
+        $this->client->loginUser($this->persistUser('mallory'));
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/status');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    /** @param callable(RunResult): mixed $change */
+    private function changeResults(?int $versionId, callable $change): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $results = $entityManager->getRepository(RunResult::class)->findBy(['runVersion' => $versionId]);
+        self::assertNotSame([], $results);
+        array_map($change, $results);
+        $entityManager->flush();
+    }
+
+    public function testStartSkipsConfigurationsWithoutKeyAndIsRefusedWhenNoneHasOne(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user, testcases: [$this->persistTestcase('Greeting', $project)], configured: true);
+        $run->addConfiguration(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4'));
+        $this->entityManager->flush();
+        static::getContainer()->get(JudgeSettingStore::class)->save(new LlmConfiguration(Provider::OpenAi, 'gpt-5.4'));
+        $this->client->loginUser($user);
+
+        $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'No LLM configuration has an API key.');
+
+        $this->storeKey(Credential::OpenAi);
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('form[action$="/start"]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Started as version 1.');
+        $this->entityManager->clear();
+        $version = $this->findRun('Nightly')->findVersion(1);
+        self::assertSame(['claude_code:opus:-'], array_map(static fn (LlmConfiguration $c): string => $c->key(), $version?->getSkippedConfigurations() ?? []));
+        self::assertSame(['openai:gpt-5.4:-'], array_map(static fn ($r): string => $r->getConfigurationKey(), $version?->getResults()->toArray() ?? []));
+    }
+
     public function testVersionPageShowsTheSnapshotAndCompareHasDefaults(): void
     {
         $user = $this->persistUser('alice');
@@ -338,10 +673,10 @@ final class RunManagementTest extends AppWebTestCase
         $skill = $this->persistSkill('Review', [$project]);
         $testcase = $this->persistTestcase('Greeting', $project);
         $run = $this->persistRun($project, creator: $user, title: 'Nightly', skills: [$skill], testcases: [$testcase], configured: true);
-        $run->start();
+        $this->startRun($run);
         $run->setTitle('Weekly');
         $skill->saveFinal('Review', null, 'content 2');
-        $run->start();
+        $this->startRun($run);
         $this->entityManager->flush();
         $this->client->loginUser($user);
 
@@ -370,15 +705,82 @@ final class RunManagementTest extends AppWebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    public function testCompareShowsScoreChangesAndAverages(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, testcases: [$this->persistTestcase('Greeting', $project), $this->persistTestcase('Farewell', $project)], configured: true, creator: $user);
+        $first = $this->startRun($run);
+        $this->entityManager->flush();
+        $this->finishAllResults();
+        $second = $this->startRun($run);
+        $this->entityManager->flush();
+        $conn = $this->entityManager->getConnection();
+        foreach ([[$first, 'Greeting', 60], [$first, 'Farewell', 80], [$second, 'Greeting', 80], [$second, 'Farewell', 80]] as [$version, $title, $score]) {
+            $conn->executeStatement(
+                'UPDATE run_result SET score = ? WHERE run_version_id = ? AND testcase_version_id IN (SELECT id FROM testcase_version WHERE title = ?)',
+                [$score, $version->getId(), $title],
+            );
+        }
+        $this->entityManager->clear();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid().'/compare', ['from' => 1, 'to' => 2]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('Greeting', trim($crawler->filter('table tbody th[scope="row"]')->eq(0)->text()));
+        self::assertSelectorTextContains('body', '60 → 80 (+20)');
+        self::assertSelectorTextContains('body', '80 → 80 (±0)');
+        self::assertSelectorTextContains('body', '70.0 → 80.0 (+10.0) · 2 cells');
+
+        $conn->executeStatement('UPDATE run_result SET score = NULL WHERE run_version_id = ? AND score = 80 AND testcase_version_id IN (SELECT id FROM testcase_version WHERE title = ?)', [$second->getId(), 'Farewell']);
+        $conn->executeStatement('UPDATE run_result SET score = 50 WHERE run_version_id = ? AND testcase_version_id IN (SELECT id FROM testcase_version WHERE title = ?)', [$second->getId(), 'Greeting']);
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/compare', ['from' => 1, 'to' => 2]);
+        self::assertSelectorTextContains('body', '60 → 50 (-10)');
+        self::assertSelectorTextContains('body', '80 → –');
+        // Farewell has no score in version 2, so only Greeting is averaged
+        self::assertSelectorTextContains('body', '60.0 → 50.0 (-10.0) · 1 cell');
+    }
+
+    public function testCompareDeltaMatchesTheRoundedAverages(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $titles = ['Alpha', 'Beta', 'Gamma'];
+        $run = $this->persistRun($project, testcases: array_map(fn (string $title) => $this->persistTestcase($title, $project), $titles), configured: true, creator: $user);
+        $first = $this->startRun($run);
+        $this->entityManager->flush();
+        $this->finishAllResults();
+        $second = $this->startRun($run);
+        $this->entityManager->flush();
+        $conn = $this->entityManager->getConnection();
+        // averages 33.33 and 33.67: the unrounded difference 0.33 would show as +0.3 between 33.3 and 33.7
+        foreach ([[$first, [33, 33, 34]], [$second, [34, 33, 34]]] as [$version, $scores]) {
+            foreach ($titles as $index => $title) {
+                $conn->executeStatement(
+                    'UPDATE run_result SET score = ? WHERE run_version_id = ? AND testcase_version_id IN (SELECT id FROM testcase_version WHERE title = ?)',
+                    [$scores[$index], $version->getId(), $title],
+                );
+            }
+        }
+        $this->entityManager->clear();
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/compare', ['from' => 1, 'to' => 2]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', '33.3 → 33.7 (+0.4)');
+    }
+
     public function testCompareWithoutFromShowsAnEmptyFromOptionInsteadOfVersionOne(): void
     {
         $user = $this->persistUser('alice');
         $project = $this->persistProject('Security', [$user]);
         $skill = $this->persistSkill('Review', [$project]);
         $run = $this->persistRun($project, skills: [$skill], testcases: [$this->persistTestcase('Greeting', $project)], configured: true, creator: $user);
-        $run->start();
+        $this->startRun($run);
         $this->entityManager->flush();
-        $run->start();
+        $this->startRun($run);
         $this->entityManager->flush();
         $this->client->loginUser($user);
 
@@ -448,8 +850,8 @@ final class RunManagementTest extends AppWebTestCase
         $skill = $this->persistSkill('Review', [$project]);
         $testcase = $this->persistTestcase('Greeting', $project);
         $run = $this->persistRun($project, creator: $admin, title: 'Nightly', skills: [$skill], testcases: [$testcase], configured: true);
-        $run->start();
-        $run->start();
+        $this->startRun($run);
+        $this->startRun($run);
         $this->entityManager->flush();
         $this->client->loginUser($admin);
 
@@ -525,6 +927,11 @@ final class RunManagementTest extends AppWebTestCase
         self::assertSame(1, substr_count($crawler->filter('body')->text(), Help::NO_PERSONAL_DATA));
     }
 
+    private function firstResultOfVersionOne(): RunResult
+    {
+        return $this->findRun('Nightly')->findVersion(1)?->getResults()->first() ?: self::fail('no result');
+    }
+
     private function findRun(string $title): Run
     {
         $run = $this->entityManager->getRepository(Run::class)->findOneBy(['title' => $title]);
@@ -554,5 +961,40 @@ final class RunManagementTest extends AppWebTestCase
         self::assertSame('0', trim($crawler->filter('.stats .stat--wide dd a')->text()));
         self::assertSame(['1', '1', '1'], $crawler->filter('.stats .stat:not(.stat--wide) dd')->each(static fn (Crawler $dd): string => trim($dd->text())));
         self::assertSelectorTextNotContains('body', 'To start, add');
+    }
+
+    public function testStartHintIgnoresDeletedTestcasesLikeTheStartCheck(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $deleted = $this->persistTestcase('Gone', $project);
+        $deleted->softDelete();
+        $run = $this->persistRun($project, testcases: [$deleted], configured: true, creator: $user);
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid());
+
+        self::assertAnySelectorTextSame('p.help-text', 'To start, add at least one testcase.');
+    }
+
+    public function testConfigurationListShowsTheEffortNote(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, creator: $user);
+        $run->addConfiguration(new LlmConfiguration(Provider::HuggingFace, 'acme/chat-8b', Effort::High));
+        $run->addConfiguration(new LlmConfiguration(Provider::DeepSeek, 'deepseek-chat', Effort::XHigh));
+        $run->addConfiguration(new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::High));
+        $this->entityManager->flush();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+
+        $rows = $crawler->filter('tbody tr')->each(static fn (Crawler $row): string => $row->filter('td')->first()->text());
+        self::assertCount(3, $rows);
+        self::assertStringContainsString('effort not supported', $rows[0]);
+        self::assertStringContainsString('effort capped at high', $rows[1]);
+        self::assertStringNotContainsString('effort capped', $rows[2]);
+        self::assertStringNotContainsString('not supported', $rows[2]);
     }
 }

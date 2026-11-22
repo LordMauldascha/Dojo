@@ -43,7 +43,7 @@ final readonly class LlmConfiguration
         return ['provider' => $this->provider->value, 'model' => $this->model, 'effort' => $this->effort?->value];
     }
 
-    /** @param array{provider: string, model: string, effort: string|null} $data */
+    /** @param array{provider: string, model: string, effort: string|null, skipped?: string|null} $data snapshots may carry a skipped marker, which is not part of the configuration */
     public static function fromArray(array $data): self
     {
         return new self(

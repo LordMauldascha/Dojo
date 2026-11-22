@@ -33,6 +33,15 @@ final class LlmConfigurationControllerTest extends WebTestCase
         $this->entityManager->createQuery('DELETE FROM '.User::class)->execute();
     }
 
+    private function storeKeys(Credential ...$credentials): void
+    {
+        $encryptor = static::getContainer()->get(ApiKeyEncryptor::class);
+        foreach ($credentials as $credential) {
+            $this->entityManager->persist(new ProviderApiKey($credential, $encryptor->encrypt('synthetic-key-0000'), '0000'));
+        }
+        $this->entityManager->flush();
+    }
+
     private function admin(): User
     {
         $admin = new User();
@@ -79,25 +88,27 @@ final class LlmConfigurationControllerTest extends WebTestCase
 
     public function testSavingTheJudgeStoresProviderAndModelAndPreselectsIt(): void
     {
+        $this->storeKeys(Credential::Gemini);
         $this->client->loginUser($this->admin());
         $crawler = $this->client->request('GET', '/admin/llm-configuration');
 
-        $this->client->submit($crawler->filter('form[name="judge"]')->form(['judge[model]' => 'gemini:gemini-2.5-pro']));
+        $this->client->submit($crawler->filter('form[name="judge"]')->form(['judge[model]' => 'gemini:gemini-3.5-flash']));
         self::assertResponseRedirects('/admin/llm-configuration');
 
         $this->entityManager->clear();
         $stored = $this->entityManager->getRepository(JudgeSetting::class)->findAll();
         self::assertCount(1, $stored);
         self::assertSame(Provider::Gemini, $stored[0]->getProvider());
-        self::assertSame('gemini-2.5-pro', $stored[0]->getModel());
+        self::assertSame('gemini-3.5-flash', $stored[0]->getModel());
 
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextContains('body', 'Current: Google Gemini / gemini-2.5-pro.');
-        self::assertSame('gemini:gemini-2.5-pro', $crawler->filter('form[name="judge"]')->form()->getValues()['judge[model]']);
+        self::assertSelectorTextContains('body', 'Current: Google Gemini / gemini-3.5-flash.');
+        self::assertSame('gemini:gemini-3.5-flash', $crawler->filter('form[name="judge"]')->form()->getValues()['judge[model]']);
     }
 
     public function testSavingTheJudgeAgainUpdatesTheSameRow(): void
     {
+        $this->storeKeys(Credential::OpenAi, Credential::ClaudeOAuth);
         $this->client->loginUser($this->admin());
         foreach (['openai:gpt-5.5', 'claude_code:sonnet'] as $choice) {
             $crawler = $this->client->request('GET', '/admin/llm-configuration');
@@ -114,9 +125,10 @@ final class LlmConfigurationControllerTest extends WebTestCase
 
     public function testAConcurrentFirstSaveOfTheJudgeShowsTheConflictMessage(): void
     {
+        $this->storeKeys(Credential::Gemini);
         $this->client->loginUser($this->admin());
         $crawler = $this->client->request('GET', '/admin/llm-configuration');
-        $form = $crawler->filter('form[name="judge"]')->form(['judge[model]' => 'gemini:gemini-2.5-pro']);
+        $form = $crawler->filter('form[name="judge"]')->form(['judge[model]' => 'gemini:gemini-3.5-flash']);
 
         $connection = $this->entityManager->getConnection();
         $this->client->disableReboot();
@@ -140,8 +152,19 @@ final class LlmConfigurationControllerTest extends WebTestCase
         self::assertSame(['gpt-5.5'], $connection->fetchFirstColumn('SELECT model FROM judge_setting'));
     }
 
+    public function testJudgeSelectOffersOnlyModelsOfProvidersWithKey(): void
+    {
+        $this->storeKeys(Credential::DeepSeek);
+        $this->client->loginUser($this->admin());
+
+        $crawler = $this->client->request('GET', '/admin/llm-configuration');
+
+        self::assertSame(['DeepSeek'], $crawler->filter('form[name="judge"] optgroup')->each(static fn (Crawler $group): string => (string) $group->attr('label')));
+    }
+
     public function testAnUnknownJudgeModelIsRefusedAndNothingIsStored(): void
     {
+        $this->storeKeys(Credential::OpenAi);
         $this->client->loginUser($this->admin());
         $crawler = $this->client->request('GET', '/admin/llm-configuration');
         $form = $crawler->filter('form[name="judge"]')->form();

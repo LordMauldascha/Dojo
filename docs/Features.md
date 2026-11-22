@@ -10,12 +10,12 @@ The whole interface is in English. Each feature has its own page in [features/](
 | --- | --- |
 | [Overview](features/overview.md) | Start page after login: own projects, recent runs, open drafts, admin summary |
 | [Authentication and users](features/authentication-and-users.md) | Login, roles, user management, own account and password |
-| [LLM configuration](features/llm-configuration.md) | Provider credentials (stored encrypted), Hugging Face model discovery and the LLM judge model, managed by admins |
+| [LLM configuration](features/llm-configuration.md) | Provider credentials (stored encrypted), Hugging Face model discovery, the LLM judge model and the effort mapping, managed by admins |
 | [Groups](features/groups.md) | Named sets of users that are assigned to projects |
 | [Projects](features/projects.md) | The central unit: members, skills, testcases, runs |
 | [Skills](features/skills.md) | Skill instructions with generated SKILL.md header, version history, assigned to projects |
-| [Testcases](features/testcases.md) | Prompt and output criteria with version history, assigned to projects |
-| [Runs](features/runs.md) | LLM configurations plus skills and testcases, snapshot on every start, version compare |
+| [Testcases](features/testcases.md) | Prompt and output criteria (one per line) with version history, assigned to projects |
+| [Runs](features/runs.md) | LLM configurations plus skills and testcases; every start snapshots, executes (LLM calls, judge, score) and shows a result matrix; version compare |
 | [Versioning](features/versioning.md) | Draft and final versions of skills and testcases |
 | [Access control](features/access-control.md) | Who may see and do what, and how it is enforced |
 | [Overview tables](features/overview-tables.md) | Search, sorting and pagination shared by all lists |
@@ -30,7 +30,7 @@ User  ── n:m ──  Group
               ├── Run              exactly one project, hard-deleted with it
               │     ├── skills      (only skills of the run's project)
               │     ├── testcases   (only testcases of the run's project)
-              │     └── versions    (snapshot on every start)
+              │     └── versions    (snapshot on every start, with one result per testcase and configuration)
               ├── Skill     n:m    0 to n projects, 0 = admin only
               └── Testcase  n:m    0 to n projects, 0 = admin only
 ```
@@ -48,8 +48,10 @@ to projects they have access to.
   error page.
 - Dates are shown as `DD.MM.YYYY HH:MM` in the Europe/Vienna time zone.
 - Skills and testcases are never hard-deleted by users. Deleting hides them, their history stays.
-- No personal data belongs into skills, testcases, run descriptions or any other free text: prompts are meant to be sent
-  to LLM providers later. Use synthetic data.
-- Starting a run creates a version only. Calling the LLMs and comparing their output is not built yet.
+- No personal data belongs into skills, testcases, run descriptions or any other free text: prompts are sent to LLM
+  providers when a run starts. Use synthetic data.
+- Starting a run executes it: a queue worker (`messenger:consume async`, the `worker` service of the dev stack) calls the
+  LLMs and the judge. Without the worker a started version stays pending. There is no quota per project or user; the
+  start confirmation shows the number of calls.
 
 Console commands (create the first admin, import API keys) are described in [Commands.md](Commands.md).

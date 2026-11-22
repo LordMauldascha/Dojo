@@ -131,9 +131,10 @@ git config core.hooksPath .githooks
 - [docs/CI.md](docs/CI.md): the GitHub Actions pipeline (`.github/workflows/ci.yml`). Keep it up to date when
   `.github/` changes.
 
-## Before production and before runs call LLM providers
+## Before production and for runs that call LLM providers
 
-These points depend on the deployment or on code that does not exist yet, so they are rules for the next step, not code:
+Runs call LLM providers now. These points are rules for the deployment and for changes to the run code; some of them
+are not covered by code yet:
 
 - **Production setup**: set `APP_ENV=prod`, a real `APP_SECRET` (the kernel refuses to boot in prod without one),
   `API_KEY_ENCRYPTION_KEY` and the database password (`POSTGRES_PASSWORD`). Behind a reverse proxy that terminates TLS set
@@ -142,21 +143,34 @@ These points depend on the deployment or on code that does not exist yet, so the
   user, `composer install --no-dev --classmap-authoritative`).
 - **Dev stack**: `compose.override.yaml` publishes the app, database and mail catcher on `127.0.0.1` only. Keep it that way;
   the web profiler has no authentication and shows request data. Do not keep real provider keys in `.env.local` while
-  developing, the keys stored in the database are enough.
-- **Runs that call an LLM**: route every call through one gateway service that passes `tools: []` and a fixed option
-  whitelist to the platform, hands the process only the one credential of the provider and never forwards user-controlled
-  option names. Run the container as a non-root user. Prompts must not reach logs or the process list (the Claude Code
-  platform logger is a `NullLogger` on purpose). Add a quota per project and user before a run can start paid calls. Pick one
-  source of provider keys (database or environment), not both.
-- **CLI child**: the gateway must also set a neutral working directory (not the project root, which holds `.env.local` and
-  `.claude/settings.json`) and pass `--` before the prompt so a prompt starting with `-` is not read as a flag.
+  developing, the keys stored in the database are enough. The `worker` service runs with `APP_DEBUG=0`, because Doctrine's
+  SQL logging (on with `kernel.debug`) would write outputs and judge reasons to `var/log/dev.log`; keep it that way.
+- **Runs that call an LLM**: every call goes through one gateway service, `App\Ai\LlmGateway`, which passes a fixed option
+  whitelist (`tools: []` for Claude Code plus the effort option of `App\Ai\EffortMapper`) to a platform that
+  `App\Ai\KeyedPlatformProvider` builds per call from the key stored in the database (no key is read from the
+  environment, one source only). Never forward user-controlled option names. Run the container as a non-root user (the
+  `Dockerfile` and the dev `worker` still run as root). Prompts must not reach logs or the process list (the Claude Code
+  platform logger is a `NullLogger` on purpose). No quota per project or user (product decision 21.11.2026); the start
+  confirmation shows the number of calls. The cells run in the `worker` service (`messenger:consume async`); in production
+  that process must run, otherwise started versions stay `pending`. The lock that prevents a double start uses
+  `LOCK_DSN=flock`, which is local to one host: with several app replicas point it at a shared store (for example Redis or
+  the database).
+- **CLI child**: `App\Ai\ClaudeCodeModelClient` sends the prompt via stdin (never as an argument, so a prompt starting
+  with `-` cannot be read as a flag and nothing shows up in the process list) and the skills as a system prompt file made
+  with `tempnam()` (mode 0600) in the system temp directory. It runs in the neutral working directory `var/claude-runs`
+  (not the project root, which holds `.env.local` and `.claude/settings.json`) and with an environment that contains only
+  the one credential in use plus `PATH` and `HOME`. Every call gets the fixed flags `--no-session-persistence` (no
+  transcript under `$HOME/.claude/projects`) and `--strict-mcp-config` (no MCP servers from user or project settings);
+  they are set in the client, not through options, so no caller can drop them. The temp file is removed after the call; a SIGKILL of the worker can
+  leave one behind in the system temp directory.
 - **Shared skills**: a skill in several projects is editable by members of any one of them and changes the input of runs in
-  all of them. The skill page shows how many projects the editor cannot see. Decide whether that is acceptable before runs execute.
+  all of them. The skill page shows how many projects the editor cannot see. Runs execute now, so this is an open
+  decision: confirm that it is acceptable or restrict editing.
 - **Personal data**: free text may contain personal data despite the hints. Versions and run snapshots are immutable and
   there is no purge in the interface, so a deletion request needs a database intervention.
 - **Supply chain**: run `composer audit` and `npm audit` regularly. GitHub Actions are pinned by tag, not by commit.
-- **Kept on purpose**: the versioning code exists twice (`Skill`, `Testcase`); packages for mail, notifications and
-  messaging stay installed for planned features.
+- **Kept on purpose**: the versioning code exists twice (`Skill`, `Testcase`); packages for mail and notifications stay
+  installed for planned features. Messenger is in use: it queues the run cells.
 
 ## AI usage and data protection
 

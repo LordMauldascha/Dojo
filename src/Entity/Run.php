@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Ai\LlmConfiguration;
+use App\Ai\Provider;
 use App\Entity\Trait\HasTimestamps;
 use App\Entity\Trait\HasUuid;
 use App\Repository\RunRepository;
@@ -216,13 +217,26 @@ class Run
     }
 
     /**
-     * Snapshots the run with the latest final version of every assigned skill and testcase (drafts are ignored).
-     * Items that were deleted or do not belong to the run's project are left out, even if a prune is still pending.
+     * Testcases a start would use: deleted ones and ones outside the run's project are left out, even if a prune is still pending.
+     *
+     * @return list<Testcase>
      */
-    public function start(): RunVersion
+    public function getStartableTestcases(): array
+    {
+        return array_values(array_filter($this->testcases->toArray(), fn (Testcase $testcase): bool => !$testcase->isDeleted() && $testcase->getProjects()->contains($this->project)));
+    }
+
+    /**
+     * Snapshots the run with the latest final version of every assigned skill and testcase (drafts are ignored)
+     * and creates one result per testcase and configuration whose provider is available.
+     * Items that were deleted or do not belong to the run's project are left out, even if a prune is still pending.
+     *
+     * @param callable(Provider): bool $isAvailable
+     */
+    public function start(callable $isAvailable, LlmConfiguration $judge): RunVersion
     {
         $skills = array_filter($this->skills->toArray(), fn (Skill $skill): bool => !$skill->isDeleted() && $skill->getProjects()->contains($this->project));
-        $testcases = array_filter($this->testcases->toArray(), fn (Testcase $testcase): bool => !$testcase->isDeleted() && $testcase->getProjects()->contains($this->project));
+        $testcases = $this->getStartableTestcases();
 
         if ([] === $testcases) {
             throw new \LogicException('A run needs at least one testcase to start.');
@@ -231,15 +245,35 @@ class Run
             throw new \LogicException('A run needs at least one LLM configuration to start.');
         }
 
+        $available = [];
+        $snapshot = [];
+        foreach ($this->getConfigurations() as $configuration) {
+            $isSkipped = !$isAvailable($configuration->provider);
+            if (!$isSkipped) {
+                $available[] = $configuration;
+            }
+            $snapshot[] = $configuration->toArray() + ['skipped' => $isSkipped ? 'no_api_key' : null];
+        }
+        if ([] === $available) {
+            throw new \LogicException('No LLM configuration has an API key.');
+        }
+
+        $testcaseVersions = array_map(static fn (Testcase $testcase): TestcaseVersion => $testcase->getActiveVersion(), $testcases);
         $version = new RunVersion(
             $this,
             1 + ($this->getLatestVersion()?->getNumber() ?? 0),
             $this->title,
             $this->description,
-            $this->configurations,
+            $snapshot,
             array_values(array_map(static fn (Skill $skill): SkillVersion => $skill->getActiveVersion(), $skills)),
-            array_values(array_map(static fn (Testcase $testcase): TestcaseVersion => $testcase->getActiveVersion(), $testcases)),
+            $testcaseVersions,
+            $judge,
         );
+        foreach ($testcaseVersions as $testcaseVersion) {
+            foreach ($available as $configuration) {
+                $version->getResults()->add(new RunResult($version, $testcaseVersion, $configuration));
+            }
+        }
         $this->versions->add($version);
 
         return $version;

@@ -78,6 +78,31 @@ stored, `.status-dot--off`, an empty ring, when none is). Each credential is a `
 variable, status and the buttons *Set key* / *Replace key* (opens a form dialog, same pattern as the user dialog) and
 *Delete*. Never show a stored key again, only `••••` and the last four characters.
 
+## Result matrix
+
+The version page shows the results of a run version as a table of testcases (rows) by LLM configurations (columns):
+`templates/runs/_result_matrix.html.twig`, styles in `assets/css/components/_result-matrix.scss`. The same partial is
+rendered by the page and by the progress endpoint, so the live update swaps in exactly what the page shows.
+
+- The table sits in `.result-matrix-scroll` (`overflow-x: auto`), so many columns scroll inside the page. It stays a
+  neutral table (see Tables above): no colors and no icons, status and score are text. A column note (*skipped – no API
+  key*, *effort not supported*) is a `<small>` under the header.
+- A cell with output or criteria is a native `<details>`: the `<summary>` is the score or status (semibold), the body
+  holds the output in a scrollable `<pre>` (max height 20rem, wrapped) and the criteria list with *met* / *not met*, the
+  criterion and the reason. No JavaScript for opening.
+- `assets/js/components/runProgress.ts` polls the progress URL every 3 s while the version is running and replaces the
+  matrix markup. It keeps open cells (`details[data-cell]`), the output scroll position, the focused summary and the
+  horizontal scroll; after three failed requests it stops and shows the `[data-run-progress-notice]` text asking to
+  reload. Keep the `data-cell` attributes when you change the partial.
+- Live region: `[data-run-progress-status]` (`role="status"`) announces once that the run finished. It is
+  `.visually-hidden` and is not replaced with the matrix, so the announcement is not lost. The notice stays a normal
+  `.help-text` paragraph, hidden with the `hidden` attribute until needed.
+
+## Visually hidden text
+
+`.visually-hidden` (`_base.scss`) hides text visually and keeps it for assistive technology (1px clip, no `display:
+none`). Use it for live regions and labels that only a screen reader needs, never for content sighted users miss.
+
 ## Back link and split layout
 
 Detail and form pages start with a back link: `templates/_back_link.html.twig` (`href`, `label`), styled in

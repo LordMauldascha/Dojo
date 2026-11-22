@@ -36,7 +36,7 @@ enum Provider: string
     {
         return match ($this) {
             self::OpenAi => ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-4.1'],
-            self::Gemini => ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-pro-preview'],
+            self::Gemini => ['gemini-3.5-flash', 'gemini-3.1-pro-preview'],
             self::DeepSeek => ['deepseek-chat', 'deepseek-reasoner', 'deepseek-v4-pro', 'deepseek-v4-flash'],
             self::ClaudeCode => ['opus', 'sonnet', 'haiku'],
             self::HuggingFace => [],

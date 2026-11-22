@@ -179,3 +179,15 @@ pre {
         margin-top: var(--space-5);
     }
 }
+
+// Text for assistive technology only, e.g. a live region that announces a result.
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

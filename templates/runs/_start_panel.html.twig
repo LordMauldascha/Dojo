@@ -1,0 +1,74 @@
+{% import '_forms.html.twig' as forms %}
+{% set latest = run.latestVersion %}
+<dl class="stats">
+    <div class="stat stat--wide">
+        <dt>Versions</dt>
+        <dd>
+            <a href="#versions">{{ run.versions|length }}</a>
+            {% if latest %}
+                <a href="{{ path('app_run_version', {uuid: run.uuid, number: latest.number}) }}" class="help-text" data-version-status>Version {{ latest.number }}: {{ latest.statusLabel }}</a>
+            {% endif %}
+            {% if startCheck.canStart %}
+                {{ forms.confirm_post(path('app_run_start', {uuid: run.uuid}), constant('App\\Controller\\RunController::CSRF_START') ~ run.uuid, 'Start', 'Start run?', 'This makes ' ~ startCheck.llmCalls ~ ' LLM calls and ' ~ startCheck.judgeCalls ~ ' judge calls, which may cost money.', null, 'button-primary') }}
+            {% else %}
+                {{ forms.post(path('app_run_start', {uuid: run.uuid}), constant('App\\Controller\\RunController::CSRF_START') ~ run.uuid, 'Start', 'button-primary') }}
+            {% endif %}
+        </dd>
+    </div>
+    <div class="stat">
+        <dt>Configurations</dt>
+        <dd>{{ run.configurations|length }}</dd>
+    </div>
+    <div class="stat">
+        <dt>Skills</dt>
+        <dd>{{ run.skills|length }}</dd>
+    </div>
+    <div class="stat">
+        <dt>Testcases</dt>
+        <dd>{{ run.testcases|length }}</dd>
+    </div>
+</dl>
+{# deleted testcases do not count, as in the start check #}
+{% set noTestcase = constant('App\\Run\\RunStarter::NO_TESTCASE') in startCheck.problems %}
+{% if noTestcase and not run.configurations|length %}
+    <p class="help-text">To start, add at least one testcase and one LLM configuration.</p>
+{% elseif noTestcase %}
+    <p class="help-text">To start, add at least one testcase.</p>
+{% elseif not run.configurations|length %}
+    <p class="help-text">To start, add at least one LLM configuration.</p>
+{% endif %}
+{% for problem in startProblems %}
+    <p class="help-text">
+        {{ problem }}
+        {% if problem in [constant('App\\Run\\RunStarter::NO_JUDGE'), constant('App\\Run\\RunStarter::JUDGE_WITHOUT_KEY'), constant('App\\Run\\RunStarter::JUDGE_MODEL_UNAVAILABLE')] and is_granted('ROLE_ADMIN') %}
+            <a href="{{ path('app_admin_llm_configuration') }}">Open the LLM configuration</a>
+        {% endif %}
+    </p>
+{% endfor %}
+
+{% if run.versions|length %}
+    <h2 id="versions">Versions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Version</th>
+                <th>Created</th>
+                <th>Criteria met</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for version in run.versions|reverse %}
+                <tr>
+                    <td>{{ version.number }}</td>
+                    <td>{{ version.createdAt|date }}</td>
+                    <td data-criteria-score>{{ version.criteriaScore is null ? '–' : version.criteriaScore ~ ' %' }}</td>
+                    <td><a href="{{ path('app_run_version', {uuid: run.uuid, number: version.number}) }}">View</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if 1 < run.versions|length %}
+        <p><a href="{{ path('app_run_compare', {uuid: run.uuid}) }}">Compare versions</a></p>
+    {% endif %}
+{% endif %}

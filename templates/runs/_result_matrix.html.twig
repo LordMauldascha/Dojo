@@ -1,0 +1,66 @@
+{# Rendered by the version page and by the progress endpoint, so the polling script swaps in exactly what the page shows. #}
+<div class="run-progress">
+    {% if 0 == matrix.total %}
+        <p>This version was not executed.</p>
+    {% else %}
+        <p>{{ matrix.done }} / {{ matrix.total }} done</p>
+        {% set skipped = version.skippedConfigurations|map(configuration => configuration.key) %}
+        <div class="result-matrix-scroll">
+            <table class="result-matrix">
+                <thead>
+                    <tr>
+                        <th scope="col">Testcase</th>
+                        {% for configuration in version.configurations %}
+                            <th scope="col">
+                                {{ configuration.label }}
+                                {% if configuration.key in skipped %}
+                                    <small>skipped – no API key</small>
+                                {% elseif matrix.notes[configuration.key] is not null %}
+                                    <small>{{ matrix.notes[configuration.key] }}</small>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for testcaseVersion in matrix.rows %}
+                        <tr>
+                            <th scope="row">{{ testcaseVersion.title }} (version {{ testcaseVersion.number }})</th>
+                            {% for configuration in version.configurations %}
+                                {% set result = matrix.cells[testcaseVersion.id ~ '|' ~ configuration.key] ?? null %}
+                                <td>
+                                    {% if configuration.key in skipped %}
+                                        skipped – no API key
+                                    {% elseif null is same as result %}
+                                        –
+                                    {% else %}
+                                        {% set label = 'done' == result.status.value ? (null is same as result.score ? '–' : result.score ~ ' %') : ('failed' == result.status.value ? 'failed – ' ~ result.error : result.status.value) %}
+                                        {% set hasOutput = null is not same as result.output and '' != result.output %}
+                                        {% set hasCriteria = result.criteria is not empty %}
+                                        {% if hasOutput or hasCriteria %}
+                                            <details data-cell="{{ testcaseVersion.id }}|{{ configuration.key }}">
+                                                <summary>{{ label }}</summary>
+                                                {% if hasOutput %}
+                                                    <pre>{{ result.output }}</pre>
+                                                {% endif %}
+                                                {% if hasCriteria %}
+                                                    <ul class="criteria">
+                                                        {% for criterion in result.criteria %}
+                                                            <li><strong>{{ criterion.met ? 'met' : 'not met' }}</strong> {{ criterion.criterion }} – {{ criterion.reason }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% endif %}
+                                            </details>
+                                        {% else %}
+                                            {{ label }}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>

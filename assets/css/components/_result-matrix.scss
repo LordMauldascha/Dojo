@@ -1,0 +1,42 @@
+@use '../variables' as *;
+
+// Version page: testcases x configurations. Cell details open with native <details>; the table itself stays neutral (see _tables.scss).
+.result-matrix-scroll {
+    overflow-x: auto;
+}
+
+.result-matrix {
+    th small {
+        display: block;
+        font-weight: var(--font-weight-regular);
+    }
+
+    th[scope='row'] {
+        color: var(--color-text);
+        white-space: normal;
+    }
+
+    td {
+        vertical-align: top;
+    }
+
+    summary {
+        cursor: pointer;
+        font-weight: var(--font-weight-semibold);
+    }
+
+    pre {
+        max-width: var(--measure);
+        max-height: 20rem;
+        margin: var(--space-2) 0;
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .criteria {
+        max-width: var(--measure);
+        margin: 0;
+        padding-left: var(--space-4);
+    }
+}

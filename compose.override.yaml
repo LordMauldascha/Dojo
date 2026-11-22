@@ -3,9 +3,30 @@ services:
   app:
     build: .
     ports:
-      - "127.0.0.1:8000:80"
+      - "8000:80"
     environment:
       SERVER_NAME: ":80"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=16&charset=utf8"
+      MAILER_DSN: "smtp://mailer:1025"
+    volumes:
+      - ./:/app
+    depends_on:
+      database:
+        condition: service_healthy
+
+  # Executes the queued run cells (LLM and judge calls); without it started runs stay pending.
+  worker:
+    build: .
+    command: php bin/console messenger:consume async -vv --time-limit=3600 --memory-limit=256M
+    restart: unless-stopped
+    # the image's web server healthcheck does not apply to the consumer
+    healthcheck:
+      disable: true
+    # an LLM call can take minutes; give a running one time to finish on stop
+    stop_grace_period: 5m
+    environment:
+      # Doctrine's SQL logging follows kernel.debug and would write outputs and judge reasons to var/log/dev.log
+      APP_DEBUG: "0"
       DATABASE_URL: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=16&charset=utf8"
       MAILER_DSN: "smtp://mailer:1025"
     volumes:

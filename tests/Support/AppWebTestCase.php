@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
+use App\Ai\Credential;
+use App\Ai\JudgeSettingStore;
 use App\Ai\LlmConfiguration;
 use App\Ai\Provider;
 use App\Entity\Group;
 use App\Entity\HuggingFaceModel;
+use App\Entity\JudgeSetting;
 use App\Entity\Project;
+use App\Entity\ProviderApiKey;
 use App\Entity\Run;
+use App\Entity\RunVersion;
 use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Entity\User;
+use App\Security\ApiKeyStore;
 use App\Security\UserRole;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,6 +27,7 @@ use Doctrine\ORM\Events;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 abstract class AppWebTestCase extends WebTestCase
@@ -28,6 +35,7 @@ abstract class AppWebTestCase extends WebTestCase
     protected const PASSWORD = 'correct-horse-battery';
 
     protected KernelBrowser $client;
+    private ?KernelInterface $concurrentKernel = null;
     protected EntityManagerInterface $entityManager;
 
     protected function setUp(): void
@@ -37,9 +45,45 @@ abstract class AppWebTestCase extends WebTestCase
         $rateLimiterPool = static::getContainer()->get('cache.rate_limiter');
         $rateLimiterPool->clear();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class] as $class) {
+        foreach ([Run::class, Testcase::class, Skill::class, Project::class, Group::class, User::class, HuggingFaceModel::class, ProviderApiKey::class, JudgeSetting::class] as $class) {
             $this->entityManager->createQuery('DELETE FROM '.$class)->execute();
         }
+    }
+
+    protected function tearDown(): void
+    {
+        if (null !== $this->concurrentKernel) {
+            $connection = $this->concurrentKernel->getContainer()->get('doctrine')->getConnection();
+            \assert($connection instanceof Connection);
+            $connection->close();
+            $this->concurrentKernel->shutdown();
+        }
+        $this->concurrentKernel = null;
+        parent::tearDown();
+    }
+
+    protected function storeKey(Credential $credential): void
+    {
+        static::getContainer()->get(ApiKeyStore::class)->save($credential, 'synthetic-key-0000000000');
+    }
+
+    /** Stores a Claude Code key and makes Claude Code opus the judge. */
+    protected function storeJudge(): void
+    {
+        $this->storeKey(Credential::Anthropic);
+        static::getContainer()->get(JudgeSettingStore::class)->save(new LlmConfiguration(Provider::ClaudeCode, 'opus'));
+    }
+
+    /** Starts the run as if every provider had a key. */
+    protected function startRun(Run $run): RunVersion
+    {
+        return $run->start(static fn (): bool => true, new LlmConfiguration(Provider::ClaudeCode, 'opus'));
+    }
+
+    /** Marks every result as done, so the next start is not blocked by a running version. */
+    protected function finishAllResults(): void
+    {
+        $this->entityManager->getConnection()->executeStatement("UPDATE run_result SET status = 'done'");
     }
 
     protected function persistUser(string $username, UserRole $role = UserRole::User, bool $enabled = true): User
@@ -133,6 +177,17 @@ abstract class AppWebTestCase extends WebTestCase
         $values = $form->getPhpValues();
         $values[$formName] = array_replace($values[$formName], $overrides);
         $this->client->request($form->getMethod(), $form->getUri(), $values);
+    }
+
+    /** A connection of its own: its writes commit while the code under test holds its transaction open, as another worker's would. */
+    protected function concurrentConnection(): Connection
+    {
+        $kernel = $this->concurrentKernel ??= static::createKernel();
+        $kernel->boot();
+        $connection = $kernel->getContainer()->get('doctrine')->getConnection();
+        \assert($connection instanceof Connection);
+
+        return $connection;
     }
 
     /** Runs raw SQL right before the entity is inserted, to simulate a concurrent request that wins the race. */

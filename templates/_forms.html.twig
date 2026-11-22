@@ -6,17 +6,17 @@
     </form>
 {% endmacro %}
 
-{# A danger button that opens a modal; the POST (CSRF token id must match the controller attribute) is sent only after the user confirms. #}
-{% macro confirm_post(action, tokenId, label, title, message, confirmLabel = null) %}
+{# A button that opens a modal; the POST (CSRF token id must match the controller attribute) is sent only after the user confirms. Danger styled unless class says otherwise. #}
+{% macro confirm_post(action, tokenId, label, title, message, confirmLabel = null, class = 'button-danger') %}
     {% set id = 'confirm-' ~ tokenId %}
-    <button type="button" class="button-danger" command="show-modal" commandfor="{{ id }}">{{ label }}</button>
+    <button type="button" class="{{ class }}" command="show-modal" commandfor="{{ id }}">{{ label }}</button>
     <dialog id="{{ id }}" aria-labelledby="{{ id }}-title" closedby="any">
         <h2 id="{{ id }}-title">{{ title }}</h2>
         <p>{{ message }}</p>
         <form method="post" action="{{ action }}">
             <input type="hidden" name="_token" value="{{ csrf_token(tokenId) }}">
             <button type="button" command="close" commandfor="{{ id }}" autofocus>Cancel</button>
-            <button type="submit" class="button-danger">{{ confirmLabel ?? label }}</button>
+            <button type="submit" class="{{ class }}">{{ confirmLabel ?? label }}</button>
         </form>
     </dialog>
 {% endmacro %}

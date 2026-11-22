@@ -31,6 +31,16 @@
     {% endif %}
 {% endmacro %}
 
+{# "from → to (±delta)"; a missing side shows as – and has no delta. #}
+{% macro change(from, to, decimals) %}
+    {%- if null is same as from or null is same as to -%}
+        {{ from is null ? '–' : from|number_format(decimals) }} → {{ to is null ? '–' : to|number_format(decimals) }}
+    {%- else -%}
+        {% set delta = (to|round(decimals) - from|round(decimals))|round(decimals) -%}
+        {{ from|number_format(decimals) }} → {{ to|number_format(decimals) }} ({{ 0 == delta ? '±0' : (0 < delta ? '+' : '') ~ delta|number_format(decimals) }})
+    {%- endif -%}
+{% endmacro %}
+
 {% block title %}Compare versions of {{ run.title }}{% endblock %}
 
 {% block heading %}Compare versions of run {{ run.title }}{% endblock %}
@@ -86,6 +96,46 @@
                         <li>Removed: {{ configuration.label }}</li>
                     {% endfor %}
                 </ul>
+            {% endif %}
+
+            {% if diff.scores %}
+                <h3>Scores</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Testcase</th>
+                            <th scope="col">LLM configuration</th>
+                            <th scope="col">Score {{ from.number }} → {{ to.number }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for score in diff.scores %}
+                            <tr>
+                                <th scope="row">{{ score.testcase }}</th>
+                                <td>{{ score.configuration }}</td>
+                                <td>{{ _self.change(score.from, score.to, 0) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h3>Average score per LLM configuration</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">LLM configuration</th>
+                            <th scope="col">Average {{ from.number }} → {{ to.number }} (cells scored in both)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for label, average in diff.averages %}
+                            <tr>
+                                <th scope="row">{{ label }}</th>
+                                <td>{{ _self.change(average.from, average.to, 1) }} · {{ average.cells }} {{ 1 == average.cells ? 'cell' : 'cells' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% endif %}
 
             {{ _self.changes('Skills', diff.skillsAdded, diff.skillsRemoved, diff.skillsChanged, 'skill') }}

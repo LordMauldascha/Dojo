@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Ai\Effort;
+use App\Ai\EffortMapper;
 use App\Ai\LlmConfiguration;
 use App\Ai\ModelCatalog;
 use App\Entity\Project;
 use App\Entity\Run;
+use App\Entity\RunResult;
 use App\Entity\Skill;
 use App\Entity\Testcase;
 use App\Entity\User;
@@ -22,16 +24,24 @@ use App\Pagination\PageSizeResolver;
 use App\Repository\RunRepository;
 use App\Repository\SkillRepository;
 use App\Repository\TestcaseRepository;
+use App\Run\RunStarter;
+use App\Run\RunVersionStatus;
+use App\Run\StartCheck;
 use App\Security\Voter\ProjectVoter;
 use App\Security\Voter\RunVoter;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\OptimisticLockException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
+use Symfony\Component\Messenger\Exception\ExceptionInterface as MessengerException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -98,6 +108,8 @@ final class RunController extends AbstractController
         SkillRepository $skills,
         TestcaseRepository $testcases,
         EntityManagerInterface $entityManager,
+        ModelCatalog $catalog,
+        RunStarter $starter,
     ): Response {
         $storedTitle = $run->getTitle();
         $form = $this->createForm(RunType::class, $run);
@@ -122,8 +134,45 @@ final class RunController extends AbstractController
             'testcasesForm' => $this->createTestcasesForm($run, $availableTestcases),
             'hasSkills' => [] !== $availableSkills,
             'hasTestcases' => [] !== $availableTestcases,
+            'unavailableConfigurations' => array_values(array_map(
+                static fn (LlmConfiguration $configuration): string => $configuration->key(),
+                array_filter($run->getConfigurations(), static fn (LlmConfiguration $configuration): bool => !$catalog->isAvailable($configuration->provider)),
+            )),
+            'effortNotes' => array_combine(
+                array_map(static fn (LlmConfiguration $configuration): string => $configuration->key(), $run->getConfigurations()),
+                array_map(static fn (LlmConfiguration $configuration): ?string => EffortMapper::map($configuration)['note'], $run->getConfigurations()),
+            ),
             'canDelete' => $this->isGranted(RunVoter::DELETE, $run),
+            ...$this->startPanel($run, $starter),
         ]);
+    }
+
+    /** Polled by the run page while its latest version runs: status of that version plus the re-rendered start panel. */
+    #[Route('/runs/{uuid:run}/status', name: 'app_run_status', requirements: ['uuid' => Requirement::UUID], methods: ['GET'])]
+    #[IsGranted(RunVoter::VIEW, subject: 'run')]
+    public function status(Run $run, RunStarter $starter): JsonResponse
+    {
+        // check() sweeps stale results first, so the status below is current
+        $panel = $this->startPanel($run, $starter);
+        $results = $run->getLatestVersion()?->getResults()->toArray() ?? [];
+
+        return $this->json([
+            'status' => $run->getLatestVersion()?->getStatus()->value ?? RunVersionStatus::NotExecuted->value,
+            'done' => \count(array_filter($results, static fn (RunResult $result): bool => !$result->getStatus()->isOpen())),
+            'total' => \count($results),
+            'html' => $this->renderView('runs/_start_panel.html.twig', ['run' => $run, ...$panel]),
+        ]);
+    }
+
+    /** @return array{startCheck: StartCheck, startProblems: list<string>} */
+    private function startPanel(Run $run, RunStarter $starter): array
+    {
+        $startCheck = $starter->check($run);
+
+        return [
+            'startCheck' => $startCheck,
+            'startProblems' => array_values(array_diff($startCheck->problems, [RunStarter::NO_TESTCASE, RunStarter::NO_CONFIGURATION])),
+        ];
     }
 
     #[Route('/runs/{uuid:run}/configurations', name: 'app_run_configuration_add', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
@@ -218,21 +267,24 @@ final class RunController extends AbstractController
     #[Route('/runs/{uuid:run}/start', name: 'app_run_start', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(RunVoter::START, subject: 'run')]
     #[IsCsrfTokenValid(new Expression('"'.self::CSRF_START.'" ~ args["run"].getUuid()'), methods: 'POST')]
-    public function start(
-        Run $run,
-        EntityManagerInterface $entityManager,
-    ): Response {
+    public function start(Run $run, RunStarter $starter): Response
+    {
         try {
-            $version = $run->start();
+            $version = $starter->start($run);
         } catch (\LogicException $exception) {
             $this->addFlash('error', $exception->getMessage());
 
             return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
-        }
+        } catch (UniqueConstraintViolationException|ForeignKeyConstraintViolationException|OptimisticLockException) {
+            $this->addFlash('error', ConflictMessage::TEXT);
 
-        if ($this->flushOrConflict($entityManager)) {
-            $this->addFlash('success', \sprintf('Started as version %d.', $version->getNumber()));
+            return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
+        } catch (MessengerException) {
+            $this->addFlash('error', RunStarter::DISPATCH_FAILED);
+
+            return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
         }
+        $this->addFlash('success', \sprintf('Started as version %d.', $version->getNumber()));
 
         return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
     }

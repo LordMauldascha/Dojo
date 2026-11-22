@@ -14,9 +14,12 @@ created without a run.
 | Output criteria | required, at most 100 000 characters; stored exactly as typed | yes |
 | Projects | 0 to n; the assignment only controls who may see and edit the testcase; no project means admin only; it is set on the testcase page, the project page shows only a count | no |
 
-Output criteria describe what the output must meet (one criterion per line is a convention, not enforced). They are the
-basis for the LLM judge that will rate run outputs. Admins choose its provider and model in the
-[LLM configuration](llm-configuration.md); the judge itself does not run yet.
+Output criteria describe what the output must meet. **One criterion per line is a rule:** each non-empty line (trimmed)
+is one criterion; the LLM judge rates every criterion as met or not met with a short reason, and the score is the share
+of met criteria (`round(100 × met / total)`). Put each requirement on its own line, a requirement spread over two lines
+counts as two. The judge is the one
+the run version stored at start (chosen by admins in the [LLM configuration](llm-configuration.md)). An invalid judge
+answer is asked for once more; then the result fails with `invalid_judge_answer`.
 
 Also stored: creator, created, updated and deleted time. The free-text fields remind users to use synthetic data and no
 personal data, because prompts are later sent to LLM providers.

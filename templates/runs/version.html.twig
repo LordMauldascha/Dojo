@@ -9,6 +9,13 @@
 
     <p>Created: {{ version.createdAt|date }}</p>
 
+    <h2>Results</h2>
+    <p role="status" class="visually-hidden" data-run-progress-status></p>
+    <p class="help-text" data-run-progress-notice hidden></p>
+    <div id="{{ prepare_component('run-progress') }}" data-progress-url="{{ path('app_run_version_progress', {uuid: run.uuid, number: version.number}) }}" data-status="{{ version.status.value }}">
+        {{ include('runs/_result_matrix.html.twig') }}
+    </div>
+
     <h2>Description</h2>
     <p>{{ version.description ?? 'No description.' }}</p>
 

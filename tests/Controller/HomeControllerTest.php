@@ -57,8 +57,8 @@ final class HomeControllerTest extends AppWebTestCase
         $myTestcase->saveDraft('My testcase draft', null, 'prompt', 'output');
         $foreignSkill->saveDraft('Foreign skill draft', null, 'content');
         $foreignTestcase->saveDraft('Foreign testcase draft', null, 'prompt', 'output');
-        $this->persistRun($mine, 'My run', [$mySkill], [$myTestcase], true)->start();
-        $this->persistRun($foreign, 'Foreign run', [$foreignSkill], [$foreignTestcase], true)->start();
+        $this->startRun($this->persistRun($mine, 'My run', [$mySkill], [$myTestcase], true));
+        $this->startRun($this->persistRun($foreign, 'Foreign run', [$foreignSkill], [$foreignTestcase], true));
         $this->entityManager->flush();
         $this->client->loginUser($user);
 

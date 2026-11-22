@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Run;
 
 use App\Ai\LlmConfiguration;
+use App\Entity\RunResult;
 use App\Entity\RunVersion;
 use App\Entity\SkillVersion;
 use App\Entity\TestcaseVersion;
@@ -46,7 +47,54 @@ final class RunVersionDiffer
             $testcasesAdded,
             $testcasesRemoved,
             $testcasesChanged,
+            ...$this->scores($from, $to),
         );
+    }
+
+    /**
+     * Cells are matched by testcase (not its version) and configuration key; skipped configurations have no results.
+     *
+     * @return array{list<array{testcase: string, configuration: string, from: int|null, to: int|null}>, array<string, array{from: float|null, to: float|null, cells: int}>}
+     */
+    private function scores(RunVersion $from, RunVersion $to): array
+    {
+        $fromCells = [];
+        foreach ($from->getResults() as $result) {
+            $fromCells[$this->cell($result)] = $result;
+        }
+
+        $scores = [];
+        $samples = [];
+        foreach ($to->getResults() as $result) {
+            $before = $fromCells[$this->cell($result)] ?? null;
+            if (null === $before || (null === $before->getScore() && null === $result->getScore())) {
+                continue;
+            }
+            $label = $result->getConfiguration()->label();
+            $scores[] = ['testcase' => $result->getTestcaseVersion()->getTitle(), 'configuration' => $label, 'from' => $before->getScore(), 'to' => $result->getScore()];
+            $samples[$label] ??= ['from' => [], 'to' => []];
+            // like for like: a cell scored on one side only would move one average but not the other
+            [$fromScore, $toScore] = [$before->getScore(), $result->getScore()];
+            if (null !== $fromScore && null !== $toScore) {
+                $samples[$label]['from'][] = $fromScore;
+                $samples[$label]['to'][] = $toScore;
+            }
+        }
+
+        $averages = array_map(fn (array $side): array => ['from' => $this->mean($side['from']), 'to' => $this->mean($side['to']), 'cells' => \count($side['from'])], $samples);
+
+        return [$scores, $averages];
+    }
+
+    private function cell(RunResult $result): string
+    {
+        return spl_object_id($result->getTestcaseVersion()->getTestcase()).'|'.$result->getConfigurationKey();
+    }
+
+    /** @param list<int> $scores */
+    private function mean(array $scores): ?float
+    {
+        return [] === $scores ? null : array_sum($scores) / \count($scores);
     }
 
     /**

@@ -124,14 +124,16 @@ final class RunPruningTest extends AppWebTestCase
         $skill = $this->persistSkill('Review', [$project]);
         $testcase = $this->persistTestcase('Greeting', $project);
         $run = $this->persistRun($project, 'Run A', [$skill], [$testcase], true);
-        $run->start();
+        $this->startRun($run);
         $this->entityManager->flush();
+        $this->storeJudge();
         $this->client->loginUser($admin);
 
         $crawler = $this->client->request('GET', '/skills/'.$skill->getUuid());
         $this->client->submit($crawler->filter('form[action$="/delete"]')->form());
         self::assertSame([], $this->skillTitles('Run A'));
 
+        $this->finishAllResults();
         $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
         $this->client->submit($crawler->filter('form[action$="/start"]')->form());
         $this->client->followRedirect();
