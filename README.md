@@ -188,10 +188,43 @@ Versions and drafts work like for skills.
 
 Started versions stay `pending` when the worker is not running, see Troubleshooting.
 
+### MCP
+
+An AI agent such as Claude Code can use Dojo through the Model Context Protocol. It acts as the person who connected
+it and can do what that person can do in the web interface, nothing more. Typical uses: let the agent write or improve
+skills and testcases, set up and start a run, and compare the versions to see whether a change helped. Agents cannot
+manage users, groups, the LLM configuration or passwords.
+
+Connect an agent (for local development the URL is `http://localhost:8000/mcp`):
+
+```bash
+claude mcp add --transport http dojo http://localhost:8000/mcp
+```
+
+On the first call the browser opens: sign in to Dojo and approve the agent. Approve only connections you started
+yourself. The **My account** page lists connected agents with a **Disconnect** button.
+
+Two things to know: `start_run` calls the LLM providers and costs money, exactly like **Start** in the web interface,
+but without the confirmation dialog (`get_run` shows the number of calls first). Deleting runs and projects is final.
+Tool results go to the LLM provider of your agent, so the rule "no personal data" applies here as well.
+
+Available tools (all work on what the signed-in person may access; "admin" means admins only):
+
+| Area | Tools |
+| --- | --- |
+| Overview | `get_overview` (a good first call) |
+| Projects | `list_projects`, `get_project`; admin: `create_project`, `update_project`, `delete_project`, `add_project_group`, `remove_project_group`, `add_project_user`, `remove_project_user` |
+| Skills | `list_skills`, `get_skill`, `get_skill_version`, `create_skill`, `save_skill` (draft or final), `set_skill_projects`, `restore_skill_version`, `discard_skill_draft`, `delete_skill` |
+| Testcases | `list_testcases`, `get_testcase`, `get_testcase_version`, `create_testcase`, `save_testcase` (draft or final), `set_testcase_projects`, `restore_testcase_version`, `discard_testcase_draft`, `delete_testcase` |
+| Runs | `list_runs`, `get_run` (includes the start check), `create_run`, `update_run`, `list_models`, `add_run_configuration`, `remove_run_configuration`, `set_run_skills`, `set_run_testcases`, `start_run`, `delete_run` |
+| Run versions | `get_run_version` (results), `compare_run_versions` |
+
+Details, rights and operations (OAuth keys, hosts, proxies): [docs/features/mcp.md](docs/features/mcp.md).
+
 ### My account
 
 **My account** shows your projects, groups and numbers, lets you **Change password** and lists the AI agents connected
-through MCP with a **Disconnect** button. How to connect an agent such as Claude Code: [docs/features/mcp.md](docs/features/mcp.md).
+through [MCP](#mcp) with a **Disconnect** button.
 
 More detail on every feature: [docs/Features.md](docs/Features.md).
 
