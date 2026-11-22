@@ -236,6 +236,99 @@ final class RunVersionPageTest extends AppWebTestCase
         return [$user, $run];
     }
 
+    public function testFirstVersionShowsAHintInsteadOfCharts(): void
+    {
+        [$user, $run] = $this->versionWithResults();
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/versions/1');
+
+        self::assertSelectorTextContains('main', 'There is no previous version to compare against.');
+        self::assertSelectorNotExists('.comparison');
+    }
+
+    public function testLaterVersionShowsChartsAgainstThePreviousVersion(): void
+    {
+        [$user, $run] = $this->twoVersions(true);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid().'/versions/2');
+
+        self::assertResponseIsSuccessful();
+        $root = $crawler->filter('.comparison[data-comparison]');
+        self::assertCount(1, $root);
+        self::assertSame('Version 1', $root->attr('data-from-label'));
+        self::assertSame('Version 2', $root->attr('data-to-label'));
+        self::assertSame(['score', 'durationMs', 'inputTokens', 'outputTokens', 'failureRate'], $root->filter('canvas')->each(static fn (Crawler $canvas): ?string => $canvas->attr('data-metric')));
+        /** @var list<array{label: string, score: array<string, float>, durationMs: array<string, float>}> $rows */
+        $rows = json_decode((string) $root->attr('data-comparison'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['Claude Code / opus / no effort', 'Total'], array_column($rows, 'label'));
+        self::assertEquals(['from' => 50, 'to' => 100], $rows[1]['score']);
+        self::assertEquals(['from' => 1000, 'to' => 500], $rows[1]['durationMs']);
+        self::assertCount(1, $crawler->filter('.comparison table.visually-hidden[data-comparison-table]'));
+        self::assertSelectorNotExists('main p.help-text:contains("no results that can be compared")');
+    }
+
+    public function testVersionWithoutCommonCellsExplainsThereIsNothingToCompare(): void
+    {
+        [$user, $run] = $this->twoVersions(false);
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/versions/2');
+
+        self::assertSelectorTextContains('main', 'Version 1 has no results that can be compared with this version.');
+        self::assertSelectorNotExists('.comparison');
+    }
+
+    public function testProgressEndpointReportsTheComparisonAndNoneForTheFirstVersion(): void
+    {
+        [$user, $run] = $this->twoVersions(true);
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/versions/2/progress');
+        /** @var array{comparison: list<array{label: string}>} $second */
+        $second = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        $this->client->request('GET', '/runs/'.$run->getUuid().'/versions/1/progress');
+        /** @var array{comparison: list<array{label: string}>} $first */
+        $first = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['Claude Code / opus / no effort', 'Total'], array_column($second['comparison'], 'label'));
+        self::assertSame([], $first['comparison']);
+    }
+
+    /**
+     * Version 1 scores 50 in 1 s, version 2 scores 100 in 0.5 s. With $sameTestcase false version 2 runs another testcase.
+     *
+     * @return array{\App\Entity\User, Run}
+     */
+    private function twoVersions(bool $sameTestcase): array
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $testcase = $this->persistTestcase('Greeting', $project);
+        $run = $this->persistRun($project, creator: $user, testcases: [$testcase], configured: true);
+        $first = $this->startRun($run);
+        $this->rate($first, 50, 1000);
+        if (!$sameTestcase) {
+            $run->setTestcases([$this->persistTestcase('Farewell', $project)]);
+        }
+        $second = $this->startRun($run);
+        $this->rate($second, 100, 500);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
+
+        return [$user, $run];
+    }
+
+    private function rate(RunVersion $version, int $score, int $durationMs): void
+    {
+        foreach ($version->getResults() as $result) {
+            $result->markRunning();
+            $result->markJudging('answer', 10, 20, $durationMs);
+            $result->markDone(array_map(static fn (int $i): array => ['criterion' => 'c'.$i, 'met' => $score > $i, 'reason' => 'r'], range(0, 99)));
+        }
+    }
+
     /** @return array<string, \App\Entity\RunResult> keyed by "testcase title|provider" */
     private function cells(RunVersion $version): array
     {

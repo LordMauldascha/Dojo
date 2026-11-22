@@ -361,6 +361,29 @@ final class RunToolsTest extends McpWebTestCase
         self::assertSame(1, $this->rows($this->callTool($token, 'get_run', ['runUuid' => $uuid])['data'], 'versions')[0]['number']);
     }
 
+    public function testStartWithBaselineRunsAVersionWithoutSkillsFirstAndRejectsItLater(): void
+    {
+        [$user, $project] = $this->member();
+        $run = $this->persistRun($project, 'Ready', skills: [$this->persistSkill('Style', [$project])], testcases: [$this->persistTestcase('One', $project), $this->persistTestcase('Two', $project)], configured: true);
+        $this->storeJudge();
+        $uuid = $run->getUuid()->toRfc4122();
+        $token = $this->connect($user);
+        self::assertTrue($this->callTool($token, 'get_run', ['runUuid' => $uuid])['data']['baselineAvailable']);
+
+        $started = $this->callTool($token, 'start_run', ['runUuid' => $uuid, 'withBaseline' => true]);
+
+        self::assertFalse($started['isError'], $started['text']);
+        self::assertSame([2, 1, 4, 4], [$started['data']['version'], $started['data']['baselineVersion'], $started['data']['llmCalls'], $started['data']['judgeCalls']]);
+        self::assertCount(4, $this->sent());
+        $detail = $this->callTool($token, 'get_run', ['runUuid' => $uuid])['data'];
+        self::assertFalse($detail['baselineAvailable']);
+        self::assertSame([1, 2], array_column($this->rows($detail, 'versions'), 'number'));
+        $this->finishAllResults();
+        $again = $this->callTool($token, 'start_run', ['runUuid' => $uuid, 'withBaseline' => true]);
+        self::assertTrue($again['isError']);
+        self::assertSame(RunStarter::BASELINE_NOT_AVAILABLE, $again['text']);
+    }
+
     public function testDeleteIsAllowedForCreatorAndAdminOnly(): void
     {
         $creator = $this->persistUser('creator');

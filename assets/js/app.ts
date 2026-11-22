@@ -1,5 +1,6 @@
 import web from '@sulu/web';
 import Dialog from './components/dialog';
+import RunComparison from './components/runComparison';
 import RunProgress from './components/runProgress';
 import SmashLogout from './components/smashLogout';
 import TatamiCover from './components/tatamiCover';
@@ -11,6 +12,7 @@ import preventDoubleSubmit from './services/preventDoubleSubmit';
 import skillHeader from './services/skillHeader';
 
 web.registerComponent('dialog', Dialog);
+web.registerComponent('run-comparison', RunComparison);
 web.registerComponent('run-progress', RunProgress);
 web.registerComponent('smash-logout', SmashLogout);
 web.registerComponent('tatami-cover', TatamiCover);

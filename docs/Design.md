@@ -99,6 +99,24 @@ rendered by the page and by the progress endpoint, so the live update swaps in e
   `.visually-hidden` and is not replaced with the matrix, so the announcement is not lost. The notice stays a normal
   `.help-text` paragraph, hidden with the `hidden` attribute until needed.
 
+## Comparison charts
+
+The version page compares a run version with the one before it in bar charts (Chart.js, bar parts only):
+`templates/runs/_comparison.html.twig`, styles in `assets/css/components/_comparison.scss`, drawing in
+`assets/js/components/runComparison.ts`. One tile per metric (score, duration, input tokens, output tokens, failure
+rate) in a grid like the stat tiles (`auto-fit`, one column under `$breakpoint-sm`); a tile is a flat surface with a
+hairline border and a `.comparison-chart-canvas` box of fixed height (`maintainAspectRatio` is off, Chart.js sizes the
+canvas from the box).
+
+- Colors are read from the tokens at runtime: the previous version is `--color-border-strong`, this version
+  `--color-highlight`; ticks use `--color-text-muted`, grid lines `--color-border`.
+- Animation is off with `prefers-reduced-motion`. A live update replaces the data with `chart.update('none')`, so the
+  charts do not redraw or flicker.
+- The canvases are `aria-hidden`. The text alternative is `table.visually-hidden[data-comparison-table]`, rebuilt by
+  the component, so it is also current after a live update.
+- `runProgress.ts` dispatches `run-progress:update` on `document` after every answer of the progress endpoint
+  (`detail` is the JSON); the comparison listens for it. Keep the event name when you change either file.
+
 ## Visually hidden text
 
 `.visually-hidden` (`_base.scss`) hides text visually and keeps it for assistive technology (1px clip, no `display:

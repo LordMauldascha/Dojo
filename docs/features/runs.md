@@ -53,8 +53,8 @@ Runs have no own members. Everything derives from the project.
 | Runs of a project | `/projects/{uuid}/runs` | Table of that project's runs; reached from the project page |
 | New run | `/projects/{uuid}/runs/new` | Title and description, then continue on the run page |
 | Run | `/runs/{uuid}` | Tiles at the top (versions with the status of the latest version — `running`, `judging`, `finished`, `finished with errors` or `not executed`, linking to it — and the Start button, configurations, skills, testcases; a hint says what is missing to start), version list with the share of met criteria per version (met criteria of all judged cells divided by all their criteria, `–` until a cell is judged) and the average duration, input tokens and output tokens per version (columns `Avg. …`, mean over the cells that have the value, `–` if none has it), edit details and configurations, skills and testcases side by side |
-| Version | `/runs/{uuid}/versions/{number}` | The snapshot and its results: progress and the result matrix |
-| Progress | `/runs/{uuid}/versions/{number}/progress` | JSON for the live update of the version page (`status`, `done`, `total`, `html`); same access as the version page |
+| Version | `/runs/{uuid}/versions/{number}` | The snapshot, the charts against the previous version, its results (progress and the result matrix) |
+| Progress | `/runs/{uuid}/versions/{number}/progress` | JSON for the live update of the version page (`status`, `done`, `total`, `html`, `comparison`); same access as the version page |
 | Run status | `/runs/{uuid}/status` | JSON for the live update of the run page: status of the latest version, `done`, `total` and the re-rendered tiles with Start button, hints and version list (`html`); polled every 3 seconds while the latest version runs; same access as the run page |
 | Compare | `/runs/{uuid}/compare?from=1&to=2` | Differences between two versions |
 
@@ -76,12 +76,23 @@ count for rule 1, in the check and in the hint:
    available.* Otherwise every cell would pay for its LLM call and then fail at the judge,
 5. a version of the same run is still running (no double start, no duplicate cost).
 
-Skills are optional (a run without skills is a baseline). Rule 5 is checked under a lock per run (`symfony/lock`,
+Skills are optional (a run without skills is a baseline, see also [Baseline](#baseline)). Rule 5 is checked under a lock per run (`symfony/lock`,
 `LOCK_DSN`), so two clicks at once create one version. Before it, results stuck for more than 30 minutes are failed (see
 [Timeout](#timeout)), so a crashed worker cannot block a run forever.
 
 When a start is possible, the button opens a confirmation with the number of LLM calls (cells) and judge calls; every
 call is billed by the provider. There is no quota per project or user (product decision 21.11.2026).
+
+### Baseline
+
+The first start of a run that has skills asks whether to also start a **baseline**: the dialog then has the buttons
+*Start without baseline* and *Start with baseline* and shows the number of calls for both. With the baseline, version 1
+is a snapshot without skills and version 2 the one with the selected skills; both are created in the same start (one
+lock, one flush) and queued together, so they run at the same time. Without the baseline only the version with skills is
+created, as before. Later starts, runs without skills and runs that already have a version get the plain dialog, and a
+baseline request for them is refused (*A baseline is only possible for the first version of a run with skills.*). The
+baseline is an ordinary version, so version 2 has version 1 to be compared with on its [version page](#version-page).
+Agents use `start_run` with `withBaseline`, see [MCP](mcp.md).
 
 ## Execution
 
@@ -167,6 +178,20 @@ provider did not report; the judge call is not included). A cell with output ope
 While the version is running the page asks the progress endpoint every 3 seconds and swaps in the new matrix (open
 cells, focus and scroll position stay); it stops when the version is no longer running. After three failed requests in a
 row it stops and says to reload the page. A version without cells shows *This version was not executed.*
+
+#### Comparison with the previous version
+
+Above the matrix the page shows bar charts of this version against version `number - 1`: score, duration, input
+tokens, output tokens and failure rate, each with one pair of bars (previous, this version) per LLM configuration and a
+*Total* group. Values are means over the testcases. As on the compare page, cells are matched by testcase (also when its
+version changed) and configuration; only cells that exist in both versions count. A value counts only when both sides
+have it, so a cell without a score or token count on one side does not move one bar alone. The failure rate is the share of
+failed cells over the cells that are finished in both versions. The score is the mean of the cell scores, not the share
+of met criteria shown in the version list. While the version runs, the charts follow the live update. Every chart set has
+a text alternative (a visually hidden table with *previous → this version* per configuration and metric).
+
+Version 1 shows *There is no previous version to compare against.* instead of the charts, and a version whose previous
+version shares no cell with it says so.
 
 ### Compare
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { startRunProgress } from '../../components/runProgress';
+import { RUN_PROGRESS_EVENT, startRunProgress } from '../../components/runProgress';
 
 function root(status: string): HTMLElement {
     const el = document.createElement('div');
@@ -50,6 +50,22 @@ describe('startRunProgress', () => {
         await vi.advanceTimersByTimeAsync(10000);
 
         expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it('announces every answer on the document so the comparison charts can follow', async () => {
+        const seen: unknown[] = [];
+        const listener = (event: Event): void => void seen.push((event as CustomEvent).detail.status);
+        document.addEventListener(RUN_PROGRESS_EVENT, listener);
+        const fetchFn = vi
+            .fn<typeof fetch>()
+            .mockResolvedValueOnce(reply('running'))
+            .mockResolvedValueOnce(reply('completed'));
+
+        startRunProgress(root('running'), fetchFn);
+        await vi.advanceTimersByTimeAsync(6000);
+        document.removeEventListener(RUN_PROGRESS_EVENT, listener);
+
+        expect(seen).toEqual(['running', 'completed']);
     });
 
     it('polls every 3000 ms while running, replaces the content and stops on completed', async () => {

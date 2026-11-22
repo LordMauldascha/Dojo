@@ -29,6 +29,7 @@ final readonly class RunStarter
     public const JUDGE_WITHOUT_KEY = 'The LLM judge has no API key.';
     public const JUDGE_MODEL_UNAVAILABLE = 'The LLM judge model is no longer available.';
     public const STILL_RUNNING = 'A version of this run is still running.';
+    public const BASELINE_NOT_AVAILABLE = 'A baseline is only possible for the first version of a run with skills.';
     public const DISPATCH_FAILED = 'The run could not be queued. Please start it again.';
 
     public function __construct(
@@ -75,15 +76,19 @@ final readonly class RunStarter
 
         $cells = $testcases * \count($usable);
 
-        return new StartCheck($problems, $cells, $cells);
+        $baselineAvailable = $run->getVersions()->isEmpty() && [] !== $run->getStartableSkills();
+
+        return new StartCheck($problems, $cells, $cells, $baselineAvailable);
     }
 
     /**
+     * With $withBaseline version N is a baseline without skills and version N + 1, the one returned, runs with them; both are queued by this one start.
+     *
      * @throws \LogicException                                                                                   with the first blocking problem
      * @throws UniqueConstraintViolationException|ForeignKeyConstraintViolationException|OptimisticLockException when a concurrent request changed the run meanwhile
      * @throws \Throwable                                                                                        when queueing failed (any error); the unqueued cells are failed with `dispatch_failed`
      */
-    public function start(Run $run): RunVersion
+    public function start(Run $run, bool $withBaseline = false): RunVersion
     {
         $lock = $this->lockFactory->createLock('run-start-'.$run->getId());
         $lock->acquire(true);
@@ -94,14 +99,21 @@ final readonly class RunStarter
             if (!$check->canStart()) {
                 throw new \LogicException($check->problems[0]);
             }
+            if ($withBaseline && !$check->baselineAvailable) {
+                throw new \LogicException(self::BASELINE_NOT_AVAILABLE);
+            }
 
-            $version = $run->start($this->catalog->isAvailable(...), $this->judgeSetting->get() ?? throw new \LogicException(self::NO_JUDGE));
+            $judge = $this->judgeSetting->get() ?? throw new \LogicException(self::NO_JUDGE);
+            $baseline = $withBaseline ? $run->start($this->catalog->isAvailable(...), $judge, false) : null;
+            $version = $run->start($this->catalog->isAvailable(...), $judge);
             $this->entityManager->flush();
         } finally {
             $lock->release();
         }
 
-        $undispatched = array_values(array_map(static fn (RunResult $result): int => $result->getId() ?? throw new \LogicException('Result was not stored.'), $version->getResults()->toArray()));
+        $versions = null === $baseline ? [$version] : [$baseline, $version];
+        $results = array_merge(...array_map(static fn (RunVersion $created): array => $created->getResults()->toArray(), $versions));
+        $undispatched = array_map(static fn (RunResult $result): int => $result->getId() ?? throw new \LogicException('Result was not stored.'), $results);
         try {
             while ([] !== $undispatched) {
                 $this->messageBus->dispatch(new ExecuteRunResult($undispatched[0]));
@@ -109,7 +121,7 @@ final readonly class RunStarter
             }
         } catch (\Throwable $error) {
             $this->failUndispatched($undispatched);
-            foreach ($version->getResults() as $result) {
+            foreach ($results as $result) {
                 $this->entityManager->refresh($result);
             }
 

@@ -144,6 +144,9 @@ under `assets/`. See [AGENTS.md](../AGENTS.md) for how to enable the hook.
   with `export default await Encore.getWebpackConfig();`. `require()` does not work.
 - **TypeScript is limited to `^5 || ^6`** by the Encore peer dependency. Do not upgrade to a newer major until Encore
   supports it.
+- **Chart.js** (`chart.js`) draws the comparison charts of the version page. Only the bar chart parts are registered
+  (`BarController`, `BarElement`, `CategoryScale`, `LinearScale`, `Tooltip`, `Legend` in `runComparison.ts`), so the
+  bundle stays small. Do not import `chart.js/auto`.
 - **Babel 8** with `@babel/preset-env` (Encore defaults, no extra plugins).
 - `ts-loader` reports TypeScript errors as build errors. For modules without types add a declaration to
   `assets/env.d.ts` (`declare module 'package';`).

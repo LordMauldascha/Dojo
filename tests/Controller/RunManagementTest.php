@@ -554,6 +554,63 @@ final class RunManagementTest extends AppWebTestCase
         self::assertSelectorTextContains('dialog', '6 LLM calls and 6 judge calls');
     }
 
+    public function testStartDialogAsksForABaselineOnlyForTheFirstStartWithSkills(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $withoutSkills = $this->persistRun($project, 'Plain', creator: $user, testcases: [$this->persistTestcase('One', $project)], configured: true);
+        $withSkills = $this->persistRun($project, 'Skilled', skills: [$this->persistSkill('Style', [$project])], testcases: [$this->persistTestcase('Two', $project)], configured: true, creator: $user);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/runs/'.$withoutSkills->getUuid());
+        self::assertSelectorNotExists('dialog button[name="baseline"]');
+
+        $this->client->request('GET', '/runs/'.$withSkills->getUuid());
+        self::assertSelectorCount(2, 'dialog button[name="baseline"]');
+        self::assertSelectorTextContains('dialog', 'Also start a baseline without skills');
+        self::assertSelectorTextContains('dialog', 'Without baseline this makes 1 LLM calls and 1 judge calls, with baseline 2 and 2.');
+    }
+
+    public function testStartWithBaselineCreatesAVersionWithoutSkillsAndOneWithSkills(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, 'Skilled', skills: [$this->persistSkill('Style', [$project])], testcases: [$this->persistTestcase('One', $project)], configured: true, creator: $user);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('dialog button[name="baseline"][value="1"]')->form());
+        $transport = static::getContainer()->get('messenger.transport.async');
+        self::assertInstanceOf(InMemoryTransport::class, $transport);
+        self::assertCount(2, $transport->getSent());
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('body', 'Started as version 1 (baseline without skills) and version 2.');
+        $this->entityManager->clear();
+        $run = $this->findRun('Skilled');
+        self::assertCount(0, $run->findVersion(1)?->getSkillVersions() ?? throw new \LogicException('No baseline.'));
+        self::assertCount(1, $run->findVersion(2)?->getSkillVersions() ?? throw new \LogicException('No version.'));
+    }
+
+    public function testStartWithoutBaselineChoiceCreatesOneVersionWithSkills(): void
+    {
+        $user = $this->persistUser('alice');
+        $project = $this->persistProject('Security', [$user]);
+        $run = $this->persistRun($project, 'Skilled', skills: [$this->persistSkill('Style', [$project])], testcases: [$this->persistTestcase('One', $project)], configured: true, creator: $user);
+        $this->storeJudge();
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/runs/'.$run->getUuid());
+        $this->client->submit($crawler->filter('dialog button[name="baseline"][value="0"]')->form());
+
+        $this->entityManager->clear();
+        $run = $this->findRun('Skilled');
+        self::assertCount(1, $run->getVersions());
+        self::assertCount(1, $run->findVersion(1)?->getSkillVersions() ?? throw new \LogicException('No version.'));
+    }
+
     public function testVersionsTileShowsTheStatusOfTheLatestVersion(): void
     {
         $user = $this->persistUser('alice');

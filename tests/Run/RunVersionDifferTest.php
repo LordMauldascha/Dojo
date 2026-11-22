@@ -12,6 +12,7 @@ use App\Entity\Run;
 use App\Entity\RunVersion;
 use App\Entity\Skill;
 use App\Entity\Testcase;
+use App\Run\RunResultStatus;
 use App\Run\RunVersionDiffer;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 
@@ -229,6 +230,75 @@ final class RunVersionDifferTest extends PhpUnitTestCase
         self::assertSame([], $diff->configurationsAdded);
     }
 
+    public function testMetricsAverageMatchedCellsPerConfigurationAndInTotal(): void
+    {
+        $other = $this->makeTestcase('Other', 'p', 'o', $this->project);
+        $this->run->setTestcases([$this->testcase, $other]);
+        $first = $this->start();
+        $this->rate($first, $this->testcase, 60, 1000, 100, 10);
+        $this->rate($first, $other, 80, 3000, 300, 30);
+        $second = $this->start();
+        $this->rate($second, $this->testcase, 80, 500, 100, 20);
+        $this->rate($second, $other, 100, 1500, 100, 40);
+
+        $rows = (new RunVersionDiffer())->metrics($first, $second);
+
+        self::assertSame([(new LlmConfiguration(Provider::ClaudeCode, 'opus', Effort::High))->label(), 'Total'], array_column($rows, 'label'));
+        self::assertSame($rows[0]['score'], $rows[1]['score']);
+        self::assertSame(['from' => 70.0, 'to' => 90.0], $rows[1]['score']);
+        self::assertSame(['from' => 2000.0, 'to' => 1000.0], $rows[1]['durationMs']);
+        self::assertSame(['from' => 200.0, 'to' => 100.0], $rows[1]['inputTokens']);
+        self::assertSame(['from' => 20.0, 'to' => 30.0], $rows[1]['outputTokens']);
+        self::assertSame(['from' => 0.0, 'to' => 0.0], $rows[1]['failureRate']);
+    }
+
+    public function testMetricsSplitConfigurationsAndIgnoreCellsOfOnlyOneVersion(): void
+    {
+        $extra = $this->makeTestcase('Extra', 'p', 'o', $this->project);
+        $first = $this->start();
+        $this->rate($first, $this->testcase, 50, 1000, 10, 10);
+        $this->run->setTestcases([$this->testcase, $extra]);
+        $this->run->addConfiguration(new LlmConfiguration(Provider::Gemini, 'gemini-3.5-flash'));
+        $second = $this->start();
+        $this->rate($second, $this->testcase, 70, 2000, 20, 20);
+        $this->rate($second, $extra, 10, 9000, 90, 90);
+
+        $rows = (new RunVersionDiffer())->metrics($first, $second);
+
+        self::assertCount(2, $rows);
+        self::assertSame(['from' => 50.0, 'to' => 70.0], $rows[0]['score']);
+        self::assertSame(['from' => 1000.0, 'to' => 2000.0], $rows[1]['durationMs']);
+    }
+
+    public function testMetricsFailureRateCountsFinishedCellsOnBothSidesAndAValueNeedsBothSides(): void
+    {
+        $other = $this->makeTestcase('Other', 'p', 'o', $this->project);
+        $open = $this->makeTestcase('Open', 'p', 'o', $this->project);
+        $this->run->setTestcases([$this->testcase, $other, $open]);
+        $first = $this->start();
+        $this->rate($first, $this->testcase, 100, 1000, 10, 10);
+        $this->failCell($first, $other);
+        $second = $this->start();
+        $this->rate($second, $this->testcase, 100, 1000, 10, 10);
+        $this->rate($second, $other, 100, 5000, 50, 50);
+
+        $total = (new RunVersionDiffer())->metrics($first, $second)[1];
+
+        // "Open" is pending on both sides; "Other" failed before and works now
+        self::assertSame(['from' => 50.0, 'to' => 0.0], $total['failureRate']);
+        self::assertSame(['from' => 1000.0, 'to' => 1000.0], $total['durationMs']);
+        self::assertSame(['from' => 100.0, 'to' => 100.0], $total['score']);
+    }
+
+    public function testMetricsAreEmptyWithoutCommonCells(): void
+    {
+        $first = $this->start();
+        $this->run->setTestcases([$this->makeTestcase('Else', 'p', 'o', $this->project)]);
+        $second = $this->start();
+
+        self::assertSame([], (new RunVersionDiffer())->metrics($first, $second));
+    }
+
     private function skill(string $title): Skill
     {
         $skill = new Skill($title, null, 'v1');
@@ -255,6 +325,27 @@ final class RunVersionDifferTest extends PhpUnitTestCase
             $result->markRunning();
             $result->markJudging('answer', null, null, 1);
             $result->markDone(array_map(static fn (int $i): array => ['criterion' => 'c'.$i, 'met' => $score > $i, 'reason' => 'r'], range(0, 99)));
+        }
+    }
+
+    private function rate(RunVersion $version, Testcase $testcase, int $score, int $durationMs, int $input, int $output): void
+    {
+        foreach ($version->getResults() as $result) {
+            if ($result->getTestcaseVersion()->getTestcase() !== $testcase) {
+                continue;
+            }
+            $result->markRunning();
+            $result->markJudging('answer', $input, $output, $durationMs);
+            $result->markDone(array_map(static fn (int $i): array => ['criterion' => 'c'.$i, 'met' => $score > $i, 'reason' => 'r'], range(0, 99)));
+        }
+    }
+
+    private function failCell(RunVersion $version, Testcase $testcase): void
+    {
+        foreach ($version->getResults() as $result) {
+            if ($result->getTestcaseVersion()->getTestcase() === $testcase) {
+                $result->markFailed('timeout', RunResultStatus::Pending);
+            }
         }
     }
 

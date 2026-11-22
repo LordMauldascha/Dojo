@@ -9,6 +9,9 @@
 
     <p>Created: {{ version.createdAt|date }}</p>
 
+    <h2>Comparison</h2>
+    {{ include('runs/_comparison.html.twig') }}
+
     <h2>Results</h2>
     <p role="status" class="visually-hidden" data-run-progress-status></p>
     <p class="help-text" data-run-progress-notice hidden></p>

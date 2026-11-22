@@ -226,16 +226,24 @@ class Run
         return array_values(array_filter($this->testcases->toArray(), fn (Testcase $testcase): bool => !$testcase->isDeleted() && $testcase->getProjects()->contains($this->project)));
     }
 
+    /** @return list<Skill> */
+    public function getStartableSkills(): array
+    {
+        return array_values(array_filter($this->skills->toArray(), fn (Skill $skill): bool => !$skill->isDeleted() && $skill->getProjects()->contains($this->project)));
+    }
+
     /**
      * Snapshots the run with the latest final version of every assigned skill and testcase (drafts are ignored)
      * and creates one result per testcase and configuration whose provider is available.
      * Items that were deleted or do not belong to the run's project are left out, even if a prune is still pending.
      *
+     * Without skills the version is a baseline.
+     *
      * @param callable(Provider): bool $isAvailable
      */
-    public function start(callable $isAvailable, LlmConfiguration $judge): RunVersion
+    public function start(callable $isAvailable, LlmConfiguration $judge, bool $withSkills = true): RunVersion
     {
-        $skills = array_filter($this->skills->toArray(), fn (Skill $skill): bool => !$skill->isDeleted() && $skill->getProjects()->contains($this->project));
+        $skills = $withSkills ? $this->getStartableSkills() : [];
         $testcases = $this->getStartableTestcases();
 
         if ([] === $testcases) {
@@ -265,7 +273,7 @@ class Run
             $this->title,
             $this->description,
             $snapshot,
-            array_values(array_map(static fn (Skill $skill): SkillVersion => $skill->getActiveVersion(), $skills)),
+            array_map(static fn (Skill $skill): SkillVersion => $skill->getActiveVersion(), $skills),
             $testcaseVersions,
             $judge,
         );

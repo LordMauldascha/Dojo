@@ -79,7 +79,7 @@ final readonly class RunTools
     /** @return array<string, mixed> */
     #[McpTool(
         name: 'get_run',
-        description: 'Shows a run: details, project, LLM configurations, skills, testcases, its versions with status and progress, and the start check (canStart, problems that block a start, number of LLM and judge calls a start would make).',
+        description: 'Shows a run: details, project, LLM configurations, skills, testcases, its versions with status and progress, and the start check (canStart, problems that block a start, number of LLM and judge calls a start would make, baselineAvailable: a first start could also run a baseline without skills).',
         annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     public function get(string $runUuid): array
@@ -228,14 +228,14 @@ final readonly class RunTools
     /** @return array<string, mixed> */
     #[McpTool(
         name: 'start_run',
-        description: 'Starts a new version of a run. This calls the configured LLM providers (one call per testcase and configuration, plus one judge call each) and COSTS MONEY; start only when the user wants it. Check get_run first (canStart, problems, llmCalls, judgeCalls). Execution runs in the background: follow it with get_run or get_run_version. Fails while another version of the run is still running.',
+        description: 'Starts a new version of a run. This calls the configured LLM providers (one call per testcase and configuration, plus one judge call each) and COSTS MONEY; start only when the user wants it. Check get_run first (canStart, problems, llmCalls, judgeCalls). Execution runs in the background: follow it with get_run or get_run_version. Fails while another version of the run is still running. With withBaseline=true, a first version without skills is started as well (only for the first start of a run with skills, see baselineAvailable in get_run), as a baseline for the version with skills; this doubles the calls and the cost.',
         annotations: new ToolAnnotations(readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true),
     )]
-    public function start(string $runUuid): array
+    public function start(string $runUuid, bool $withBaseline = false): array
     {
         $run = $this->load($runUuid, RunVoter::START);
         try {
-            $version = $this->starter->start($run);
+            $version = $this->starter->start($run, $withBaseline);
         } catch (\LogicException $exception) {
             throw new ToolCallException($exception->getMessage());
         } catch (UniqueConstraintViolationException|ForeignKeyConstraintViolationException|OptimisticLockException) {
@@ -243,9 +243,10 @@ final readonly class RunTools
         } catch (MessengerException) {
             throw new ToolCallException(RunStarter::DISPATCH_FAILED);
         }
-        $cells = $version->getResults()->count();
+        $baseline = $withBaseline ? $run->findVersion($version->getNumber() - 1) : null;
+        $cells = $version->getResults()->count() + ($baseline?->getResults()->count() ?? 0);
 
-        return ['started' => true, 'version' => $version->getNumber(), 'llmCalls' => $cells, 'judgeCalls' => $cells];
+        return ['started' => true, 'version' => $version->getNumber(), 'baselineVersion' => $baseline?->getNumber(), 'llmCalls' => $cells, 'judgeCalls' => $cells];
     }
 
     /** @return array<string, mixed> */
@@ -362,6 +363,7 @@ final readonly class RunTools
             'problems' => $check->problems,
             'llmCalls' => $check->llmCalls,
             'judgeCalls' => $check->judgeCalls,
+            'baselineAvailable' => $check->baselineAvailable,
         ];
     }
 }

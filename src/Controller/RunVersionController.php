@@ -27,26 +27,35 @@ final class RunVersionController extends AbstractController
 {
     #[Route('/runs/{uuid:run}/versions/{number}', name: 'app_run_version', requirements: ['uuid' => Requirement::UUID, 'number' => Requirements::ID], methods: ['GET'])]
     #[IsGranted(RunVoter::VIEW, subject: 'run')]
-    public function version(Run $run, int $number, StaleResultSweeper $sweeper): Response
+    public function version(Run $run, int $number, StaleResultSweeper $sweeper, RunVersionDiffer $differ): Response
     {
         $version = $run->findVersion($number) ?? throw $this->createNotFoundException();
         $sweeper->sweep($version);
+        $previous = $run->findVersion($number - 1);
 
-        return $this->render('runs/version.html.twig', ['run' => $run, 'version' => $version, 'matrix' => $this->matrixContext($version)]);
+        return $this->render('runs/version.html.twig', [
+            'run' => $run,
+            'version' => $version,
+            'matrix' => $this->matrixContext($version),
+            'previous' => $previous,
+            'comparison' => null === $previous ? [] : $differ->metrics($previous, $version),
+        ]);
     }
 
     #[Route('/runs/{uuid:run}/versions/{number}/progress', name: 'app_run_version_progress', requirements: ['uuid' => Requirement::UUID, 'number' => Requirements::ID], methods: ['GET'])]
     #[IsGranted(RunVoter::VIEW, subject: 'run')]
-    public function progress(Run $run, int $number, StaleResultSweeper $sweeper): JsonResponse
+    public function progress(Run $run, int $number, StaleResultSweeper $sweeper, RunVersionDiffer $differ): JsonResponse
     {
         $version = $run->findVersion($number) ?? throw $this->createNotFoundException();
         $sweeper->sweep($version);
         $matrix = $this->matrixContext($version);
+        $previous = $run->findVersion($number - 1);
 
         return new JsonResponse([
             'status' => $version->getStatus()->value,
             'done' => $matrix['done'],
             'total' => $matrix['total'],
+            'comparison' => null === $previous ? [] : $differ->metrics($previous, $version),
             'html' => $this->renderView('runs/_result_matrix.html.twig', ['version' => $version, 'matrix' => $matrix]),
         ]);
     }

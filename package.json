@@ -29,6 +29,7 @@
         "format:check": "prettier --check assets"
     },
     "dependencies": {
-        "@sulu/web": "^2.4.1"
+        "@sulu/web": "^2.4.1",
+        "chart.js": "^4.6.1"
     }
 }

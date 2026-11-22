@@ -27,6 +27,7 @@ use App\Repository\TestcaseRepository;
 use App\Run\RunStarter;
 use App\Run\RunVersionStatus;
 use App\Run\StartCheck;
+use App\Run\StartRunPayload;
 use App\Security\Voter\ProjectVoter;
 use App\Security\Voter\RunVoter;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -41,6 +42,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Messenger\Exception\ExceptionInterface as MessengerException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -267,10 +269,14 @@ final class RunController extends AbstractController
     #[Route('/runs/{uuid:run}/start', name: 'app_run_start', requirements: ['uuid' => Requirement::UUID], methods: ['POST'])]
     #[IsGranted(RunVoter::START, subject: 'run')]
     #[IsCsrfTokenValid(new Expression('"'.self::CSRF_START.'" ~ args["run"].getUuid()'), methods: 'POST')]
-    public function start(Run $run, RunStarter $starter): Response
-    {
+    public function start(
+        Run $run,
+        RunStarter $starter,
+        #[MapRequestPayload(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)]
+        StartRunPayload $payload = new StartRunPayload(),
+    ): Response {
         try {
-            $version = $starter->start($run);
+            $version = $starter->start($run, $payload->baseline);
         } catch (\LogicException $exception) {
             $this->addFlash('error', $exception->getMessage());
 
@@ -284,7 +290,9 @@ final class RunController extends AbstractController
 
             return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
         }
-        $this->addFlash('success', \sprintf('Started as version %d.', $version->getNumber()));
+        $this->addFlash('success', $payload->baseline
+            ? \sprintf('Started as version %d (baseline without skills) and version %d.', $version->getNumber() - 1, $version->getNumber())
+            : \sprintf('Started as version %d.', $version->getNumber()));
 
         return $this->redirectToRoute('app_run_show', ['uuid' => $run->getUuid()]);
     }

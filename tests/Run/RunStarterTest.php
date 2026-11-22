@@ -111,6 +111,62 @@ final class RunStarterTest extends AppWebTestCase
         self::assertSame($expected, $sent);
     }
 
+    public function testCheckOffersABaselineOnlyForTheFirstStartOfARunWithSkills(): void
+    {
+        $withoutSkills = $this->readyRun(1);
+        $withSkills = $this->readyRun(1, withSkill: true);
+        $this->storeKey(Credential::Anthropic);
+        $this->storeJudge();
+
+        self::assertFalse($this->starter()->check($withoutSkills)->baselineAvailable);
+        self::assertTrue($this->starter()->check($withSkills)->baselineAvailable);
+
+        $this->starter()->start($withSkills);
+        self::assertFalse($this->starter()->check($withSkills)->baselineAvailable);
+    }
+
+    public function testStartWithBaselineCreatesAVersionWithoutSkillsFirstAndQueuesBoth(): void
+    {
+        $run = $this->readyRun(2, withSkill: true);
+        $this->storeJudge();
+
+        $version = $this->starter()->start($run, true);
+
+        $baseline = $run->findVersion(1);
+        self::assertSame(2, $version->getNumber());
+        self::assertCount(0, $baseline?->getSkillVersions() ?? throw new \LogicException('No baseline.'));
+        self::assertCount(1, $version->getSkillVersions());
+        self::assertCount(2, $baseline->getResults());
+        self::assertCount(2, $version->getResults());
+        $queued = [];
+        foreach ($this->transport()->getSent() as $envelope) {
+            $message = $envelope->getMessage();
+            self::assertInstanceOf(ExecuteRunResult::class, $message);
+            $queued[] = $message->resultId;
+        }
+        $expected = array_map(static fn (RunResult $result): ?int => $result->getId(), array_merge($baseline->getResults()->toArray(), $version->getResults()->toArray()));
+        self::assertSame($expected, $queued);
+    }
+
+    public function testBaselineIsRejectedWithoutSkillsOrAfterTheFirstVersionAndCreatesNothing(): void
+    {
+        $withoutSkills = $this->readyRun(1);
+        $withSkills = $this->readyRun(1, withSkill: true);
+        $this->storeJudge();
+        $this->starter()->start($withSkills);
+
+        foreach ([$withoutSkills, $withSkills] as $run) {
+            $versions = \count($run->getVersions());
+            try {
+                $this->starter()->start($run, true);
+                self::fail('Expected a LogicException.');
+            } catch (\LogicException $exception) {
+                self::assertSame(1 === $versions ? RunStarter::STILL_RUNNING : RunStarter::BASELINE_NOT_AVAILABLE, $exception->getMessage());
+            }
+            self::assertCount($versions, $run->getVersions());
+        }
+    }
+
     public function testStartThrowsTheFirstProblemAndCreatesNothing(): void
     {
         $run = $this->readyRun(1);
@@ -348,16 +404,16 @@ final class RunStarterTest extends AppWebTestCase
         return $transport;
     }
 
-    private function readyRun(int $testcases): Run
+    private function readyRun(int $testcases, bool $withSkill = false): Run
     {
-        $project = $this->persistProject('Security');
+        $project = $this->persistProject($withSkill ? 'Security with skills' : 'Security');
         $cases = [];
         for ($index = 1; $index <= $testcases; ++$index) {
             $cases[] = $this->persistTestcase('Case '.$index, $project);
         }
         $this->entityManager->createQuery('DELETE FROM '.ProviderApiKey::class)->execute();
 
-        return $this->persistRun($project, testcases: $cases, configured: true);
+        return $this->persistRun($project, skills: $withSkill ? [$this->persistSkill('Style', [$project])] : [], testcases: $cases, configured: true);
     }
 
     private function ageStatus(RunResult $result, int $minutes): void

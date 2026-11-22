@@ -86,6 +86,77 @@ final class RunVersionDiffer
         return [$scores, $averages];
     }
 
+    /**
+     * Mean per configuration label and in total over the cells that exist in both versions. A value counts only when both sides have it,
+     * the failure rate only over cells that are finished on both sides.
+     *
+     * @return list<array{label: string, score: array{from: float|null, to: float|null}, durationMs: array{from: float|null, to: float|null}, inputTokens: array{from: float|null, to: float|null}, outputTokens: array{from: float|null, to: float|null}, failureRate: array{from: float|null, to: float|null}}>
+     */
+    public function metrics(RunVersion $from, RunVersion $to): array
+    {
+        $fromCells = [];
+        foreach ($from->getResults() as $result) {
+            $fromCells[$this->cell($result)] = $result;
+        }
+
+        $pairs = [];
+        foreach ($to->getResults() as $result) {
+            if (null !== ($before = $fromCells[$this->cell($result)] ?? null)) {
+                $pairs[$result->getConfiguration()->label()][] = [$before, $result];
+            }
+        }
+        if ([] === $pairs) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($pairs as $label => $group) {
+            $rows[] = $this->metricsRow((string) $label, $group);
+        }
+        $rows[] = $this->metricsRow('Total', array_merge(...array_values($pairs)));
+
+        return $rows;
+    }
+
+    /**
+     * @param list<array{RunResult, RunResult}> $pairs
+     *
+     * @return array{label: string, score: array{from: float|null, to: float|null}, durationMs: array{from: float|null, to: float|null}, inputTokens: array{from: float|null, to: float|null}, outputTokens: array{from: float|null, to: float|null}, failureRate: array{from: float|null, to: float|null}}
+     */
+    private function metricsRow(string $label, array $pairs): array
+    {
+        $finished = array_filter($pairs, static fn (array $pair): bool => !$pair[0]->getStatus()->isOpen() && !$pair[1]->getStatus()->isOpen());
+        $failed = static fn (RunResult $result): int => RunResultStatus::Failed === $result->getStatus() ? 100 : 0;
+
+        return [
+            'label' => $label,
+            'score' => $this->side($pairs, static fn (RunResult $r): ?int => $r->getScore()),
+            'durationMs' => $this->side($pairs, static fn (RunResult $r): ?int => $r->getDurationMs()),
+            'inputTokens' => $this->side($pairs, static fn (RunResult $r): ?int => $r->getInputTokens()),
+            'outputTokens' => $this->side($pairs, static fn (RunResult $r): ?int => $r->getOutputTokens()),
+            'failureRate' => [
+                'from' => $this->mean(array_map(static fn (array $pair): int => $failed($pair[0]), array_values($finished))),
+                'to' => $this->mean(array_map(static fn (array $pair): int => $failed($pair[1]), array_values($finished))),
+            ],
+        ];
+    }
+
+    /**
+     * @param list<array{RunResult, RunResult}> $pairs
+     * @param callable(RunResult): ?int         $value
+     *
+     * @return array{from: float|null, to: float|null}
+     */
+    private function side(array $pairs, callable $value): array
+    {
+        $both = array_filter(array_map(static fn (array $pair): array => [$value($pair[0]), $value($pair[1])], $pairs), static fn (array $values): bool => null !== $values[0] && null !== $values[1]);
+
+        return [
+            'from' => $this->mean(array_column($both, 0)),
+            'to' => $this->mean(array_column($both, 1)),
+        ];
+    }
+
     private function cell(RunResult $result): string
     {
         return spl_object_id($result->getTestcaseVersion()->getTestcase()).'|'.$result->getConfigurationKey();

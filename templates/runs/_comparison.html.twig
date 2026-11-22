@@ -1,0 +1,18 @@
+{% if previous is null %}
+    <p class="help-text">There is no previous version to compare against.</p>
+{% elseif not comparison %}
+    <p class="help-text">Version {{ previous.number }} has no results that can be compared with this version.</p>
+{% else %}
+    <p class="help-text">Version {{ version.number }} against version {{ previous.number }}. Mean over the testcases that have a result in both versions; the failure rate counts finished results only.</p>
+    <div class="comparison" id="{{ prepare_component('run-comparison') }}" data-comparison="{{ comparison|json_encode }}" data-from-label="Version {{ previous.number }}" data-to-label="Version {{ version.number }}">
+        {% for key, title in {score: 'Score (%)', durationMs: 'Duration (s)', inputTokens: 'Input tokens', outputTokens: 'Output tokens', failureRate: 'Failure rate (%)'} %}
+            <figure class="comparison-chart">
+                <figcaption>{{ title }}</figcaption>
+                <div class="comparison-chart-canvas"><canvas data-metric="{{ key }}" aria-hidden="true"></canvas></div>
+            </figure>
+        {% endfor %}
+        <table class="visually-hidden" data-comparison-table>
+            <caption>Version {{ version.number }} against version {{ previous.number }}</caption>
+        </table>
+    </div>
+{% endif %}

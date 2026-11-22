@@ -1,3 +1,4 @@
+export const RUN_PROGRESS_EVENT = 'run-progress:update';
 const INTERVAL_MS = 3000;
 const MAX_FAILURES = 3;
 const STOPPED_NOTICE = 'Live update stopped. Reload the page to see the latest state.';
@@ -7,6 +8,7 @@ interface Progress {
     done: number;
     total: number;
     html: string;
+    comparison?: unknown[];
 }
 
 interface ViewState {
@@ -119,6 +121,7 @@ export function startRunProgress(root: HTMLElement, fetchFn: typeof fetch = fetc
             restoreState(root, state);
         }
         announce(progress);
+        document.dispatchEvent(new CustomEvent(RUN_PROGRESS_EVENT, { detail: progress }));
         if ('running' === progress.status) {
             schedule();
         }

@@ -55,6 +55,9 @@ the agent can correct itself. Tools that delete or start carry the MCP hints `de
 
 - **Costs**: `start_run` calls LLM providers and costs money, exactly like *Start* in the UI. The confirmation dialog
   with the number of calls does not exist for agents; `get_run` shows `llmCalls` and `judgeCalls` before the start.
+  `start_run` with `withBaseline=true` starts a version without skills first and the version with skills right after
+  it (see [Baseline](runs.md#baseline)), so it doubles the calls. It only works while `get_run` reports
+  `baselineAvailable`; the answer then also has `baselineVersion`, and `llmCalls` and `judgeCalls` count both versions.
 - **Deleting** skills and testcases hides them (history stays); deleting runs and projects is final.
 - **Data protection**: tool results (skill and testcase text, run outputs, judge reasons) go to the LLM provider of the
   agent, not only the providers configured in Dojo. The same rule as everywhere applies: no personal data in free text.
