@@ -7,9 +7,9 @@
 {% endmacro %}
 
 {# A button that opens a modal; the POST (CSRF token id must match the controller attribute) is sent only after the user confirms. Danger styled unless class says otherwise. #}
-{% macro confirm_post(action, tokenId, label, title, message, confirmLabel = null, class = 'button-danger') %}
+{% macro confirm_post(action, tokenId, label, title, message, confirmLabel = null, class = 'button-danger', triggerLabel = null, triggerClass = null) %}
     {% set id = 'confirm-' ~ tokenId %}
-    <button type="button" class="{{ class }}" command="show-modal" commandfor="{{ id }}">{{ label }}</button>
+    <button type="button" class="{{ triggerClass ?? class }}" command="show-modal" commandfor="{{ id }}"{% if triggerLabel %} aria-label="{{ label }}" title="{{ label }}"{% endif %}>{{ triggerLabel ?? label }}</button>
     <dialog id="{{ id }}" aria-labelledby="{{ id }}-title" closedby="any">
         <h2 id="{{ id }}-title">{{ title }}</h2>
         <p>{{ message }}</p>

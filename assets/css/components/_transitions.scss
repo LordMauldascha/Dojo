@@ -6,6 +6,12 @@
     view-transition-name: app-sidebar;
 }
 
+// Chromium sometimes captures the old page as an opaque white image, which then fades out as a white flash (measured:
+// about 1 in 8 navigations). Without the old image the new page fades in on the dark background instead.
+::view-transition-old(root) {
+    display: none;
+}
+
 // Same pace for the content and the sidebar (its board changes pages with the content).
 ::view-transition-group(*),
 ::view-transition-old(*),

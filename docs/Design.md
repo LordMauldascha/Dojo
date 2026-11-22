@@ -77,6 +77,7 @@ hairline border, `--radius-md`. The heading carries a status dot (`.status-dot--
 stored, `.status-dot--off`, an empty ring, when none is). Each credential is a `.credential` block with label, environment
 variable, status and the buttons *Set key* / *Replace key* (opens a form dialog, same pattern as the user dialog) and
 *Delete*. Never show a stored key again, only `••••` and the last four characters.
+The Hugging Face card lists its models in `.model-list`: name left (wraps), a red `−` icon button (`.button-icon`) right, aligned to the top line of the name.
 
 ## Result matrix
 
@@ -121,6 +122,7 @@ user confirms. Styles: `assets/css/components/_dialog.scss`, backdrop token `--c
 - `closedby="any"` adds click-outside dismissal where supported; Esc always closes.
 - Never set `display` on `dialog` without `[open]`, and keep `overscroll-behavior: contain` on `dialog:modal` and
   `dialog::backdrop`, otherwise the page scrolls behind the modal.
+- `confirm_post` takes `triggerLabel` / `triggerClass` to restyle only the opener (for example an icon button); the dialog keeps `label` as its accessible name and confirm text.
 - Browsers without Invoker Commands are served by `assets/js/services/commandButtons.ts` (no dependency).
 - `Remove` buttons (assignments) and `Restore` do not ask.
 - Form dialogs (the password change on the account page) use the same `<dialog>`. A Symfony form (it has a `name`) inside
@@ -211,7 +213,9 @@ follow these rules:
    "ViewTransition opt-in disabled"); the same rule inline works.
 4. The animation lives in `assets/css/components/_transitions.scss`: the page content cross-fades with
    `--duration-page` (450 ms, deliberately slower than the 150 to 200 ms of hover and focus changes) and `--ease-out`. `.app-sidebar` has `view-transition-name: app-sidebar`, so it stays put while the
-   content changes.
+   content changes. The old page image (`::view-transition-old(root)`) is hidden and the new page fades in: Chromium
+   sometimes captures the old image as opaque white, which showed as a white flash on navigation (also after saving a
+   form). Do not bring the old image back without measuring that flash again.
 5. A `view-transition-name` must be unique on a page; duplicates cancel the whole transition. Add names for new
    elements that should morph or stay fixed (for example a sticky toolbar), in CSS, not in JavaScript, unless the name
    depends on the previous page (then use the `pagereveal` event and remove the name afterwards).

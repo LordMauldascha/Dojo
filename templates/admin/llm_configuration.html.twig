@@ -67,11 +67,11 @@
                             <a href="{{ path('app_admin_huggingface_models') }}">Discover models</a>
                         </div>
                         {% if huggingFaceModels %}
-                            <ul>
+                            <ul class="model-list">
                                 {% for model in huggingFaceModels %}
                                     <li>
-                                        {{ model.modelId }}
-                                        {{ forms.confirm_post(path('app_admin_huggingface_model_delete', {id: model.id}), constant('App\\Controller\\HuggingFaceModelController::CSRF_DELETE') ~ model.id, 'Remove', 'Remove ' ~ model.modelId ~ '?', 'The model is no longer offered in runs and as judge. Existing run configurations keep it.') }}
+                                        <span>{{ model.modelId }}</span>
+                                        {{ forms.confirm_post(path('app_admin_huggingface_model_delete', {id: model.id}), constant('App\\Controller\\HuggingFaceModelController::CSRF_DELETE') ~ model.id, 'Remove', 'Remove ' ~ model.modelId ~ '?', 'The model is no longer offered in runs and as judge. Existing run configurations keep it.', null, 'button-danger', '−', 'button-danger button-icon') }}
                                     </li>
                                 {% endfor %}
                             </ul>

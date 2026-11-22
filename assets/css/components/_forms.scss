@@ -68,6 +68,15 @@ form[name] button[type='submit'],
     }
 }
 
+// Square button with a single symbol; pair with an aria-label.
+.button-icon {
+    flex-shrink: 0;
+    width: 1.5rem;
+    min-height: 1.5rem;
+    padding: 0;
+    line-height: 1;
+}
+
 label {
     display: block;
     margin-bottom: var(--space-1);
