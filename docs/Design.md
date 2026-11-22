@@ -21,7 +21,9 @@ no hex values, pixel sizes or durations outside `variables/`. Breakpoints are th
   sans. Never use the display face for UI labels or data.
 - Shape: radii 0 to 2px, no shadows, hairline borders.
 - Seal: the square gold stamp with 道 (`.seal`, `--font-seal`) is the brand mark in the sidebar and on the login page,
-  pressed slightly crooked (-4°) and straight on hover. Use the seal for the brand only.
+  pressed slightly crooked (-4°) and straight on hover. Use the seal for the brand only. The favicon is the same seal, straight
+  and full-bleed (`public/favicon.svg` with the glyph as a path, `favicon.ico` 16/32/48, `apple-touch-icon.png` 180),
+  linked in `base.html.twig`. The glyph is Hiragino Mincho ProN W6; regenerate the files if the seal colors change.
 - Glow: a very faint, soft glowing-gold glow falls from the upper right corner onto the page background (two radial
   gradients on `body::before` and `body::after` in `_base.scss`, tokens `--color-glow-core` and `--color-glow-wide`,
   fixed to the viewport, behind `.app` and `.login`). The layers breathe slowly and out of step (opacity and a slight

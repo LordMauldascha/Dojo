@@ -4,7 +4,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN install-php-extensions @composer pdo_pgsql intl opcache zip
+RUN install-php-extensions @composer pdo_pgsql intl opcache zip pcntl
 
 # Node is only needed for the Claude Code CLI used by symfony/ai-claude-code-platform
 COPY --from=node:24-slim /usr/local/bin/node /usr/local/bin/node
